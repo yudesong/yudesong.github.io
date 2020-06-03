@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="android开发过程中经常会用到缓存，现在主流的app中图片等资源的缓存策略一般是分两级，一个是内存级别的缓存，一个是磁盘级别的缓存。 作为android系统的维护者google也开源了其缓存方案，LruCache和DiskLruCache。从android3.1开始LruCache已经作为android源码的一部分维护在android系统中，为了兼容以前的版本android的support-v">
+<meta property="og:type" content="article">
+<meta property="og:title" content="7 android之LruCache">
+<meta property="og:url" content="http://yoursite.com/2020/05/30/7%20android%E4%B9%8BLruCache/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="android开发过程中经常会用到缓存，现在主流的app中图片等资源的缓存策略一般是分两级，一个是内存级别的缓存，一个是磁盘级别的缓存。 作为android系统的维护者google也开源了其缓存方案，LruCache和DiskLruCache。从android3.1开始LruCache已经作为android源码的一部分维护在android系统中，为了兼容以前的版本android的support-v">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-29T16:29:04.263Z">
+<meta property="article:modified_time" content="2020-05-31T03:02:18.362Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android系统层">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/30/7%20android%E4%B9%8BLruCache/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>7 android之LruCache | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/30/7%20android%E4%B9%8BLruCache/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          7 android之LruCache
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-30 00:29:04" itemprop="dateCreated datePublished" datetime="2020-05-30T00:29:04+08:00">2020-05-30</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>android开发过程中经常会用到缓存，现在主流的app中图片等资源的缓存策略一般是分两级，一个是内存级别的缓存，一个是磁盘级别的缓存。</p>
+<p>作为android系统的维护者google也开源了其缓存方案，LruCache和DiskLruCache。从android3.1开始LruCache已经作为android源码的一部分维护在android系统中，为了兼容以前的版本android的support-v4包也提供了LruCache的维护，如果App需要兼容到android3.1之前的版本就需要使用support-v4包中的LruCache，如果不需要兼容到android3.1则直接使用android源码中的LruCache即可，这里需要注意的是DiskLruCache并不是android源码的一部分。</p>
+<p>在LruCache的源码中，关于LruCache有这样的一段介绍：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">A cache that holds strong references to a limited number of values. Each time a value is accessed, it is moved to the head of a queue. When a value is added to a full cache, the value at the end of that queue is evicted and may become eligible for garbage collection.</span><br></pre></td></tr></table></figure>
+<p>cache对象通过一个强引用来访问内容。每次当一个item被访问到的时候，这个item就会被移动到一个队列的队首。当一个item被添加到已经满了的队列时，这个队列的队尾的item就会被移除。</p>
+<p>其实这个实现的过程就是LruCache的缓存策略，即Lru–&gt;(Least recent used)最少最近使用算法。</p>
+<p>下面我们具体看一下LruCache的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br></pre></td><td class="code"><pre><span class="line">public class LruCache&lt;K, V&gt; &#123;</span><br><span class="line">    private final LinkedHashMap&lt;K, V&gt; map;</span><br><span class="line"></span><br><span class="line">    &#x2F;** Size of this cache in units. Not necessarily the number of elements. *&#x2F;</span><br><span class="line">    private int size;</span><br><span class="line">    private int maxSize;</span><br><span class="line"></span><br><span class="line">    private int putCount;</span><br><span class="line">    private int createCount;</span><br><span class="line">    private int evictionCount;</span><br><span class="line">    private int hitCount;</span><br><span class="line">    private int missCount;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * @param maxSize for caches that do not override &#123;@link #sizeOf&#125;, this is</span><br><span class="line">     *     the maximum number of entries in the cache. For all other caches,</span><br><span class="line">     *     this is the maximum sum of the sizes of the entries in this cache.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public LruCache(int maxSize) &#123;</span><br><span class="line">        if (maxSize &lt;&#x3D; 0) &#123;</span><br><span class="line">            throw new IllegalArgumentException(&quot;maxSize &lt;&#x3D; 0&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">        this.maxSize &#x3D; maxSize;</span><br><span class="line">        this.map &#x3D; new LinkedHashMap&lt;K, V&gt;(0, 0.75f, true);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Sets the size of the cache.</span><br><span class="line">     *</span><br><span class="line">     * @param maxSize The new maximum size.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public void resize(int maxSize) &#123;</span><br><span class="line">        if (maxSize &lt;&#x3D; 0) &#123;</span><br><span class="line">            throw new IllegalArgumentException(&quot;maxSize &lt;&#x3D; 0&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            this.maxSize &#x3D; maxSize;</span><br><span class="line">        &#125;</span><br><span class="line">        trimToSize(maxSize);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Returns the value for &#123;@code key&#125; if it exists in the cache or can be</span><br><span class="line">     * created by &#123;@code #create&#125;. If a value was returned, it is moved to the</span><br><span class="line">     * head of the queue. This returns null if a value is not cached and cannot</span><br><span class="line">     * be created.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public final V get(K key) &#123;</span><br><span class="line">        if (key &#x3D;&#x3D; null) &#123;</span><br><span class="line">            throw new NullPointerException(&quot;key &#x3D;&#x3D; null&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        V mapValue;</span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            mapValue &#x3D; map.get(key);</span><br><span class="line">            if (mapValue !&#x3D; null) &#123;</span><br><span class="line">                hitCount++;</span><br><span class="line">                return mapValue;</span><br><span class="line">            &#125;</span><br><span class="line">            missCount++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        &#x2F;*</span><br><span class="line">         * Attempt to create a value. This may take a long time, and the map</span><br><span class="line">         * may be different when create() returns. If a conflicting value was</span><br><span class="line">         * added to the map while create() was working, we leave that value in</span><br><span class="line">         * the map and release the created value.</span><br><span class="line">         *&#x2F;</span><br><span class="line"></span><br><span class="line">        V createdValue &#x3D; create(key);</span><br><span class="line">        if (createdValue &#x3D;&#x3D; null) &#123;</span><br><span class="line">            return null;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            createCount++;</span><br><span class="line">            mapValue &#x3D; map.put(key, createdValue);</span><br><span class="line"></span><br><span class="line">            if (mapValue !&#x3D; null) &#123;</span><br><span class="line">                &#x2F;&#x2F; There was a conflict so undo that last put</span><br><span class="line">                map.put(key, mapValue);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                size +&#x3D; safeSizeOf(key, createdValue);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (mapValue !&#x3D; null) &#123;</span><br><span class="line">            entryRemoved(false, key, createdValue, mapValue);</span><br><span class="line">            return mapValue;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            trimToSize(maxSize);</span><br><span class="line">            return createdValue;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Caches &#123;@code value&#125; for &#123;@code key&#125;. The value is moved to the head of</span><br><span class="line">     * the queue.</span><br><span class="line">     *</span><br><span class="line">     * @return the previous value mapped by &#123;@code key&#125;.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public final V put(K key, V value) &#123;</span><br><span class="line">        if (key &#x3D;&#x3D; null || value &#x3D;&#x3D; null) &#123;</span><br><span class="line">            throw new NullPointerException(&quot;key &#x3D;&#x3D; null || value &#x3D;&#x3D; null&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        V previous;</span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            putCount++;</span><br><span class="line">            size +&#x3D; safeSizeOf(key, value);</span><br><span class="line">            previous &#x3D; map.put(key, value);</span><br><span class="line">            if (previous !&#x3D; null) &#123;</span><br><span class="line">                size -&#x3D; safeSizeOf(key, previous);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (previous !&#x3D; null) &#123;</span><br><span class="line">            entryRemoved(false, key, previous, value);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        trimToSize(maxSize);</span><br><span class="line">        return previous;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Remove the eldest entries until the total of remaining entries is at or</span><br><span class="line">     * below the requested size.</span><br><span class="line">     *</span><br><span class="line">     * @param maxSize the maximum size of the cache before returning. May be -1</span><br><span class="line">     *            to evict even 0-sized elements.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public void trimToSize(int maxSize) &#123;</span><br><span class="line">        while (true) &#123;</span><br><span class="line">            K key;</span><br><span class="line">            V value;</span><br><span class="line">            synchronized (this) &#123;</span><br><span class="line">                if (size &lt; 0 || (map.isEmpty() &amp;&amp; size !&#x3D; 0)) &#123;</span><br><span class="line">                    throw new IllegalStateException(getClass().getName()</span><br><span class="line">                            + &quot;.sizeOf() is reporting inconsistent results!&quot;);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                if (size &lt;&#x3D; maxSize) &#123;</span><br><span class="line">                    break;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                Map.Entry&lt;K, V&gt; toEvict &#x3D; map.eldest();</span><br><span class="line">                if (toEvict &#x3D;&#x3D; null) &#123;</span><br><span class="line">                    break;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                key &#x3D; toEvict.getKey();</span><br><span class="line">                value &#x3D; toEvict.getValue();</span><br><span class="line">                map.remove(key);</span><br><span class="line">                size -&#x3D; safeSizeOf(key, value);</span><br><span class="line">                evictionCount++;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            entryRemoved(true, key, value, null);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Removes the entry for &#123;@code key&#125; if it exists.</span><br><span class="line">     *</span><br><span class="line">     * @return the previous value mapped by &#123;@code key&#125;.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public final V remove(K key) &#123;</span><br><span class="line">        if (key &#x3D;&#x3D; null) &#123;</span><br><span class="line">            throw new NullPointerException(&quot;key &#x3D;&#x3D; null&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        V previous;</span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            previous &#x3D; map.remove(key);</span><br><span class="line">            if (previous !&#x3D; null) &#123;</span><br><span class="line">                size -&#x3D; safeSizeOf(key, previous);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (previous !&#x3D; null) &#123;</span><br><span class="line">            entryRemoved(false, key, previous, null);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        return previous;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Called for entries that have been evicted or removed. This method is</span><br><span class="line">     * invoked when a value is evicted to make space, removed by a call to</span><br><span class="line">     * &#123;@link #remove&#125;, or replaced by a call to &#123;@link #put&#125;. The default</span><br><span class="line">     * implementation does nothing.</span><br><span class="line">     *</span><br><span class="line">     * &lt;p&gt;The method is called without synchronization: other threads may</span><br><span class="line">     * access the cache while this method is executing.</span><br><span class="line">     *</span><br><span class="line">     * @param evicted true if the entry is being removed to make space, false</span><br><span class="line">     *     if the removal was caused by a &#123;@link #put&#125; or &#123;@link #remove&#125;.</span><br><span class="line">     * @param newValue the new value for &#123;@code key&#125;, if it exists. If non-null,</span><br><span class="line">     *     this removal was caused by a &#123;@link #put&#125;. Otherwise it was caused by</span><br><span class="line">     *     an eviction or a &#123;@link #remove&#125;.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    protected void entryRemoved(boolean evicted, K key, V oldValue, V newValue) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Called after a cache miss to compute a value for the corresponding key.</span><br><span class="line">     * Returns the computed value or null if no value can be computed. The</span><br><span class="line">     * default implementation returns null.</span><br><span class="line">     *</span><br><span class="line">     * &lt;p&gt;The method is called without synchronization: other threads may</span><br><span class="line">     * access the cache while this method is executing.</span><br><span class="line">     *</span><br><span class="line">     * &lt;p&gt;If a value for &#123;@code key&#125; exists in the cache when this method</span><br><span class="line">     * returns, the created value will be released with &#123;@link #entryRemoved&#125;</span><br><span class="line">     * and discarded. This can occur when multiple threads request the same key</span><br><span class="line">     * at the same time (causing multiple values to be created), or when one</span><br><span class="line">     * thread calls &#123;@link #put&#125; while another is creating a value for the same</span><br><span class="line">     * key.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    protected V create(K key) &#123;</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private int safeSizeOf(K key, V value) &#123;</span><br><span class="line">        int result &#x3D; sizeOf(key, value);</span><br><span class="line">        if (result &lt; 0) &#123;</span><br><span class="line">            throw new IllegalStateException(&quot;Negative size: &quot; + key + &quot;&#x3D;&quot; + value);</span><br><span class="line">        &#125;</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Returns the size of the entry for &#123;@code key&#125; and &#123;@code value&#125; in</span><br><span class="line">     * user-defined units.  The default implementation returns 1 so that size</span><br><span class="line">     * is the number of entries and max size is the maximum number of entries.</span><br><span class="line">     *</span><br><span class="line">     * &lt;p&gt;An entry&#39;s size must not change while it is in the cache.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    protected int sizeOf(K key, V value) &#123;</span><br><span class="line">        return 1;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Clear the cache, calling &#123;@link #entryRemoved&#125; on each removed entry.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public final void evictAll() &#123;</span><br><span class="line">        trimToSize(-1); &#x2F;&#x2F; -1 will evict 0-sized elements</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * For caches that do not override &#123;@link #sizeOf&#125;, this returns the number</span><br><span class="line">     * of entries in the cache. For all other caches, this returns the sum of</span><br><span class="line">     * the sizes of the entries in this cache.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public synchronized final int size() &#123;</span><br><span class="line">        return size;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * For caches that do not override &#123;@link #sizeOf&#125;, this returns the maximum</span><br><span class="line">     * number of entries in the cache. For all other caches, this returns the</span><br><span class="line">     * maximum sum of the sizes of the entries in this cache.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public synchronized final int maxSize() &#123;</span><br><span class="line">        return maxSize;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Returns the number of times &#123;@link #get&#125; returned a value that was</span><br><span class="line">     * already present in the cache.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public synchronized final int hitCount() &#123;</span><br><span class="line">        return hitCount;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Returns the number of times &#123;@link #get&#125; returned null or required a new</span><br><span class="line">     * value to be created.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public synchronized final int missCount() &#123;</span><br><span class="line">        return missCount;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Returns the number of times &#123;@link #create(Object)&#125; returned a value.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public synchronized final int createCount() &#123;</span><br><span class="line">        return createCount;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Returns the number of times &#123;@link #put&#125; was called.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public synchronized final int putCount() &#123;</span><br><span class="line">        return putCount;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Returns the number of values that have been evicted.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public synchronized final int evictionCount() &#123;</span><br><span class="line">        return evictionCount;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Returns a copy of the current contents of the cache, ordered from least</span><br><span class="line">     * recently accessed to most recently accessed.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public synchronized final Map&lt;K, V&gt; snapshot() &#123;</span><br><span class="line">        return new LinkedHashMap&lt;K, V&gt;(map);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override public synchronized final String toString() &#123;</span><br><span class="line">        int accesses &#x3D; hitCount + missCount;</span><br><span class="line">        int hitPercent &#x3D; accesses !&#x3D; 0 ? (100 * hitCount &#x2F; accesses) : 0;</span><br><span class="line">        return String.format(&quot;LruCache[maxSize&#x3D;%d,hits&#x3D;%d,misses&#x3D;%d,hitRate&#x3D;%d%%]&quot;,</span><br><span class="line">                maxSize, hitCount, missCount, hitPercent);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到LruCache初始化的时候需要使用泛型，一般的我们这样初始化LruCache对象：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 获取应用程序最大可用内存  </span><br><span class="line">        int maxMemory &#x3D; (int) Runtime.getRuntime().maxMemory();  </span><br><span class="line">        int cacheSize &#x3D; maxMemory &#x2F; 8;  </span><br><span class="line">        &#x2F;&#x2F; 设置图片缓存大小为程序最大可用内存的1&#x2F;8  </span><br><span class="line">        mMemoryCache &#x3D; new LruCache&lt;String, Bitmap&gt;(cacheSize) &#123;  </span><br><span class="line">            @Override  </span><br><span class="line">            protected int sizeOf(String key, Bitmap bitmap) &#123;  </span><br><span class="line">                return bitmap.getByteCount();  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125;;</span><br></pre></td></tr></table></figure>
+<p>这里我们假设通过String作为key保存bitmap对象，同时需要传递一个int型的maxSize数值，主要用于设置LruCache链表的最大值。</p>
+<p>查看其构造方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 获取应用程序最大可用内存  </span><br><span class="line">        int maxMemory &#x3D; (int) Runtime.getRuntime().maxMemory();  </span><br><span class="line">        int cacheSize &#x3D; maxMemory &#x2F; 8;  </span><br><span class="line">        &#x2F;&#x2F; 设置图片缓存大小为程序最大可用内存的1&#x2F;8  </span><br><span class="line">        mMemoryCache &#x3D; new LruCache&lt;String, Bitmap&gt;(cacheSize) &#123;  </span><br><span class="line">            @Override  </span><br><span class="line">            protected int sizeOf(String key, Bitmap bitmap) &#123;  </span><br><span class="line">                return bitmap.getByteCount();  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125;;</span><br></pre></td></tr></table></figure>
+<p>可以看到其主要的是初始化了maxSize和map链表对象。</p>
+<p>然后查看put方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">public final V put(K key, V value) &#123;</span><br><span class="line">        if (key &#x3D;&#x3D; null || value &#x3D;&#x3D; null) &#123;</span><br><span class="line">            throw new NullPointerException(&quot;key &#x3D;&#x3D; null || value &#x3D;&#x3D; null&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        V previous;</span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            putCount++;</span><br><span class="line">            size +&#x3D; safeSizeOf(key, value);</span><br><span class="line">            previous &#x3D; map.put(key, value);</span><br><span class="line">            if (previous !&#x3D; null) &#123;</span><br><span class="line">                size -&#x3D; safeSizeOf(key, previous);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (previous !&#x3D; null) &#123;</span><br><span class="line">            entryRemoved(false, key, previous, value);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        trimToSize(maxSize);</span><br><span class="line">        return previous;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>需要传递两个参数：K和V，首先做了一下参数的判断，然后定义一个保存前一个Value值得临时变量，让putCount（put执行的次数）自增，让map的size大小自增。<br>需要注意的是这里的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">previous &#x3D; map.put(key, value);</span><br></pre></td></tr></table></figure>
+<p>我们看一下这里的map.put（）的具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">@Override public V put(K key, V value) &#123;</span><br><span class="line">        if (key &#x3D;&#x3D; null) &#123;</span><br><span class="line">            return putValueForNullKey(value);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        int hash &#x3D; Collections.secondaryHash(key);</span><br><span class="line">        HashMapEntry&lt;K, V&gt;[] tab &#x3D; table;</span><br><span class="line">        int index &#x3D; hash &amp; (tab.length - 1);</span><br><span class="line">        for (HashMapEntry&lt;K, V&gt; e &#x3D; tab[index]; e !&#x3D; null; e &#x3D; e.next) &#123;</span><br><span class="line">            if (e.hash &#x3D;&#x3D; hash &amp;&amp; key.equals(e.key)) &#123;</span><br><span class="line">                preModify(e);</span><br><span class="line">                V oldValue &#x3D; e.value;</span><br><span class="line">                e.value &#x3D; value;</span><br><span class="line">                return oldValue;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; No entry for (non-null) key is present; create one</span><br><span class="line">        modCount++;</span><br><span class="line">        if (size++ &gt; threshold) &#123;</span><br><span class="line">            tab &#x3D; doubleCapacity();</span><br><span class="line">            index &#x3D; hash &amp; (tab.length - 1);</span><br><span class="line">        &#125;</span><br><span class="line">        addNewEntry(key, value, hash, index);</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>将Key与Value的值压入Map中，这里判断了一下如果map中已经存在该key，value键值对，则不再压入map，并将Value值返回，否则将该键值对压入Map中，并返回null；</p>
+<p>返回继续put方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">previous &#x3D; map.put(key, value);</span><br><span class="line">            if (previous !&#x3D; null) &#123;</span><br><span class="line">                size -&#x3D; safeSizeOf(key, previous);</span><br><span class="line">            &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到这里我们判断map.put方法的返回值是否为空，如果不为空的话，则说明我们刚刚并没有将我么你的键值对压入Map中，所以这里的size需要自减；</p>
+<p>然后下面：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">if (previous !&#x3D; null) &#123;</span><br><span class="line">            entryRemoved(false, key, previous, value);</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>这里判断previous是否为空，如果不为空的话，调用了一个空的实现方法entryRemoved()，也就是说我们可以实现自己的LruCache并在添加缓存的时候若存在该缓存可以重写这个方法；</p>
+<p>下面调用了trimToSize(maxSize)方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">public void trimToSize(int maxSize) &#123;</span><br><span class="line">        while (true) &#123;</span><br><span class="line">            K key;</span><br><span class="line">            V value;</span><br><span class="line">            synchronized (this) &#123;</span><br><span class="line">                if (size &lt; 0 || (map.isEmpty() &amp;&amp; size !&#x3D; 0)) &#123;</span><br><span class="line">                    throw new IllegalStateException(getClass().getName()</span><br><span class="line">                            + &quot;.sizeOf() is reporting inconsistent results!&quot;);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                if (size &lt;&#x3D; maxSize) &#123;</span><br><span class="line">                    break;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                Map.Entry&lt;K, V&gt; toEvict &#x3D; map.eldest();</span><br><span class="line">                if (toEvict &#x3D;&#x3D; null) &#123;</span><br><span class="line">                    break;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                key &#x3D; toEvict.getKey();</span><br><span class="line">                value &#x3D; toEvict.getValue();</span><br><span class="line">                map.remove(key);</span><br><span class="line">                size -&#x3D; safeSizeOf(key, value);</span><br><span class="line">                evictionCount++;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            entryRemoved(true, key, value, null);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>该方法主要是判断该Map的大小是否已经达到阙值，若达到，则将Map队尾的元素（最不常使用的元素）remove掉。</p>
+<p><strong>总结：</strong><br>LruCache put方法，将键值对压入Map数据结构中，若这是Map的大小已经大于LruCache中定义的最大值，则将Map中最早压入的元素remove掉；</p>
+<p>查看get方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">public final V get(K key) &#123;</span><br><span class="line">        if (key &#x3D;&#x3D; null) &#123;</span><br><span class="line">            throw new NullPointerException(&quot;key &#x3D;&#x3D; null&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        V mapValue;</span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            mapValue &#x3D; map.get(key);</span><br><span class="line">            if (mapValue !&#x3D; null) &#123;</span><br><span class="line">                hitCount++;</span><br><span class="line">                return mapValue;</span><br><span class="line">            &#125;</span><br><span class="line">            missCount++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        &#x2F;*</span><br><span class="line">         * Attempt to create a value. This may take a long time, and the map</span><br><span class="line">         * may be different when create() returns. If a conflicting value was</span><br><span class="line">         * added to the map while create() was working, we leave that value in</span><br><span class="line">         * the map and release the created value.</span><br><span class="line">         *&#x2F;</span><br><span class="line"></span><br><span class="line">        V createdValue &#x3D; create(key);</span><br><span class="line">        if (createdValue &#x3D;&#x3D; null) &#123;</span><br><span class="line">            return null;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            createCount++;</span><br><span class="line">            mapValue &#x3D; map.put(key, createdValue);</span><br><span class="line"></span><br><span class="line">            if (mapValue !&#x3D; null) &#123;</span><br><span class="line">                &#x2F;&#x2F; There was a conflict so undo that last put</span><br><span class="line">                map.put(key, mapValue);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                size +&#x3D; safeSizeOf(key, createdValue);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (mapValue !&#x3D; null) &#123;</span><br><span class="line">            entryRemoved(false, key, createdValue, mapValue);</span><br><span class="line">            return mapValue;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            trimToSize(maxSize);</span><br><span class="line">            return createdValue;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到参数值为Key，简单的理解就是通过key值从map中取出Value值。<br>具体来说，判断map中是否含有key值value值，若存在，则hitCount（击中元素数量）自增，并返回Value值，若没有击中，则执行create(key)方法，这里看到create方法是一个空的实现方法，返回值为null，所以我们可以重写该方法，在调用get（key）的时候若没有找到value值，则自动创建一个value值并压入map中。</p>
+<p>总结：</p>
+<ul>
+<li><p>LruCache，内部使用Map保存内存级别的缓存</p>
+</li>
+<li><p>LruCache使用泛型可以设配各种类型</p>
+</li>
+<li><p>LruCache使用了Lru算法保存数据（最短最少使用least recent use）</p>
+</li>
+<li><p>LruCache只用使用put和get方法压入数据和取出数据</p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E7%B3%BB%E7%BB%9F%E5%B1%82/" rel="tag"># Android系统层</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/30/6%20android%E4%B9%8BLog%E6%97%A5%E5%BF%97/" rel="prev" title="6 android之Log日志">
+      <i class="fa fa-chevron-left"></i> 6 android之Log日志
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/30/8%20Zygote%E8%BF%9B%E7%A8%8B%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" rel="next" title="8 Zygote进程启动流程">
+      8 Zygote进程启动流程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

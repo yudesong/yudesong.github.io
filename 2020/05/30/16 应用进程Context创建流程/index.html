@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="今天讲讲应用进程Context的创建流程，相信大家平时在开发过程中经常会遇到对Context对象的使用，Application是Context，Activity是Context，Service也是Context，所以有一个经典的问题是一个App中一共有多少个Context？ 这个问题的答案是Application + N个Activity + N个Service。 还有就是我们平时在使用Conte">
+<meta property="og:type" content="article">
+<meta property="og:title" content="16 应用进程Context创建流程">
+<meta property="og:url" content="http://yoursite.com/2020/05/30/16%20%E5%BA%94%E7%94%A8%E8%BF%9B%E7%A8%8BContext%E5%88%9B%E5%BB%BA%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="今天讲讲应用进程Context的创建流程，相信大家平时在开发过程中经常会遇到对Context对象的使用，Application是Context，Activity是Context，Service也是Context，所以有一个经典的问题是一个App中一共有多少个Context？ 这个问题的答案是Application + N个Activity + N个Service。 还有就是我们平时在使用Conte">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-29T16:29:04.506Z">
+<meta property="article:modified_time" content="2020-05-31T03:01:29.740Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android系统层">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/30/16%20%E5%BA%94%E7%94%A8%E8%BF%9B%E7%A8%8BContext%E5%88%9B%E5%BB%BA%E6%B5%81%E7%A8%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>16 应用进程Context创建流程 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/30/16%20%E5%BA%94%E7%94%A8%E8%BF%9B%E7%A8%8BContext%E5%88%9B%E5%BB%BA%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          16 应用进程Context创建流程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-30 00:29:04" itemprop="dateCreated datePublished" datetime="2020-05-30T00:29:04+08:00">2020-05-30</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>今天讲讲应用进程Context的创建流程，相信大家平时在开发过程中经常会遇到对Context对象的使用，Application是Context，Activity是Context，Service也是Context，所以有一个经典的问题是一个App中一共有多少个Context？</p>
+<p>这个问题的答案是Application + N个Activity + N个Service。</p>
+<p>还有就是我们平时在使用Context过程中许多时候由于使用不当，可能会造成内存泄露的情况等等，这个也是需要我们注意的。这里有篇不错的文章：<br><a href="http://blog.csdn.net/feiduclear_up/article/details/47356289" target="_blank" rel="noopener"> Android Context 是什么？</a></p>
+<p>好吧，什么叫应用进程Context呢？这是指的是Application所代表的Context的创建流程，还记得我们前几篇写的应用进程创建流程么？<br><a href="http://blog.csdn.net/qq_23547831/article/details/51119333" target="_blank" rel="noopener"> android源码解析之（十一）–&gt;应用进程启动流程</a><br>最后我们得出结论，应用进程的起始方法是ActivityThread.main方法，好吧，</p>
+<p>由于还未讲解Service相关知识，这里暂时讲解一下Activity与Application中Context对象的创建过程。</p>
+<p>首先我们就从ActivityThread.main方法开始看一下Application的创建流程。。。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">        ...</span><br><span class="line">        ActivityThread thread &#x3D; new ActivityThread();</span><br><span class="line">        thread.attach(false);</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里我们发现在方法体中我们创建了一个ActivityThread对象并执行了attach方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">private void attach(boolean system) &#123;</span><br><span class="line">        sCurrentActivityThread &#x3D; this;</span><br><span class="line">        mSystemThread &#x3D; system;</span><br><span class="line">        if (!system) &#123;</span><br><span class="line">            ViewRootImpl.addFirstDrawHandler(new Runnable() &#123;</span><br><span class="line">                @Override</span><br><span class="line">                public void run() &#123;</span><br><span class="line">                    ensureJitEnabled();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">            android.ddm.DdmHandleAppName.setAppName(&quot;&lt;pre-initialized&gt;&quot;,</span><br><span class="line">                                                    UserHandle.myUserId());</span><br><span class="line">            RuntimeInit.setApplicationObject(mAppThread.asBinder());</span><br><span class="line">            final IActivityManager mgr &#x3D; ActivityManagerNative.getDefault();</span><br><span class="line">            try &#123;</span><br><span class="line">                mgr.attachApplication(mAppThread);</span><br><span class="line">            &#125; catch (RemoteException ex) &#123;</span><br><span class="line">                &#x2F;&#x2F; Ignore</span><br><span class="line">            &#125;</span><br><span class="line">            &#x2F;&#x2F; Watch for getting close to heap limit.</span><br><span class="line">            BinderInternal.addGcWatcher(new Runnable() &#123;</span><br><span class="line">                @Override public void run() &#123;</span><br><span class="line">                    if (!mSomeActivitiesChanged) &#123;</span><br><span class="line">                        return;</span><br><span class="line">                    &#125;</span><br><span class="line">                    Runtime runtime &#x3D; Runtime.getRuntime();</span><br><span class="line">                    long dalvikMax &#x3D; runtime.maxMemory();</span><br><span class="line">                    long dalvikUsed &#x3D; runtime.totalMemory() - runtime.freeMemory();</span><br><span class="line">                    if (dalvikUsed &gt; ((3*dalvikMax)&#x2F;4)) &#123;</span><br><span class="line">                        if (DEBUG_MEMORY_TRIM) Slog.d(TAG, &quot;Dalvik max&#x3D;&quot; + (dalvikMax&#x2F;1024)</span><br><span class="line">                                + &quot; total&#x3D;&quot; + (runtime.totalMemory()&#x2F;1024)</span><br><span class="line">                                + &quot; used&#x3D;&quot; + (dalvikUsed&#x2F;1024));</span><br><span class="line">                        mSomeActivitiesChanged &#x3D; false;</span><br><span class="line">                        try &#123;</span><br><span class="line">                            mgr.releaseSomeActivities(mAppThread);</span><br><span class="line">                        &#125; catch (RemoteException e) &#123;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">          ...  </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里看一下重点实现，我们可以发现在方法体中调用了ActivityManagerNative.getDefault().attachApplication(mAppThread)<br>看过我的前几篇文章的童鞋应该知道这里就是一个Binder进程间通讯，其实上执行的是ActivityManagerService.attachApplication方法，具体的可以参考前几篇文章的介绍，好吧，既然这样我们看一下ActivityManagerService.attachApplication方法的具体实现。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">    public final void attachApplication(IApplicationThread thread) &#123;</span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            int callingPid &#x3D; Binder.getCallingPid();</span><br><span class="line">            final long origId &#x3D; Binder.clearCallingIdentity();</span><br><span class="line">            attachApplicationLocked(thread, callingPid);</span><br><span class="line">            Binder.restoreCallingIdentity(origId);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>然后这里面又调用了attachApplicationLocked方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">private final boolean attachApplicationLocked(IApplicationThread 	  thread, int pid) &#123;</span><br><span class="line"></span><br><span class="line">        ...</span><br><span class="line">        thread.bindApplication(processName, appInfo, providers, app.instrumentationClass, profilerInfo, app.instrumentationArguments, app.instrumentationWatcher,</span><br><span class="line">app.instrumentationUiAutomationConnection, testMode, enableOpenGlTrace, isRestrictedBackupMode || !normalMode, app.persistent, new Configuration(mConfiguration), app.compat,</span><br><span class="line">getCommonServicesLocked(app.isolated),</span><br><span class="line">mCoreSettingsObserver.getCoreSettingsLocked());</span><br><span class="line">        ...</span><br></pre></td></tr></table></figure>
+<p>可以看到这里面又调用了IApplication.bindApplication，从方法名称中我们可以看出这里应该是绑定Application的方法，跟上面的ActivityManangerNative类似的，前面几篇文章中我们已经做过介绍，IApplicationThread是ActivityThread中ApplicationThread binder对象的客户端，所以这里最终调用的是ApplicationThread的bindApplication方法，既然这样，我们来看一下ApplicationThread的bindApplication的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line">public final void bindApplication(String processName, ApplicationInfo appInfo,</span><br><span class="line">                List&lt;ProviderInfo&gt; providers, ComponentName instrumentationName,</span><br><span class="line">                ProfilerInfo profilerInfo, Bundle instrumentationArgs,</span><br><span class="line">                IInstrumentationWatcher instrumentationWatcher,</span><br><span class="line">                IUiAutomationConnection instrumentationUiConnection, int debugMode,</span><br><span class="line">                boolean enableOpenGlTrace, boolean isRestrictedBackupMode, boolean persistent,</span><br><span class="line">                Configuration config, CompatibilityInfo compatInfo, Map&lt;String, IBinder&gt; services,</span><br><span class="line">                Bundle coreSettings) &#123;</span><br><span class="line"></span><br><span class="line">            if (services !&#x3D; null) &#123;</span><br><span class="line">                &#x2F;&#x2F; Setup the service cache in the ServiceManager</span><br><span class="line">                ServiceManager.initServiceCache(services);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            setCoreSettings(coreSettings);</span><br><span class="line"></span><br><span class="line">            &#x2F;*</span><br><span class="line">             * Two possible indications that this package could be</span><br><span class="line">             * sharing its runtime with other packages:</span><br><span class="line">             *</span><br><span class="line">             * 1.) the sharedUserId attribute is set in the manifest,</span><br><span class="line">             *     indicating a request to share a VM with other</span><br><span class="line">             *     packages with the same sharedUserId.</span><br><span class="line">             *</span><br><span class="line">             * 2.) the application element of the manifest has an</span><br><span class="line">             *     attribute specifying a non-default process name,</span><br><span class="line">             *     indicating the desire to run in another packages VM.</span><br><span class="line">             *</span><br><span class="line">             * If sharing is enabled we do not have a unique application</span><br><span class="line">             * in a process and therefore cannot rely on the package</span><br><span class="line">             * name inside the runtime.</span><br><span class="line">             *&#x2F;</span><br><span class="line">            IPackageManager pm &#x3D; getPackageManager();</span><br><span class="line">            android.content.pm.PackageInfo pi &#x3D; null;</span><br><span class="line">            try &#123;</span><br><span class="line">                pi &#x3D; pm.getPackageInfo(appInfo.packageName, 0, UserHandle.myUserId());</span><br><span class="line">            &#125; catch (RemoteException e) &#123;</span><br><span class="line">            &#125;</span><br><span class="line">            if (pi !&#x3D; null) &#123;</span><br><span class="line">                boolean sharedUserIdSet &#x3D; (pi.sharedUserId !&#x3D; null);</span><br><span class="line">                boolean processNameNotDefault &#x3D;</span><br><span class="line">                (pi.applicationInfo !&#x3D; null &amp;&amp;</span><br><span class="line">                 !appInfo.packageName.equals(pi.applicationInfo.processName));</span><br><span class="line">                boolean sharable &#x3D; (sharedUserIdSet || processNameNotDefault);</span><br><span class="line"></span><br><span class="line">                &#x2F;&#x2F; Tell the VMRuntime about the application, unless it is shared</span><br><span class="line">                &#x2F;&#x2F; inside a process.</span><br><span class="line">                if (!sharable) &#123;</span><br><span class="line">                    VMRuntime.registerAppInfo(appInfo.packageName, appInfo.dataDir,</span><br><span class="line">                                            appInfo.processName);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            AppBindData data &#x3D; new AppBindData();</span><br><span class="line">            data.processName &#x3D; processName;</span><br><span class="line">            data.appInfo &#x3D; appInfo;</span><br><span class="line">            data.providers &#x3D; providers;</span><br><span class="line">            data.instrumentationName &#x3D; instrumentationName;</span><br><span class="line">            data.instrumentationArgs &#x3D; instrumentationArgs;</span><br><span class="line">            data.instrumentationWatcher &#x3D; instrumentationWatcher;</span><br><span class="line">            data.instrumentationUiAutomationConnection &#x3D; instrumentationUiConnection;</span><br><span class="line">            data.debugMode &#x3D; debugMode;</span><br><span class="line">            data.enableOpenGlTrace &#x3D; enableOpenGlTrace;</span><br><span class="line">            data.restrictedBackupMode &#x3D; isRestrictedBackupMode;</span><br><span class="line">            data.persistent &#x3D; persistent;</span><br><span class="line">            data.config &#x3D; config;</span><br><span class="line">            data.compatInfo &#x3D; compatInfo;</span><br><span class="line">            data.initProfilerInfo &#x3D; profilerInfo;</span><br><span class="line">            sendMessage(H.BIND_APPLICATION, data);</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>好吧，最后调用了ActivityThread.sendMessage()…</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">private void sendMessage(int what, Object obj) &#123;</span><br><span class="line">        sendMessage(what, obj, 0, 0, false);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>然后我们看一下其sendMessage的重载方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">private void sendMessage(int what, Object obj, int arg1, int arg2, boolean async) &#123;</span><br><span class="line">        if (DEBUG_MESSAGES) Slog.v(</span><br><span class="line">            TAG, &quot;SCHEDULE &quot; + what + &quot; &quot; + mH.codeToString(what)</span><br><span class="line">            + &quot;: &quot; + arg1 + &quot; &#x2F; &quot; + obj);</span><br><span class="line">        Message msg &#x3D; Message.obtain();</span><br><span class="line">        msg.what &#x3D; what;</span><br><span class="line">        msg.obj &#x3D; obj;</span><br><span class="line">        msg.arg1 &#x3D; arg1;</span><br><span class="line">        msg.arg2 &#x3D; arg2;</span><br><span class="line">        if (async) &#123;</span><br><span class="line">            msg.setAsynchronous(true);</span><br><span class="line">        &#125;</span><br><span class="line">        mH.sendMessage(msg);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以发现这里调用了mH的sendMessage方法，最后通过Handler的异步消息机制被mH的handleMessage方法处理，然后根据Message.what选择处理分支，最终调用了ActivityThread的handleBindApplication方法。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line">private void handleBindApplication(AppBindData data) &#123;</span><br><span class="line">        ...</span><br><span class="line">        &#x2F;&#x2F; 创建Instrumentation</span><br><span class="line">        if (data.instrumentationName !&#x3D; null) &#123;</span><br><span class="line">            InstrumentationInfo ii &#x3D; null;</span><br><span class="line">            try &#123;</span><br><span class="line">                ii &#x3D; appContext.getPackageManager().</span><br><span class="line">                    getInstrumentationInfo(data.instrumentationName, 0);</span><br><span class="line">            &#125; catch (PackageManager.NameNotFoundException e) &#123;</span><br><span class="line">            &#125;</span><br><span class="line">            if (ii &#x3D;&#x3D; null) &#123;</span><br><span class="line">                throw new RuntimeException(</span><br><span class="line">                    &quot;Unable to find instrumentation info for: &quot;</span><br><span class="line">                    + data.instrumentationName);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            mInstrumentationPackageName &#x3D; ii.packageName;</span><br><span class="line">            mInstrumentationAppDir &#x3D; ii.sourceDir;</span><br><span class="line">            mInstrumentationSplitAppDirs &#x3D; ii.splitSourceDirs;</span><br><span class="line">            mInstrumentationLibDir &#x3D; ii.nativeLibraryDir;</span><br><span class="line">            mInstrumentedAppDir &#x3D; data.info.getAppDir();</span><br><span class="line">            mInstrumentedSplitAppDirs &#x3D; data.info.getSplitAppDirs();</span><br><span class="line">            mInstrumentedLibDir &#x3D; data.info.getLibDir();</span><br><span class="line"></span><br><span class="line">            ApplicationInfo instrApp &#x3D; new ApplicationInfo();</span><br><span class="line">            instrApp.packageName &#x3D; ii.packageName;</span><br><span class="line">            instrApp.sourceDir &#x3D; ii.sourceDir;</span><br><span class="line">            instrApp.publicSourceDir &#x3D; ii.publicSourceDir;</span><br><span class="line">            instrApp.splitSourceDirs &#x3D; ii.splitSourceDirs;</span><br><span class="line">            instrApp.splitPublicSourceDirs &#x3D; ii.splitPublicSourceDirs;</span><br><span class="line">            instrApp.dataDir &#x3D; ii.dataDir;</span><br><span class="line">            instrApp.nativeLibraryDir &#x3D; ii.nativeLibraryDir;</span><br><span class="line">            LoadedApk pi &#x3D; getPackageInfo(instrApp, data.compatInfo,</span><br><span class="line">                    appContext.getClassLoader(), false, true, false);</span><br><span class="line">            ContextImpl instrContext &#x3D; ContextImpl.createAppContext(this, pi);</span><br><span class="line"></span><br><span class="line">            try &#123;</span><br><span class="line">                java.lang.ClassLoader cl &#x3D; instrContext.getClassLoader();</span><br><span class="line">                mInstrumentation &#x3D; (Instrumentation)</span><br><span class="line">                    cl.loadClass(data.instrumentationName.getClassName()).newInstance();</span><br><span class="line">            &#125; catch (Exception e) &#123;</span><br><span class="line">                throw new RuntimeException(</span><br><span class="line">                    &quot;Unable to instantiate instrumentation &quot;</span><br><span class="line">                    + data.instrumentationName + &quot;: &quot; + e.toString(), e);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            mInstrumentation.init(this, instrContext, appContext,</span><br><span class="line">                   new ComponentName(ii.packageName, ii.name), data.instrumentationWatcher,</span><br><span class="line">                   data.instrumentationUiAutomationConnection);</span><br><span class="line"></span><br><span class="line">            if (mProfiler.profileFile !&#x3D; null &amp;&amp; !ii.handleProfiling</span><br><span class="line">                    &amp;&amp; mProfiler.profileFd &#x3D;&#x3D; null) &#123;</span><br><span class="line">                mProfiler.handlingProfiling &#x3D; true;</span><br><span class="line">                File file &#x3D; new File(mProfiler.profileFile);</span><br><span class="line">                file.getParentFile().mkdirs();</span><br><span class="line">                Debug.startMethodTracing(file.toString(), 8 * 1024 * 1024);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            mInstrumentation &#x3D; new Instrumentation();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">		...</span><br><span class="line">		&#x2F; If the app is being launched for full backup or restore, bring it up in</span><br><span class="line">            &#x2F;&#x2F; a restricted environment with the base application class.</span><br><span class="line">            Application app &#x3D; data.info.makeApplication(data.restrictedBackupMode, null);</span><br><span class="line">            mInitialApplication &#x3D; app;</span><br><span class="line">		...</span><br><span class="line">        try &#123;</span><br><span class="line">           mInstrumentation.onCreate(data.instrumentationArgs);</span><br><span class="line">         &#125;</span><br><span class="line">         catch (Exception e) &#123;</span><br><span class="line">                throw new RuntimeException(</span><br><span class="line">                    &quot;Exception thrown in onCreate() of &quot;</span><br><span class="line">                    + data.instrumentationName + &quot;: &quot; + e.toString(), e);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            try &#123;</span><br><span class="line">                mInstrumentation.callApplicationOnCreate(app);</span><br><span class="line">            &#125; catch (Exception e) &#123;</span><br><span class="line">                if (!mInstrumentation.onException(app, e)) &#123;</span><br><span class="line">                    throw new RuntimeException(</span><br><span class="line">                        &quot;Unable to create application &quot; + app.getClass().getName()</span><br><span class="line">                        + &quot;: &quot; + e.toString(), e);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            StrictMode.setThreadPolicy(savedPolicy);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这个方法的方法体比较长，我们挑重点的看，可以看到方法体中系统通过反射机制创建了Instrumentation对象，并执行了init方法，执行了Insrtumentation对象的初始化。然后我们调用了LockedApk.makeApplication方法创建了Application对象，我们来看一下其具体的实现逻辑：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line">public Application makeApplication(boolean forceDefaultAppClass,</span><br><span class="line">            Instrumentation instrumentation) &#123;</span><br><span class="line">        if (mApplication !&#x3D; null) &#123;</span><br><span class="line">            return mApplication;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Application app &#x3D; null;</span><br><span class="line"></span><br><span class="line">        String appClass &#x3D; mApplicationInfo.className;</span><br><span class="line">        if (forceDefaultAppClass || (appClass &#x3D;&#x3D; null)) &#123;</span><br><span class="line">            appClass &#x3D; &quot;android.app.Application&quot;;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            java.lang.ClassLoader cl &#x3D; getClassLoader();</span><br><span class="line">            if (!mPackageName.equals(&quot;android&quot;)) &#123;</span><br><span class="line">                initializeJavaContextClassLoader();</span><br><span class="line">            &#125;</span><br><span class="line">            ContextImpl appContext &#x3D; ContextImpl.createAppContext(mActivityThread, this);</span><br><span class="line">            app &#x3D; mActivityThread.mInstrumentation.newApplication(</span><br><span class="line">                    cl, appClass, appContext);</span><br><span class="line">            appContext.setOuterContext(app);</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            if (!mActivityThread.mInstrumentation.onException(app, e)) &#123;</span><br><span class="line">                throw new RuntimeException(</span><br><span class="line">                    &quot;Unable to instantiate application &quot; + appClass</span><br><span class="line">                    + &quot;: &quot; + e.toString(), e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        mActivityThread.mAllApplications.add(app);</span><br><span class="line">        mApplication &#x3D; app;</span><br><span class="line"></span><br><span class="line">        if (instrumentation !&#x3D; null) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                instrumentation.callApplicationOnCreate(app);</span><br><span class="line">            &#125; catch (Exception e) &#123;</span><br><span class="line">                if (!instrumentation.onException(app, e)) &#123;</span><br><span class="line">                    throw new RuntimeException(</span><br><span class="line">                        &quot;Unable to create application &quot; + app.getClass().getName()</span><br><span class="line">                        + &quot;: &quot; + e.toString(), e);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; Rewrite the R &#39;constants&#39; for all library apks.</span><br><span class="line">        SparseArray&lt;String&gt; packageIdentifiers &#x3D; getAssets(mActivityThread)</span><br><span class="line">                .getAssignedPackageIdentifiers();</span><br><span class="line">        final int N &#x3D; packageIdentifiers.size();</span><br><span class="line">        for (int i &#x3D; 0; i &lt; N; i++) &#123;</span><br><span class="line">            final int id &#x3D; packageIdentifiers.keyAt(i);</span><br><span class="line">            if (id &#x3D;&#x3D; 0x01 || id &#x3D;&#x3D; 0x7f) &#123;</span><br><span class="line">                continue;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            rewriteRValues(getClassLoader(), packageIdentifiers.valueAt(i), id);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        return app;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以发现这里也是以反射的机制创建了Application对象，并创建了一个ContextImpl对象，并将Application与ContextImpl建立关联。。。</p>
+<p>继续回到我们的ActivityThread的handleBindApplication方法，在创建了Application对象之后我们调用了Instrumentation的onCreate方法，然后调用了Instrumentation的callApplicationOnCreate方法，我们来看一下其具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public void callApplicationOnCreate(Application app) &#123;</span><br><span class="line">        app.onCreate();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>咋样？原来Application的onCreate生命周期方法是在这里回调滴啊。</p>
+<p>这样我们整个Application的创建执行流程就讲解完了。</p>
+<p>总结：</p>
+<ul>
+<li><p>应用进程启动 –&gt; 创建Instrumentation –&gt; 创建Application对象 –&gt; 创建Application相关的ContextImpl对象；</p>
+</li>
+<li><p>ActivityThread.main方法–&gt; ActivityManagerService.bindApplication方法 –&gt; ActivityThread.handleBindApplication –&gt; 创建Instrumentation，创建Application；</p>
+</li>
+<li><p>每个应用进程对应一个Instrumentation，对应一个Application；</p>
+</li>
+<li><p>Instrumentation与Application都是通过java反射机制创建；</p>
+</li>
+<li><p>Application创建过程中会同时创建一个ContextImpl对象，并建立关联；</p>
+</li>
+</ul>
+<p><br><br><br><br>接下来我们来看一下Acitivty中的Context创建流程，大家都知道我们Activity的具体创建过程是在ActivityThread的performLaunchActivity,可参见：<a href="http://blog.csdn.net/qq_23547831/article/details/51224992" target="_blank" rel="noopener"> android源码解析之（十四）–&gt;Activity启动流程</a>，这里我们看一下其具体的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line">private Activity performLaunchActivity(ActivityClientRecord r, Intent customIntent) &#123;</span><br><span class="line">        ...</span><br><span class="line">        Activity activity &#x3D; null;</span><br><span class="line">        try &#123;</span><br><span class="line">            java.lang.ClassLoader cl &#x3D; r.packageInfo.getClassLoader();</span><br><span class="line">            activity &#x3D; mInstrumentation.newActivity(</span><br><span class="line">                    cl, component.getClassName(), r.intent);</span><br><span class="line">            StrictMode.incrementExpectedActivityCount(activity.getClass());</span><br><span class="line">            r.intent.setExtrasClassLoader(cl);</span><br><span class="line">            r.intent.prepareToEnterProcess();</span><br><span class="line">            if (r.state !&#x3D; null) &#123;</span><br><span class="line">                r.state.setClassLoader(cl);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            if (!mInstrumentation.onException(activity, e)) &#123;</span><br><span class="line">                throw new RuntimeException(</span><br><span class="line">                    &quot;Unable to instantiate activity &quot; + component</span><br><span class="line">                    + &quot;: &quot; + e.toString(), e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            Application app &#x3D; r.packageInfo.makeApplication(false, mInstrumentation);</span><br><span class="line">			...</span><br><span class="line">            if (activity !&#x3D; null) &#123;</span><br><span class="line">                Context appContext &#x3D; createBaseContextForActivity(r, activity);</span><br><span class="line">                CharSequence title &#x3D; r.activityInfo.loadLabel(appContext.getPackageManager());</span><br><span class="line">                Configuration config &#x3D; new Configuration(mCompatConfiguration);</span><br><span class="line">                if (DEBUG_CONFIGURATION) Slog.v(TAG, &quot;Launching activity &quot;</span><br><span class="line">                        + r.activityInfo.name + &quot; with config &quot; + config);</span><br><span class="line">                activity.attach(appContext, this, getInstrumentation(), r.token,</span><br><span class="line">                        r.ident, app, r.intent, r.activityInfo, title, r.parent,</span><br><span class="line">                        r.embeddedID, r.lastNonConfigurationInstances, config,</span><br><span class="line">                        r.referrer, r.voiceInteractor);</span><br><span class="line"></span><br><span class="line">                if (customIntent !&#x3D; null) &#123;</span><br><span class="line">                    activity.mIntent &#x3D; customIntent;</span><br><span class="line">                &#125;</span><br><span class="line">                r.lastNonConfigurationInstances &#x3D; null;</span><br><span class="line">                activity.mStartedActivity &#x3D; false;</span><br><span class="line">                int theme &#x3D; r.activityInfo.getThemeResource();</span><br><span class="line">                if (theme !&#x3D; 0) &#123;</span><br><span class="line">                    activity.setTheme(theme);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                activity.mCalled &#x3D; false;</span><br><span class="line">                if (r.isPersistable()) &#123;</span><br><span class="line">                    mInstrumentation.callActivityOnCreate(activity, r.state, r.persistentState);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    mInstrumentation.callActivityOnCreate(activity, r.state);</span><br><span class="line">                &#125;</span><br><span class="line">                if (!activity.mCalled) &#123;</span><br><span class="line">                    throw new SuperNotCalledException(</span><br><span class="line">                        &quot;Activity &quot; + r.intent.getComponent().toShortString() +</span><br><span class="line">                        &quot; did not call through to super.onCreate()&quot;);</span><br><span class="line">                &#125;</span><br><span class="line">                r.activity &#x3D; activity;</span><br><span class="line">                r.stopped &#x3D; true;</span><br><span class="line">                if (!r.activity.mFinished) &#123;</span><br><span class="line">                    activity.performStart();</span><br><span class="line">                    r.stopped &#x3D; false;</span><br><span class="line">                &#125;</span><br><span class="line">                if (!r.activity.mFinished) &#123;</span><br><span class="line">                    if (r.isPersistable()) &#123;</span><br><span class="line">                        if (r.state !&#x3D; null || r.persistentState !&#x3D; null) &#123;</span><br><span class="line">                            mInstrumentation.callActivityOnRestoreInstanceState(activity, r.state,</span><br><span class="line">                                    r.persistentState);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125; else if (r.state !&#x3D; null) &#123;</span><br><span class="line">                        mInstrumentation.callActivityOnRestoreInstanceState(activity, r.state);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                ...</span><br><span class="line">        return activity;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里简要说明一下，Activity也是系统通过反射机制创建的，然后我们通过LockedApk.makeApplication创建一个Application，通过查看源码我们知道若这时候LockedApk中的mApplication不为空则直接返回当前的mApplication又因为当我们创建应用进程的时候Application已经被创建，所以当创建Activity的时候这时候Application肯定不为空，所以这时候返回的就是应用进程创建的时候创建的Application，这也从侧面说明了一个应用进程对应着一个Application。然后我们通过createBaseContextForActivity创建了一个ContextImpl对象。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">private Context createBaseContextForActivity(ActivityClientRecord r, final Activity activity) &#123;</span><br><span class="line">        int displayId &#x3D; Display.DEFAULT_DISPLAY;</span><br><span class="line">        try &#123;</span><br><span class="line">            displayId &#x3D; ActivityManagerNative.getDefault().getActivityDisplayId(r.token);</span><br><span class="line">        &#125; catch (RemoteException e) &#123;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        ContextImpl appContext &#x3D; ContextImpl.createActivityContext(</span><br><span class="line">                this, r.packageInfo, displayId, r.overrideConfig);</span><br><span class="line">        appContext.setOuterContext(activity);</span><br><span class="line">        Context baseContext &#x3D; appContext;</span><br><span class="line"></span><br><span class="line">        final DisplayManagerGlobal dm &#x3D; DisplayManagerGlobal.getInstance();</span><br><span class="line">        &#x2F;&#x2F; For debugging purposes, if the activity&#39;s package name contains the value of</span><br><span class="line">        &#x2F;&#x2F; the &quot;debug.use-second-display&quot; system property as a substring, then show</span><br><span class="line">        &#x2F;&#x2F; its content on a secondary display if there is one.</span><br><span class="line">        String pkgName &#x3D; SystemProperties.get(&quot;debug.second-display.pkg&quot;);</span><br><span class="line">        if (pkgName !&#x3D; null &amp;&amp; !pkgName.isEmpty()</span><br><span class="line">                &amp;&amp; r.packageInfo.mPackageName.contains(pkgName)) &#123;</span><br><span class="line">            for (int id : dm.getDisplayIds()) &#123;</span><br><span class="line">                if (id !&#x3D; Display.DEFAULT_DISPLAY) &#123;</span><br><span class="line">                    Display display &#x3D;</span><br><span class="line">                            dm.getCompatibleDisplay(id, appContext.getDisplayAdjustments(id));</span><br><span class="line">                    baseContext &#x3D; appContext.createDisplayContext(display);</span><br><span class="line">                    break;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        return baseContext;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以发现这里创建了一个ContextImpl对象，并通过ContextImpl的setOuterContext方法，让该ContextImpl持有了Activity的引用，继续往下看，我们调用了activity.attach方法，查看一下该方法的实现逻辑：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line">final void attach(Context context, ActivityThread aThread,</span><br><span class="line">            Instrumentation instr, IBinder token, int ident,</span><br><span class="line">            Application application, Intent intent, ActivityInfo info,</span><br><span class="line">            CharSequence title, Activity parent, String id,</span><br><span class="line">            NonConfigurationInstances lastNonConfigurationInstances,</span><br><span class="line">            Configuration config, String referrer, IVoiceInteractor voiceInteractor) &#123;</span><br><span class="line">        attachBaseContext(context);</span><br><span class="line"></span><br><span class="line">        mFragments.attachHost(null &#x2F;*parent*&#x2F;);</span><br><span class="line"></span><br><span class="line">        mWindow &#x3D; new PhoneWindow(this);</span><br><span class="line">        mWindow.setCallback(this);</span><br><span class="line">        mWindow.setOnWindowDismissedCallback(this);</span><br><span class="line">        mWindow.getLayoutInflater().setPrivateFactory(this);</span><br><span class="line">        if (info.softInputMode !&#x3D; WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED) &#123;</span><br><span class="line">            mWindow.setSoftInputMode(info.softInputMode);</span><br><span class="line">        &#125;</span><br><span class="line">        if (info.uiOptions !&#x3D; 0) &#123;</span><br><span class="line">            mWindow.setUiOptions(info.uiOptions);</span><br><span class="line">        &#125;</span><br><span class="line">        mUiThread &#x3D; Thread.currentThread();</span><br><span class="line"></span><br><span class="line">        mMainThread &#x3D; aThread;</span><br><span class="line">        mInstrumentation &#x3D; instr;</span><br><span class="line">        mToken &#x3D; token;</span><br><span class="line">        mIdent &#x3D; ident;</span><br><span class="line">        mApplication &#x3D; application;</span><br><span class="line">        mIntent &#x3D; intent;</span><br><span class="line">        mReferrer &#x3D; referrer;</span><br><span class="line">        mComponent &#x3D; intent.getComponent();</span><br><span class="line">        mActivityInfo &#x3D; info;</span><br><span class="line">        mTitle &#x3D; title;</span><br><span class="line">        mParent &#x3D; parent;</span><br><span class="line">        mEmbeddedID &#x3D; id;</span><br><span class="line">        mLastNonConfigurationInstances &#x3D; lastNonConfigurationInstances;</span><br><span class="line">        if (voiceInteractor !&#x3D; null) &#123;</span><br><span class="line">            if (lastNonConfigurationInstances !&#x3D; null) &#123;</span><br><span class="line">                mVoiceInteractor &#x3D; lastNonConfigurationInstances.voiceInteractor;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                mVoiceInteractor &#x3D; new VoiceInteractor(voiceInteractor, this, this,</span><br><span class="line">                        Looper.myLooper());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mWindow.setWindowManager(</span><br><span class="line">                (WindowManager)context.getSystemService(Context.WINDOW_SERVICE),</span><br><span class="line">                mToken, mComponent.flattenToString(),</span><br><span class="line">                (info.flags &amp; ActivityInfo.FLAG_HARDWARE_ACCELERATED) !&#x3D; 0);</span><br><span class="line">        if (mParent !&#x3D; null) &#123;</span><br><span class="line">            mWindow.setContainer(mParent.getWindow());</span><br><span class="line">        &#125;</span><br><span class="line">        mWindowManager &#x3D; mWindow.getWindowManager();</span><br><span class="line">        mCurrentConfig &#x3D; config;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>除了一下初始化操作之外，还调用了attachBaseContext方法，让Activity持有了ContextImpl的引用，这样就相当于Activity与ContextImpl对象相互持有了对方的引用，并且Activity是继承与Context。</p>
+<p>总结：</p>
+<ul>
+<li><p>Activity中创建ContextImpl对象的具体实现在ActivityThread的performLauncherAcitivty方法中；</p>
+</li>
+<li><p>Activity的创建伴随着ContextImpl的创建，二者相互持有对方的引用；</p>
+</li>
+<li><p>创建Activity –&gt; 创建Activity相关ContextImpl对象；</p>
+</li>
+<li><p>创建应用进程 –&gt; 创建Application –&gt; 创建Application相关ContextImpl对象；</p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E7%B3%BB%E7%BB%9F%E5%B1%82/" rel="tag"># Android系统层</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/30/15%20activity%E9%94%80%E6%AF%81%E6%B5%81%E7%A8%8B/" rel="prev" title="15 activity销毁流程">
+      <i class="fa fa-chevron-left"></i> 15 activity销毁流程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/30/17%20Activity%E5%B8%83%E5%B1%80%E5%8A%A0%E8%BD%BD%E6%B5%81%E7%A8%8B/" rel="next" title="17 Activity布局加载流程">
+      17 Activity布局加载流程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

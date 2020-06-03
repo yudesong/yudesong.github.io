@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="0 前言上一节讲了Synchronized关键词的原理与优化分析，而配合Synchronized使用的另外两个关键词wait&amp;notify是本章讲解的重点。最简单的东西，往往包含了最复杂的实现，因为需要为上层的存在提供一个稳定的基础，Object作为Java中所有对象的基类，其存在的价值不言而喻，其中wait&amp;notify方法的实现多线程协作提供了保证。 1 源码今天我们要学习或者">
+<meta property="og:type" content="article">
+<meta property="og:title" content="啃碎并发（八）：深入分析wait&amp;notify原理">
+<meta property="og:url" content="http://yoursite.com/2020/06/01/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E5%85%AB%EF%BC%89%EF%BC%9A%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90wait&notify%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="0 前言上一节讲了Synchronized关键词的原理与优化分析，而配合Synchronized使用的另外两个关键词wait&amp;notify是本章讲解的重点。最简单的东西，往往包含了最复杂的实现，因为需要为上层的存在提供一个稳定的基础，Object作为Java中所有对象的基类，其存在的价值不言而喻，其中wait&amp;notify方法的实现多线程协作提供了保证。 1 源码今天我们要学习或者">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/2062729-e4d758d80ff508f2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/533/format/webp">
+<meta property="article:published_time" content="2020-06-01T12:44:24.205Z">
+<meta property="article:modified_time" content="2020-06-03T01:01:53.925Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="JAVA并发">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/2062729-e4d758d80ff508f2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/533/format/webp">
+
+<link rel="canonical" href="http://yoursite.com/2020/06/01/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E5%85%AB%EF%BC%89%EF%BC%9A%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90wait&notify%E5%8E%9F%E7%90%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>啃碎并发（八）：深入分析wait&notify原理 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/01/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E5%85%AB%EF%BC%89%EF%BC%9A%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90wait&notify%E5%8E%9F%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          啃碎并发（八）：深入分析wait&notify原理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-01 20:44:24" itemprop="dateCreated datePublished" datetime="2020-06-01T20:44:24+08:00">2020-06-01</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="0-前言"><a href="#0-前言" class="headerlink" title="0 前言"></a>0 前言</h4><p>上一节讲了Synchronized关键词的原理与优化分析，而配合Synchronized使用的另外两个关键词<strong>wait&amp;notify</strong>是本章讲解的重点。最简单的东西，往往包含了最复杂的实现，因为需要为上层的存在提供一个稳定的基础，<strong>Object作为Java中所有对象的基类，其存在的价值不言而喻，其中wait&amp;notify方法的实现多线程协作提供了保证。</strong></p>
+<h4 id="1-源码"><a href="#1-源码" class="headerlink" title="1 源码"></a>1 源码</h4><p>今天我们要学习或者说分析的是<strong>Object</strong>类中的 wait&amp;notify 这两个方法，其实说是两个方法，这两个方法包括他们的重载方法一共有 5 个，而 Object 类中一共才 12 个方法，可见这 2 个方法的重要性。我们先看看 JDK 中的代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">public final native void notify();</span><br><span class="line">public final native void notifyAll();</span><br><span class="line">public final void wait() throws InterruptedException &#123;</span><br><span class="line">    wait(0);</span><br><span class="line">&#125;</span><br><span class="line">public final native void wait(long timeout) throws InterruptedException;</span><br><span class="line">public final void wait(long timeout, int nanos) throws InterruptedException &#123;</span><br><span class="line">    if (timeout &lt; 0) &#123;</span><br><span class="line">        throw new IllegalArgumentException(&quot;timeout value is negative&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (nanos &lt; 0 || nanos &gt; 999999) &#123;</span><br><span class="line">        throw new IllegalArgumentException(</span><br><span class="line">                            &quot;nanosecond timeout value out of range&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; 此处对于纳秒的处理不精准，只是简单增加了1毫秒，</span><br><span class="line">    if (nanos &gt; 0) &#123;</span><br><span class="line">        timeout++;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    wait(timeout);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>就是这五个方法。其中有<strong>3 个方法是 native 的，也就是由虚拟机本地的 c 代码执行的。</strong>有 2 个 wait 重载方法最终还是调用了 wait（long） 方法。</p>
+<p><strong>1.wait方法：</strong>wait是要释放对象锁，进入等待池。既然是释放对象锁，那么肯定是先要获得锁。所以wait必须要写在synchronized代码块中，否则会报异常。</p>
+<p><strong>2.notify方法：</strong>也需要写在synchronized代码块中，调用对象的这两个方法也需要先获得该对象的锁。 <strong>notify，notifyAll，唤醒等待该对象同步锁的线程，并放入该对象的锁池中。对象的锁池中线程可以去竞争得到对象锁，然后开始执行。</strong></p>
+<blockquote>
+<p>1.<strong>如果是通过notify来唤起的线程，</strong>那先进入wait的线程会先被唤起来，并非随机唤醒；<br>2.<strong>如果是通过nootifyAll唤起的线程</strong>，默认情况是最后进入的会先被唤起来，即LIFO的策略；</p>
+</blockquote>
+<p>另外一点比较重要，notify，notifyAll调用时并不会释放对象锁。比如以下代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public void test()</span><br><span class="line">&#123;</span><br><span class="line">    Object object &#x3D; new Object();</span><br><span class="line">    synchronized (object)&#123;</span><br><span class="line">        object.notifyAll();</span><br><span class="line">        while (true)&#123;</span><br><span class="line">         </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>虽然调用了notifyAll，但是紧接着进入了一个死循环。<strong>导致一直不能出临界区，一直不能释放对象锁。</strong>所以，即使它把所有在等待池中的线程都唤醒放到了对象的锁池中，<strong>但是锁池中的所有线程都不会运行，因为他们始终拿不到锁。</strong></p>
+<h4 id="2-用法"><a href="#2-用法" class="headerlink" title="2 用法"></a>2 用法</h4><p>简单示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">public class WaitNotifyCase &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        final Object lock &#x3D; new Object();</span><br><span class="line"></span><br><span class="line">        new Thread(new Runnable() &#123;</span><br><span class="line">            @Override</span><br><span class="line">            public void run() &#123;</span><br><span class="line">                System.out.println(&quot;thread A is waiting to get lock&quot;);</span><br><span class="line">                synchronized (lock) &#123;</span><br><span class="line">                    try &#123;</span><br><span class="line">                        System.out.println(&quot;thread A get lock&quot;);</span><br><span class="line">                        TimeUnit.SECONDS.sleep(1);</span><br><span class="line">                        System.out.println(&quot;thread A do wait method&quot;);</span><br><span class="line">                        lock.wait();</span><br><span class="line">                        System.out.println(&quot;wait end&quot;);</span><br><span class="line">                    &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                        e.printStackTrace();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;).start();</span><br><span class="line"></span><br><span class="line">        new Thread(new Runnable() &#123;</span><br><span class="line">            @Override</span><br><span class="line">            public void run() &#123;</span><br><span class="line">                System.out.println(&quot;thread B is waiting to get lock&quot;);</span><br><span class="line">                synchronized (lock) &#123;</span><br><span class="line">                    System.out.println(&quot;thread B get lock&quot;);</span><br><span class="line">                    try &#123;</span><br><span class="line">                        TimeUnit.SECONDS.sleep(5);</span><br><span class="line">                    &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                        e.printStackTrace();</span><br><span class="line">                    &#125;</span><br><span class="line">                    lock.notify();</span><br><span class="line">                    System.out.println(&quot;thread B do notify method&quot;);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;).start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">thread A is waiting to get lock</span><br><span class="line">thread A get lock</span><br><span class="line">thread B is waiting to get lock</span><br><span class="line">thread A do wait method</span><br><span class="line">thread B get lock</span><br><span class="line">thread B do notify method</span><br><span class="line">wait end</span><br></pre></td></tr></table></figure>
+
+<p><strong>前提：必须由同一个lock对象调用wait、notify方法</strong></p>
+<blockquote>
+<ol>
+<li>当线程A执行wait方法时，该线程会被挂起；</li>
+<li>当线程B执行notify方法时，会唤醒一个被挂起的线程A；</li>
+</ol>
+</blockquote>
+<p><strong>lock对象、线程A和线程B三者是一种什么关系？</strong>根据上面的结论，可以想象一个场景：</p>
+<blockquote>
+<p>1.lock对象维护了一个等待队列list；<br>2.线程A中执行lock的wait方法，把线程A保存到list中；<br>3.线程B中执行lock的notify方法，从等待队列中取出线程A继续执行；</p>
+</blockquote>
+<h4 id="3-相关疑问"><a href="#3-相关疑问" class="headerlink" title="3 相关疑问"></a>3 相关疑问</h4><h5 id="3-1-为何wait-amp-notify必须要加synchronized锁"><a href="#3-1-为何wait-amp-notify必须要加synchronized锁" class="headerlink" title="3.1 为何wait&amp;notify必须要加synchronized锁"></a>3.1 为何wait&amp;notify必须要加synchronized锁</h5><p>从实现上来说，这个锁至关重要，正因为这把锁，才能让整个wait/notify玩转起来，当然我觉得其实通过其他的方式也可以实现类似的机制，不过hotspot至少是完全依赖这把锁来实现wait/notify的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">static void Sort(int [] array) &#123;</span><br><span class="line">    &#x2F;&#x2F; synchronize this operation so that some other thread can&#39;t</span><br><span class="line">    &#x2F;&#x2F; manipulate the array while we are sorting it. This assumes that other</span><br><span class="line">    &#x2F;&#x2F; threads also synchronize their accesses to the array.</span><br><span class="line">    synchronized(array) &#123;</span><br><span class="line">        &#x2F;&#x2F; now sort elements in array</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>synchronized 代码块通过javap生成的字节码中包含** monitorenter 和 monitorexit **指令。如下图所示：</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/2062729-e4d758d80ff508f2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/533/format/webp" alt="javap生成的字节码"></p>
+<p>执行 monitorenter 指令可以获取对象的monitor，而 lock.wait() 方法通过调用native方法wait(0)实现，其中接口注释中有这么一句：</p>
+<blockquote>
+<p>The current thread must own this object’s monitor.</p>
+</blockquote>
+<p>表示线程执行*<em>lock.wait() *</em>方法时，必须持有该lock对象的monitor，如果wait方法在synchronized代码中执行，该线程很显然已经持有了monitor。</p>
+<p><strong>3.2 为什么wait方法可能抛出InterruptedException异常</strong><br>这个异常大家应该都知道，当我们调用了某个线程的interrupt方法时，对应的线程会抛出这个异常，wait方法也不希望破坏这种规则，因此就算当前线程因为wait一直在阻塞，当某个线程希望它起来继续执行的时候，它还是得从阻塞态恢复过来，因此wait方法被唤醒起来的时候会去检测这个状态，当有线程interrupt了它的时候，它就会抛出这个异常从阻塞状态恢复过来。</p>
+<p>这里有两点要注意：</p>
+<blockquote>
+<p>1.如果被interrupt的线程只是创建了，并没有start，那等他start之后进入wait态之后也是不能会恢复的；</p>
+<p>2.如果被interrupt的线程已经start了，在进入wait之前，如果有线程调用了其interrupt方法，那这个wait等于什么都没做，会直接跳出来，不会阻塞；</p>
+</blockquote>
+<p><strong>3.3 notify执行之后立马唤醒线程吗?</strong><br>其实hotspot里真正的实现是退出同步块的时候才会去真正唤醒对应的线程，不过这个也是个默认策略，也可以改的，在notify之后立马唤醒相关线程。</p>
+<p><strong>3.4 notifyAll是怎么实现全唤起所有线程</strong><br>或许大家立马想到这个简单，一个for循环就搞定了，不过在JVM里没实现这么简单，而是借助了monitorexit，上面提到了当某个线程从wait状态恢复出来的时候，要先获取锁，然后再退出同步块，所以notifyAll的实现是调用notify的线程在退出其同步块的时候唤醒起最后一个进入wait状态的线程，然后这个线程退出同步块的时候继续唤醒其倒数第二个进入wait状态的线程，依次类推，同样这这是一个策略的问题，JVM里提供了挨个直接唤醒线程的参数，不过都很罕见就不提了。</p>
+<p><strong>3.5 wait的线程是否会影响load</strong><br>这个或许是大家比较关心的话题，因为关乎系统性能问题，wait/nofity 是通过JVM里的 park/unpark 机制来实现的，在Linux下这种机制又是通过<br>pthread_cond_wait/pthread_cond_signal 来玩的，因此当线程进入到wait状态的时候其实是会放弃cpu的，也就是说这类线程是不会占用cpu资源。</p>
+<p>4 其他资料<br>1.<a href="https://blog.csdn.net/boling_cavalry/article/details/77793224" target="_blank" rel="noopener">Java的wait()、notify()学习三部曲之一：JVM源码分析</a><br>2.<a href="https://blog.csdn.net/boling_cavalry/article/details/77897108" target="_blank" rel="noopener">Java的wait()、notify()学习三部曲之二：修改JVM源码看参数</a><br>3.<a href="https://blog.csdn.net/boling_cavalry/article/details/77995069" target="_blank" rel="noopener">Java的wait()、notify()学习三部曲之三：修改JVM源码控制抢锁顺序</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/JAVA%E5%B9%B6%E5%8F%91/" rel="tag"># JAVA并发</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/01/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%B8%83%EF%BC%89%EF%BC%9A%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90Synchronized%E5%8E%9F%E7%90%86/" rel="prev" title="啃碎并发（七）：深入分析Synchronized原理">
+      <i class="fa fa-chevron-left"></i> 啃碎并发（七）：深入分析Synchronized原理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%20--%20%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/" rel="next" title="数据结构 -- 布隆过滤器">
+      数据结构 -- 布隆过滤器 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#0-前言"><span class="nav-number">1.</span> <span class="nav-text">0 前言</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-源码"><span class="nav-number">2.</span> <span class="nav-text">1 源码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-用法"><span class="nav-number">3.</span> <span class="nav-text">2 用法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-相关疑问"><span class="nav-number">4.</span> <span class="nav-text">3 相关疑问</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-为何wait-amp-notify必须要加synchronized锁"><span class="nav-number">4.1.</span> <span class="nav-text">3.1 为何wait&amp;notify必须要加synchronized锁</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Kotlin 引入 Android 项目Kotlin是基于JVM新的编程语言，由 JetBrains 开发，可以编译成java字节码，也可以编译成JavaScript。而JetBrains，作为目前广受欢迎的Java IDE IntelliJ 的提供商，也在 Apache 许可下已经开源其Kotlin 编程语言。 一、导入依赖库 在工程根目录bulid.grade文件添加 1234567build">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kotlin 实战">
+<meta property="og:url" content="http://yoursite.com/2020/05/31/Kotlin%20%E5%AE%9E%E6%88%98/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Kotlin 引入 Android 项目Kotlin是基于JVM新的编程语言，由 JetBrains 开发，可以编译成java字节码，也可以编译成JavaScript。而JetBrains，作为目前广受欢迎的Java IDE IntelliJ 的提供商，也在 Apache 许可下已经开源其Kotlin 编程语言。 一、导入依赖库 在工程根目录bulid.grade文件添加 1234567build">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-31T03:19:43.255Z">
+<meta property="article:modified_time" content="2020-05-31T03:21:15.836Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Kotlin">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/31/Kotlin%20%E5%AE%9E%E6%88%98/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Kotlin 实战 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/31/Kotlin%20%E5%AE%9E%E6%88%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kotlin 实战
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-05-31 11:19:43 / 修改时间：11:21:15" itemprop="dateCreated datePublished" datetime="2020-05-31T11:19:43+08:00">2020-05-31</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="Kotlin-引入-Android-项目"><a href="#Kotlin-引入-Android-项目" class="headerlink" title="Kotlin 引入 Android 项目"></a>Kotlin 引入 Android 项目</h4><p>Kotlin是基于JVM新的编程语言，由 JetBrains 开发，可以编译成java字节码，也可以编译成JavaScript。而JetBrains，作为目前广受欢迎的Java IDE IntelliJ 的提供商，也在 Apache 许可下已经开源其Kotlin 编程语言。</p>
+<h5 id="一、导入依赖库"><a href="#一、导入依赖库" class="headerlink" title="一、导入依赖库"></a>一、导入依赖库</h5><ul>
+<li><p>在工程根目录bulid.grade文件添加</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">buildscript &#123;</span><br><span class="line">    ext.kotlin_version &#x3D; &#39;1.3.21&#39;</span><br><span class="line">    </span><br><span class="line">    dependencies &#123;</span><br><span class="line">        classpath &quot;org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>app或者module工程， bulid.grade文件添加一下内容</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">apply plugin: &#39;kotlin-android&#39;</span><br><span class="line">apply plugin: &#39;kotlin-android-extensions&#39;</span><br><span class="line"></span><br><span class="line">dependencies &#123;</span><br><span class="line">  implementation &quot;org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version&quot;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h5 id="二、代码示例"><a href="#二、代码示例" class="headerlink" title="二、代码示例"></a>二、代码示例</h5><ul>
+<li>Activity 中使用</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">class MainActivity : AppCompatActivity() &#123;</span><br><span class="line">    </span><br><span class="line">    private var mRecyclerView: RecyclerView? &#x3D; null</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 定义静态方法</span><br><span class="line">    companion object &#123;</span><br><span class="line">        const val KEY_FROM: String &#x3D; &quot;key_from&quot;</span><br><span class="line">        const val KEY_SHOW_OPEN_VIEW &#x3D; &quot;key_show_open_view&quot;</span><br><span class="line">        </span><br><span class="line">        fun startActivity(context: Context, from: String, showOpen: Boolean) &#123;</span><br><span class="line">            var intent &#x3D; Intent(context, MainActivity::class.java)</span><br><span class="line">            intent.putExtra(KEY_FROM, from)</span><br><span class="line">            intent.putExtra(KEY_SHOW_OPEN_VIEW, showOpen)</span><br><span class="line">            if (context !is Activity) &#123;</span><br><span class="line">               intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)</span><br><span class="line">            &#125;</span><br><span class="line">            context.startActivity(intent)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    override fun onCreate(savedInstanceState: Bundle?) &#123;</span><br><span class="line">        super.onCreate(savedInstanceState)</span><br><span class="line">        setContentView(R.layout.activity_main)</span><br><span class="line">        handlerIntent()</span><br><span class="line">        initView()</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    private fun handlerIntent() &#123;</span><br><span class="line">        if (intent !&#x3D; null) &#123;</span><br><span class="line">            mFrom &#x3D; intent.getStringExtra(KEY_FROM)</span><br><span class="line">            mShowOpenView &#x3D; intent.getBooleanExtra(KEY_SHOW_OPEN_VIEW, false)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    private fun initView() &#123;</span><br><span class="line">        mRecyclerView &#x3D; findViewById(R.id.recycler_view)</span><br><span class="line">        ....</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="三、常用设计模式-Kotlin代码示例"><a href="#三、常用设计模式-Kotlin代码示例" class="headerlink" title="三、常用设计模式 Kotlin代码示例"></a>三、常用设计模式 Kotlin代码示例</h5><h6 id="3-1-单例模式"><a href="#3-1-单例模式" class="headerlink" title="3.1 单例模式"></a>3.1 单例模式</h6><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">VideoRewardHelper</span> <span class="keyword">private</span> <span class="keyword">constructor</span></span>() &#123;</span><br><span class="line">    <span class="keyword">companion</span> <span class="keyword">object</span> &#123;</span><br><span class="line">        <span class="keyword">val</span> mInstance = SingletonHolder.mInstance</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">object</span> SingletonHolder &#123;</span><br><span class="line">        <span class="keyword">val</span> mInstance = VideoRewardHelper()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-2-基于RxJava实现观察者模式"><a href="#3-2-基于RxJava实现观察者模式" class="headerlink" title="3.2 基于RxJava实现观察者模式"></a>3.2 基于RxJava实现观察者模式</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">import io.reactivex.Observable;</span><br><span class="line">import io.reactivex.subjects.PublishSubject;</span><br><span class="line">import io.reactivex.subjects.Subject;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 基于RxJava的事总线</span><br><span class="line"> * &lt;p&gt;</span><br><span class="line"> * 单例模式 &amp; 门面模式</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class RxBus&lt;T&gt; &#123;</span><br><span class="line"></span><br><span class="line">    private volatile Subject&lt;T&gt; mSubject;</span><br><span class="line"></span><br><span class="line">    private RxBus() &#123;</span><br><span class="line">        mSubject &#x3D; PublishSubject.create();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static class Singleton &#123;</span><br><span class="line">        public static RxBus mInstance &#x3D; new RxBus();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RxBus getInstance() &#123;</span><br><span class="line">        return Singleton.mInstance;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public synchronized void sendPost(T t) &#123;</span><br><span class="line">        mSubject.onNext(t);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public synchronized void sendComplete() &#123;</span><br><span class="line">        mSubject.onComplete();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Observable&lt;T&gt; getObservable() &#123;</span><br><span class="line">        return mSubject;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h6 id="1-注册"><a href="#1-注册" class="headerlink" title="1. 注册"></a>1. 注册</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">private Disposable disposable;</span><br><span class="line"></span><br><span class="line">private Observer&lt;StatusInfo&gt; mObserver &#x3D; new Observer&lt;StatusInfo&gt;() &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void onSubscribe(Disposable d) &#123;</span><br><span class="line">        disposable &#x3D; d;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void onNext(StatusInfo info) &#123;</span><br><span class="line">        ...    </span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    @Override</span><br><span class="line">    public void onError(Throwable e) &#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void onComplete() &#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125;    </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">RxBus.getInstance().getObservable().subscribeOn(AndroidSchedulers.mainThread()).subscribe(mObserver);</span><br></pre></td></tr></table></figure>
+
+<h6 id="2-解注册"><a href="#2-解注册" class="headerlink" title="2. 解注册"></a>2. 解注册</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">if (disposable !&#x3D; null &amp;&amp; !disposable.isDisposed()) &#123;</span><br><span class="line">    XLLog.d(&quot;Rxjava&quot;, &quot;dispose: &quot;);</span><br><span class="line">    disposable.dispose();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-3-普通观察者模式"><a href="#3-3-普通观察者模式" class="headerlink" title="3.3 普通观察者模式"></a>3.3 普通观察者模式</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">interface CountDownObserver &#123;</span><br><span class="line">    fun onTimer(resource: PostResource)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class CountDownObservable : Observable&lt;CountDownObserver&gt;() &#123;</span><br><span class="line">    fun onTimer(resource: PostResource) &#123;</span><br><span class="line">        if (mObservers.isNotEmpty()) &#123;</span><br><span class="line">            val observers &#x3D; ArrayList&lt;CountDownObserver&gt;(mObservers)</span><br><span class="line">            for (observer in observers) &#123;</span><br><span class="line">                observer.onTimer(resource)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class CountDownManager &#123;</span><br><span class="line">    private var mCountDownObservable: CountDownObservable &#x3D; CountDownObservable()</span><br><span class="line"></span><br><span class="line">    companion object &#123;</span><br><span class="line">        var TAG: String &#x3D; &quot;CountDownManager&quot;</span><br><span class="line">        val mInstance &#x3D; SingletonHolder.mInstance</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private object SingletonHolder &#123;</span><br><span class="line">        val mInstance &#x3D; CountDownManager()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun registerCountDownObserver(observer: CountDownObserver) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            mCountDownObservable.registerObserver(observer)</span><br><span class="line">        &#125; catch (e: Throwable) &#123;</span><br><span class="line">            e.printStackTrace()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun unregisterCountDownObserver(observer: CountDownObserver) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            mCountDownObservable.unregisterObserver(observer)</span><br><span class="line">        &#125; catch (e: Throwable) &#123;</span><br><span class="line">            e.printStackTrace()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun notifyOnTimer(resource: PostResource) &#123;</span><br><span class="line">        mCountDownObservable.onTimer(resource)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Kotlin/" rel="tag"># Kotlin</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/31/Glide%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" rel="prev" title="Glide 源码剖析">
+      <i class="fa fa-chevron-left"></i> Glide 源码剖析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/31/Volley%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="next" title="Volley源码解析">
+      Volley源码解析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#Kotlin-引入-Android-项目"><span class="nav-number">1.</span> <span class="nav-text">Kotlin 引入 Android 项目</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#一、导入依赖库"><span class="nav-number">1.1.</span> <span class="nav-text">一、导入依赖库</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#二、代码示例"><span class="nav-number">1.2.</span> <span class="nav-text">二、代码示例</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#三、常用设计模式-Kotlin代码示例"><span class="nav-number">1.3.</span> <span class="nav-text">三、常用设计模式 Kotlin代码示例</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#3-1-单例模式"><span class="nav-number">1.3.1.</span> <span class="nav-text">3.1 单例模式</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-基于RxJava实现观察者模式"><span class="nav-number">1.4.</span> <span class="nav-text">3.2 基于RxJava实现观察者模式</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-注册"><span class="nav-number">1.4.1.</span> <span class="nav-text">1. 注册</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#2-解注册"><span class="nav-number">1.4.2.</span> <span class="nav-text">2. 解注册</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-普通观察者模式"><span class="nav-number">1.5.</span> <span class="nav-text">3.3 普通观察者模式</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

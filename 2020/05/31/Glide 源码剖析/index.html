@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Glide 源码剖析Glide是Google出品的一款性能优异的图片加载框架。 依赖库导入 123456789repositories &amp;#123;  mavenCentral()  google()&amp;#125;dependencies &amp;#123;  implementation &#39;com.github.bumptech.glide:glide:4.11.0&#39;  annotati">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Glide 源码剖析">
+<meta property="og:url" content="http://yoursite.com/2020/05/31/Glide%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Glide 源码剖析Glide是Google出品的一款性能优异的图片加载框架。 依赖库导入 123456789repositories &amp;#123;  mavenCentral()  google()&amp;#125;dependencies &amp;#123;  implementation &#39;com.github.bumptech.glide:glide:4.11.0&#39;  annotati">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-31T03:17:43.174Z">
+<meta property="article:modified_time" content="2020-06-03T03:19:50.520Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android开源框架源码分析">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/31/Glide%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Glide 源码剖析 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/31/Glide%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Glide 源码剖析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-31 11:17:43" itemprop="dateCreated datePublished" datetime="2020-05-31T11:17:43+08:00">2020-05-31</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="Glide-源码剖析"><a href="#Glide-源码剖析" class="headerlink" title="Glide 源码剖析"></a>Glide 源码剖析</h4><p><a href="https://github.com/bumptech/glide" target="_blank" rel="noopener">Glide</a>是Google出品的一款性能优异的图片加载框架。</p>
+<p>依赖库导入</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">repositories &#123;</span><br><span class="line">  mavenCentral()</span><br><span class="line">  google()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencies &#123;</span><br><span class="line">  implementation &#39;com.github.bumptech.glide:glide:4.11.0&#39;</span><br><span class="line">  annotationProcessor &#39;com.github.bumptech.glide:compiler:4.11.0&#39;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Glide.with(myFragment)</span><br><span class="line">    .load(url)</span><br><span class="line">    .centerCrop()</span><br><span class="line">    .placeholder(R.drawable.loading_spinner)</span><br><span class="line">    .into(myImageView);</span><br></pre></td></tr></table></figure>
+
+<h5 id="对比图片加载框架"><a href="#对比图片加载框架" class="headerlink" title="对比图片加载框架"></a>对比图片加载框架</h5><p>下面我们将会带着以下一些问题深入的剖析源码，去寻找答案。</p>
+<ul>
+<li>Glide的with方法是如何绑定Activity/Fragment生命周期的？</li>
+<li>Glide的网络请求是怎样发出的？</li>
+<li>Glide请求完成之后，图片是如何展示的？</li>
+<li>Glide的缓存策略是什么样的？</li>
+<li>Glide的OOM解决办法？</li>
+<li>Glide自定义BitmapTransformation</li>
+</ul>
+<h6 id="1-with-Context-方法，返回RequestManager"><a href="#1-with-Context-方法，返回RequestManager" class="headerlink" title="1. with(Context)方法，返回RequestManager"></a>1. with(Context)方法，返回RequestManager</h6><p>Glide.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">public class Glide &#123;</span><br><span class="line"></span><br><span class="line">  public static RequestManager with(Context context) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(context);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(Activity activity) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(activity);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(FragmentActivity activity) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(activity);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(android.app.Fragment fragment) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(fragment);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(Fragment fragment) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(fragment);</span><br><span class="line">    &#125;    </span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line">&#96;&#96;&#96;    </span><br><span class="line">**with()**方法重载了5个方法</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">RequestManagerRetriever.java</span><br></pre></td></tr></table></figure>
+<p>public class RequestManagerRetriever implements Handler.Callback {<br>    private static final RequestManagerRetriever INSTANCE = new RequestManagerRetriever();</p>
+<pre><code>public static RequestManagerRetriever get() {
+    return INSTANCE;
+}
+
+public RequestManager get(Context context) {
+    if (context == null) {
+        throw new IllegalArgumentException(&quot;You cannot start a load on a null Context&quot;);
+    } else if (Util.isOnMainThread() &amp;&amp; !(context instanceof Application)) {
+        if (context instanceof FragmentActivity) {
+            return get((FragmentActivity) context);
+        } else if (context instanceof Activity) {
+            return get((Activity) context);
+        } else if (context instanceof ContextWrapper) {
+            return get(((ContextWrapper) context).getBaseContext());
+        }
+    }
+
+    return getApplicationManager(context);
+}
+
+// 生命周期和Application相关连
+private RequestManager getApplicationManager(Context context) {
+    if (applicationManager == null) {
+        synchronized (this) {
+            if (applicationManager == null) {
+                applicationManager = new RequestManager(context.getApplicationContext(),
+                        new ApplicationLifecycle(), new EmptyRequestManagerTreeNode());
+            }
+        }
+    }
+    return applicationManager;
+}
+
+// activity.getSupportFragmentManager(),会创建SupportRequestManagerFragment
+public RequestManager get(FragmentActivity activity) {
+    if (Util.isOnBackgroundThread()) {
+        return get(activity.getApplicationContext());
+    } else {
+        assertNotDestroyed(activity);
+        FragmentManager fm = activity.getSupportFragmentManager();
+        return supportFragmentGet(activity, fm);
+    }
+}
+
+RequestManager supportFragmentGet(Context context, FragmentManager fm) {
+    SupportRequestManagerFragment current = getSupportRequestManagerFragment(fm);
+    // 内部新建ActivityFragmentLifecycle对象
+    RequestManager requestManager = current.getRequestManager();
+    if (requestManager == null) {
+        // 将SupportRequestManagerFragment的LifeCycle注入到RequestManager
+        requestManager = new RequestManager(context, current.getLifecycle(), current.getRequestManagerTreeNode());
+     // 将current.getLifecycle()与 requestManager进行了绑定
+        current.setRequestManager(requestManager);
+    }
+    return requestManager;
+}
+
+SupportRequestManagerFragment getSupportRequestManagerFragment(final FragmentManager fm) {
+    SupportRequestManagerFragment current = (SupportRequestManagerFragment) fm.findFragmentByTag(FRAGMENT_TAG);
+    if (current == null) {
+        current = pendingSupportRequestManagerFragments.get(fm);
+        if (current == null) {
+            current = new SupportRequestManagerFragment();
+            pendingSupportRequestManagerFragments.put(fm, current);
+            fm.beginTransaction().add(current, FRAGMENT_TAG).commitAllowingStateLoss();
+            handler.obtainMessage(ID_REMOVE_SUPPORT_FRAGMENT_MANAGER, fm).sendToTarget();
+        }
+    }
+    return current;
+}
+
+// activity.getFragmentManager会创建RequestManagerFragment
+@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+public RequestManager get(Activity activity) {
+    if (Util.isOnBackgroundThread() || Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.HONEYCOMB) {
+        return get(activity.getApplicationContext());
+    } else {
+        assertNotDestroyed(activity);
+        android.app.FragmentManager fm = activity.getFragmentManager();
+        return fragmentGet(activity, fm);
+    }
+}
+
+@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+RequestManager fragmentGet(Context context, android.app.FragmentManager fm) {
+    RequestManagerFragment current = getRequestManagerFragment(fm);
+    RequestManager requestManager = current.getRequestManager();
+    if (requestManager == null) {
+        requestManager = new RequestManager(context, current.getLifecycle(), current.getRequestManagerTreeNode());
+        current.setRequestManager(requestManager);
+    }
+    return requestManager;
+}
+
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+RequestManagerFragment getRequestManagerFragment(final android.app.FragmentManager fm) {
+    RequestManagerFragment current = (RequestManagerFragment) fm.findFragmentByTag(FRAGMENT_TAG);
+    if (current == null) {
+        current = pendingRequestManagerFragments.get(fm);
+        if (current == null) {
+            current = new RequestManagerFragment();
+            pendingRequestManagerFragments.put(fm, current);
+            fm.beginTransaction().add(current, FRAGMENT_TAG).commitAllowingStateLoss();
+            handler.obtainMessage(ID_REMOVE_FRAGMENT_MANAGER, fm).sendToTarget();
+        }
+    }
+    return current;
+}</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">判断如果是Application则创建RequestManager绑定Application，否则创建SupportRequestManagerFragment、RequestManagerFragment并将RequestManager与之绑定</span><br><span class="line"></span><br><span class="line">SupportRequestManagerFragment.java</span><br></pre></td></tr></table></figure>
+<p>public class SupportRequestManagerFragment extends Fragment {<br>    private RequestManager requestManager;<br>    private final ActivityFragmentLifecycle lifecycle;</p>
+<p>  @Override<br>    public void onStart() {<br>        super.onStart();<br>        lifecycle.onStart();<br>    }</p>
+<pre><code>@Override
+public void onStop() {
+    super.onStop();
+    lifecycle.onStop();
+}
+
+@Override
+public void onDestroy() {
+    super.onDestroy();
+    lifecycle.onDestroy();
+}</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">这样SupportRequestManagerFragment就和ActivityFragmentLifecycle进行了绑定管理者Fragment的生命周期</span><br><span class="line">在RequestManager的构造函数中会调用lifecycle.addListener(RequestManager.this);进行绑定。至此整个生命周期的传递过程就形成了。</span><br><span class="line">SupportRequestManagerFragment -&gt; ActivityFragmentLifecycle -&gt; RequestManager -&gt; requestTracker</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">###### 2. load()方法,返回DrawableTypeRequest</span><br><span class="line"></span><br><span class="line">RequestManager.java</span><br></pre></td></tr></table></figure>
+<p>public class RequestManager implements LifecycleListener {<br>  private final Lifecycle lifecycle;<br>  private final RequestTracker requestTracker;</p>
+<pre><code>RequestManager(Context context, final Lifecycle lifecycle, ...) {
+    ...
+    if (Util.isOnBackgroundThread()) {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                lifecycle.addListener(RequestManager.this);
+            }
+        });
+    } else {
+        lifecycle.addListener(this);
+    }
+    ...
+}
+
+public DrawableTypeRequest&lt;String&gt; load(String string) {
+    return (DrawableTypeRequest&lt;String&gt;) fromString().load(string);
+}
+
+public DrawableTypeRequest&lt;String&gt; fromString() {
+    return loadGeneric(String.class);
+}
+
+private &lt;T&gt; DrawableTypeRequest&lt;T&gt; loadGeneric(Class&lt;T&gt; modelClass) {
+    ModelLoader&lt;T, InputStream&gt; streamModelLoader = Glide.buildStreamModelLoader(modelClass, context);
+    ModelLoader&lt;T, ParcelFileDescriptor&gt; fileDescriptorModelLoader =
+            Glide.buildFileDescriptorModelLoader(modelClass, context);
+    if (modelClass != null &amp;&amp; streamModelLoader == null &amp;&amp; fileDescriptorModelLoader == null) {
+        throw new IllegalArgumentException(&quot;Unknown type &quot; + modelClass + &quot;. You must provide a Model of a type for&quot;
+                + &quot; which there is a registered ModelLoader, if you are using a custom model, you must first call&quot;
+                + &quot; Glide#register with a ModelLoaderFactory for your custom model class&quot;);
+    }
+
+    return optionsApplier.apply(
+            new DrawableTypeRequest&lt;T&gt;(modelClass, streamModelLoader, fileDescriptorModelLoader, context,
+                    glide, requestTracker, lifecycle, optionsApplier));
+}
+
+@Override
+public DrawableRequestBuilder&lt;ModelType&gt; load(ModelType model) {
+    super.load(model);
+    return this;
+}
+
+@Override
+public void onStart() {
+    resumeRequests();
+}
+
+@Override
+public void onStop() {
+    pauseRequests();
+}
+
+@Override
+public void onDestroy() {
+    requestTracker.clearRequests();
+}</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">DrawableTypeRequest.java</span><br></pre></td></tr></table></figure>
+<p>public class DrawableTypeRequest<ModelType> extends DrawableRequestBuilder<ModelType> implements DownloadOptions {<br>    private final ModelLoader&lt;ModelType, InputStream&gt; streamModelLoader;<br>    private final ModelLoader&lt;ModelType, ParcelFileDescriptor&gt; fileDescriptorModelLoader;<br>    private final RequestManager.OptionsApplier optionsApplier;</p>
+<pre><code>private static &lt;A, Z, R&gt; FixedLoadProvider&lt;A, ImageVideoWrapper, Z, R&gt; buildProvider(Glide glide,
+        ModelLoader&lt;A, InputStream&gt; streamModelLoader,
+        ModelLoader&lt;A, ParcelFileDescriptor&gt; fileDescriptorModelLoader, Class&lt;Z&gt; resourceClass,
+        Class&lt;R&gt; transcodedClass,
+        ResourceTranscoder&lt;Z, R&gt; transcoder) {
+    if (streamModelLoader == null &amp;&amp; fileDescriptorModelLoader == null) {
+        return null;
+    }
+
+    if (transcoder == null) {
+        transcoder = glide.buildTranscoder(resourceClass, transcodedClass);
+    }
+    DataLoadProvider&lt;ImageVideoWrapper, Z&gt; dataLoadProvider = glide.buildDataProvider(ImageVideoWrapper.class,
+            resourceClass);
+    ImageVideoModelLoader&lt;A&gt; modelLoader = new ImageVideoModelLoader&lt;A&gt;(streamModelLoader,
+            fileDescriptorModelLoader);
+    return new FixedLoadProvider&lt;A, ImageVideoWrapper, Z, R&gt;(modelLoader, transcoder, dataLoadProvider);
+}
+
+DrawableTypeRequest(Class&lt;ModelType&gt; modelClass, ModelLoader&lt;ModelType, InputStream&gt; streamModelLoader,
+        ModelLoader&lt;ModelType, ParcelFileDescriptor&gt; fileDescriptorModelLoader, Context context, Glide glide,
+        RequestTracker requestTracker, Lifecycle lifecycle, RequestManager.OptionsApplier optionsApplier) {
+    super(context, modelClass,
+            buildProvider(glide, streamModelLoader, fileDescriptorModelLoader, GifBitmapWrapper.class,
+                    GlideDrawable.class, null),
+            glide, requestTracker, lifecycle);
+    this.streamModelLoader = streamModelLoader;
+    this.fileDescriptorModelLoader = fileDescriptorModelLoader;
+    this.optionsApplier = optionsApplier;
+}
+
+public BitmapTypeRequest&lt;ModelType&gt; asBitmap() {
+    return optionsApplier.apply(new BitmapTypeRequest&lt;ModelType&gt;(this, streamModelLoader,
+            fileDescriptorModelLoader, optionsApplier));
+}
+
+public GifTypeRequest&lt;ModelType&gt; asGif() {
+    return optionsApplier.apply(new GifTypeRequest&lt;ModelType&gt;(this, streamModelLoader, optionsApplier));
+}</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">DrawableRequestBuilder.java</span><br></pre></td></tr></table></figure>
+<p>public class DrawableRequestBuilder<ModelType><br>        extends GenericRequestBuilder&lt;ModelType, ImageVideoWrapper, GifBitmapWrapper, GlideDrawable&gt;<br>        implements BitmapOptions, DrawableOptions {</p>
+<pre><code>@Override
+public DrawableRequestBuilder&lt;ModelType&gt; load(ModelType model) {
+    super.load(model); //调用其父类GenericRequestBuilder的load函数赋值model变量
+    return this;
+}
+
+@Override
+public Target&lt;GlideDrawable&gt; into(ImageView view) {
+    return super.into(view);
+}</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">into()方法,返回Target对象</span><br><span class="line"></span><br><span class="line">GenericRequestBuilder.java</span><br></pre></td></tr></table></figure>
+<p>public class GenericRequestBuilder&lt;ModelType, DataType, ResourceType, TranscodeType&gt; implements Cloneable {<br>    protected final Glide glide;<br>    protected final Class<TranscodeType> transcodeClass;<br>    protected final RequestTracker requestTracker;<br>    protected final Lifecycle lifecycle;<br>    private GenericRequestBuilder&lt;?, ?, ?, TranscodeType&gt; thumbnailRequestBuilder;</p>
+<pre><code>@Override
+public Target&lt;GlideDrawable&gt; into(ImageView view) {
+    return super.into(view);
+}
+
+public Target&lt;TranscodeType&gt; into(ImageView view) {
+    Util.assertMainThread();
+    if (view == null) {
+        throw new IllegalArgumentException(&quot;You must pass in a non null View&quot;);
+    }
+
+    if (!isTransformationSet &amp;&amp; view.getScaleType() != null) {
+        switch (view.getScaleType()) {
+            case CENTER_CROP:
+                applyCenterCrop();
+                break;
+            case FIT_CENTER:
+            case FIT_START:
+            case FIT_END:
+                applyFitCenter();
+                break;
+            //$CASES-OMITTED$
+            default:
+                // Do nothing.
+        }
+    }
+
+    return into(glide.buildImageViewTarget(view, transcodeClass));
+}    
+
+public &lt;Y extends Target&lt;TranscodeType&gt;&gt; Y into(Y target) {
+    Util.assertMainThread();
+    if (target == null) {
+        throw new IllegalArgumentException(&quot;You must pass in a non null Target&quot;);
+    }
+    if (!isModelSet) {
+        throw new IllegalArgumentException(&quot;You must first set a model (try #load())&quot;);
+    }
+
+    Request previous = target.getRequest();
+
+    if (previous != null) {
+        previous.clear();
+        requestTracker.removeRequest(previous);
+        previous.recycle();
+    }
+
+    Request request = buildRequest(target);
+    target.setRequest(request);
+    lifecycle.addListener(target);
+    requestTracker.runRequest(request);
+
+    return target;
+}
+
+// 根据是缩略图划分，返回ThumbnailRequestCoordinator、GenericRequest
+private Request buildRequest(Target&lt;TranscodeType&gt; target) {
+    if (priority == null) {
+        priority = Priority.NORMAL;
+    }
+    return buildRequestRecursive(target, null);
+}
+
+private Request buildRequestRecursive(Target&lt;TranscodeType&gt; target, ThumbnailRequestCoordinator parentCoordinator) {
+    if (thumbnailRequestBuilder != null) {
+        if (isThumbnailBuilt) {
+            throw new IllegalStateException(&quot;You cannot use a request as both the main request and a thumbnail, &quot;
+                    + &quot;consider using clone() on the request(s) passed to thumbnail()&quot;);
+        }
+        // Recursive case: contains a potentially recursive thumbnail request builder.
+        if (thumbnailRequestBuilder.animationFactory.equals(NoAnimation.getFactory())) {
+            thumbnailRequestBuilder.animationFactory = animationFactory;
+        }
+
+        if (thumbnailRequestBuilder.priority == null) {
+            thumbnailRequestBuilder.priority = getThumbnailPriority();
+        }
+
+        if (Util.isValidDimensions(overrideWidth, overrideHeight)
+                &amp;&amp; !Util.isValidDimensions(thumbnailRequestBuilder.overrideWidth,
+                        thumbnailRequestBuilder.overrideHeight)) {
+          thumbnailRequestBuilder.override(overrideWidth, overrideHeight);
+        }
+
+        ThumbnailRequestCoordinator coordinator = new ThumbnailRequestCoordinator(parentCoordinator);
+        Request fullRequest = obtainRequest(target, sizeMultiplier, priority, coordinator);
+        // Guard against infinite recursion.
+        isThumbnailBuilt = true;
+        // Recursively generate thumbnail requests.
+        Request thumbRequest = thumbnailRequestBuilder.buildRequestRecursive(target, coordinator);
+        isThumbnailBuilt = false;
+        coordinator.setRequests(fullRequest, thumbRequest);
+        return coordinator;
+    } else if (thumbSizeMultiplier != null) {
+        // Base case: thumbnail multiplier generates a thumbnail request, but cannot recurse.
+        ThumbnailRequestCoordinator coordinator = new ThumbnailRequestCoordinator(parentCoordinator);
+        Request fullRequest = obtainRequest(target, sizeMultiplier, priority, coordinator);
+        Request thumbnailRequest = obtainRequest(target, thumbSizeMultiplier, getThumbnailPriority(), coordinator);
+        coordinator.setRequests(fullRequest, thumbnailRequest);
+        return coordinator;
+    } else {
+        // Base case: no thumbnail.
+        return obtainRequest(target, sizeMultiplier, priority, parentCoordinator);
+    }
+}
+
+private Request obtainRequest(Target&lt;TranscodeType&gt; target, float sizeMultiplier, Priority priority,
+        RequestCoordinator requestCoordinator) {
+    return GenericRequest.obtain(
+            loadProvider,
+            model,
+            signature,
+            context,
+            priority,
+            target,
+            sizeMultiplier,
+            placeholderDrawable,
+            placeholderId,
+            errorPlaceholder,
+            errorId,
+            fallbackDrawable,
+            fallbackResource,
+            requestListener,
+            requestCoordinator,
+            glide.getEngine(),
+            transformation,
+            transcodeClass,
+            isCacheable,
+            animationFactory,
+            overrideWidth,
+            overrideHeight,
+            diskCacheStrategy);
+}</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">网络请求</span><br><span class="line"></span><br><span class="line">RequestTracker.java (Request集合, 负责Request的执行，暂停，取消等等关于图片请求的操作)</span><br></pre></td></tr></table></figure>
+<p>public class RequestTracker {<br>    private final Set<Request> requests = Collections.newSetFromMap(new WeakHashMap&lt;Request, Boolean&gt;());<br>    private final List<Request> pendingRequests = new ArrayList<Request>();<br>    private boolean isPaused;</p>
+<pre><code>public void runRequest(Request request) {
+    requests.add(request);
+    if (!isPaused) {
+        request.begin();
+    } else {
+        pendingRequests.add(request);
+    }
+}
+
+public void pauseRequests() {
+    isPaused = true;
+    for (Request request : Util.getSnapshot(requests)) {
+        if (request.isRunning()) {
+            request.pause();
+            pendingRequests.add(request);
+        }
+    }
+}
+
+public void resumeRequests() {
+    isPaused = false;
+    for (Request request : Util.getSnapshot(requests)) {
+        if (!request.isComplete() &amp;&amp; !request.isCancelled() &amp;&amp; !request.isRunning()) {
+            request.begin();
+        }
+    }
+    pendingRequests.clear();
+}
+
+public void restartRequests() {
+    for (Request request : Util.getSnapshot(requests)) {
+        if (!request.isComplete() &amp;&amp; !request.isCancelled()) {
+            // Ensure the request will be restarted in onResume.
+            request.pause();
+            if (!isPaused) {
+                request.begin();
+            } else {
+                pendingRequests.add(request);
+            }
+        }
+    }
+}</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GenericRequest.java</span><br></pre></td></tr></table></figure>
+<p>public final class GenericRequest&lt;A, T, Z, R&gt; implements Request, SizeReadyCallback,<br>        ResourceCallback {</p>
+<pre><code>@Override
+public void begin() {
+    startTime = LogTime.getLogTime();
+    if (model == null) {
+        onException(null);
+        return;
+    }
+
+    status = Status.WAITING_FOR_SIZE;
+    if (Util.isValidDimensions(overrideWidth, overrideHeight)) {
+        onSizeReady(overrideWidth, overrideHeight);
+    } else {
+        target.getSize(this);
+    }
+
+    if (!isComplete() &amp;&amp; !isFailed() &amp;&amp; canNotifyStatusChanged()) {
+        // 设置Placeholder图片
+        target.onLoadStarted(getPlaceholderDrawable());
+        // 最终调用view.setImageDrawable(Drawable drawable)
+    }
+    if (Log.isLoggable(TAG, Log.VERBOSE)) {
+        logV(&quot;finished run method in &quot; + LogTime.getElapsedMillis(startTime));
+    }
+}    
+
+@Override
+public void onSizeReady(int width, int height) {
+    if (Log.isLoggable(TAG, Log.VERBOSE)) {
+        logV(&quot;Got onSizeReady in &quot; + LogTime.getElapsedMillis(startTime));
+    }
+    if (status != Status.WAITING_FOR_SIZE) {
+        return;
+    }
+    status = Status.RUNNING;
+
+    width = Math.round(sizeMultiplier * width);
+    height = Math.round(sizeMultiplier * height);
+
+    ModelLoader&lt;A, T&gt; modelLoader = loadProvider.getModelLoader();
+    final DataFetcher&lt;T&gt; dataFetcher = modelLoader.getResourceFetcher(model, width, height);
+
+    if (dataFetcher == null) {
+        onException(new Exception(&quot;Failed to load model: \&apos;&quot; + model + &quot;\&apos;&quot;));
+        return;
+    }
+    ResourceTranscoder&lt;Z, R&gt; transcoder = loadProvider.getTranscoder();
+    if (Log.isLoggable(TAG, Log.VERBOSE)) {
+        logV(&quot;finished setup for calling load in &quot; + LogTime.getElapsedMillis(startTime));
+    }
+    loadedFromMemoryCache = true;
+    // 开始网络加载图片
+    loadStatus = engine.load(signature, width, height, dataFetcher, loadProvider, transformation, transcoder,
+            priority, isMemoryCacheable, diskCacheStrategy, this);
+    loadedFromMemoryCache = resource != null;
+    if (Log.isLoggable(TAG, Log.VERBOSE)) {
+        logV(&quot;finished onSizeReady in &quot; + LogTime.getElapsedMillis(startTime));
+    }
+}</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">Engine.java</span><br></pre></td></tr></table></figure>
+<p>public class Engine implements EngineJobListener,<br>        MemoryCache.ResourceRemovedListener,<br>        EngineResource.ResourceListener {</p>
+<pre><code>public &lt;T, Z, R&gt; LoadStatus load(Key signature, int width, int height, DataFetcher&lt;T&gt; fetcher,
+        DataLoadProvider&lt;T, Z&gt; loadProvider, Transformation&lt;Z&gt; transformation, ResourceTranscoder&lt;Z, R&gt; transcoder,
+        Priority priority, boolean isMemoryCacheable, DiskCacheStrategy diskCacheStrategy, ResourceCallback cb) {
+    Util.assertMainThread();
+    long startTime = LogTime.getLogTime();
+
+    final String id = fetcher.getId();
+    // 根据请求key以及width、height一起构成了一个EngineKey, 如果width、height改变了，
+    // 则会认为是一个新的Key，会重新缓存。
+    EngineKey key = keyFactory.buildKey(id, signature, width, height, loadProvider.getCacheDecoder(),
+            loadProvider.getSourceDecoder(), transformation, loadProvider.getEncoder(),
+            transcoder, loadProvider.getSourceEncoder());
+
+    // 1.从内存中获取，isMemoryCacheable：是否允许内存缓存策略
+    EngineResource&lt;?&gt; cached = loadFromCache(key, isMemoryCacheable);
+    if (cached != null) {
+        cb.onResourceReady(cached);
+        if (Log.isLoggable(TAG, Log.VERBOSE)) {
+            logWithTimeAndKey(&quot;Loaded resource from cache&quot;, startTime, key);
+        }
+        return null;
+    }
+
+    //2.从activeResources中获取 isMemoryCacheable：是否允许内存缓存策略
+    EngineResource&lt;?&gt; active = loadFromActiveResources(key, isMemoryCacheable);
+    if (active != null) {
+        cb.onResourceReady(active);
+        if (Log.isLoggable(TAG, Log.VERBOSE)) {
+            logWithTimeAndKey(&quot;Loaded resource from active resources&quot;, startTime, key);
+        }
+        return null;
+    }
+
+
+    EngineJob current = jobs.get(key);
+    if (current != null) {
+        current.addCallback(cb);
+        if (Log.isLoggable(TAG, Log.VERBOSE)) {
+            logWithTimeAndKey(&quot;Added to existing load&quot;, startTime, key);
+        }
+        return new LoadStatus(cb, current);
+    }
+
+    EngineJob engineJob = engineJobFactory.build(key, isMemoryCacheable);
+    DecodeJob&lt;T, Z, R&gt; decodeJob = new DecodeJob&lt;T, Z, R&gt;(key, width, height, fetcher, loadProvider, transformation,
+            transcoder, diskCacheProvider, diskCacheStrategy, priority);
+    EngineRunnable runnable = new EngineRunnable(engineJob, decodeJob, priority);
+    jobs.put(key, engineJob);
+    engineJob.addCallback(cb);
+    engineJob.start(runnable);
+
+    if (Log.isLoggable(TAG, Log.VERBOSE)) {
+        logWithTimeAndKey(&quot;Started new load&quot;, startTime, key);
+    }
+    return new LoadStatus(cb, engineJob);
+}    </code></pre><p>}            </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">EngineJob.java</span><br></pre></td></tr></table></figure>
+<p>class EngineJob implements EngineRunnable.EngineRunnableManager {</p>
+<pre><code>@Override
+public void run() {
+    if (isCancelled) {
+        return;
+    }
+
+    Exception exception = null;
+    Resource&lt;?&gt; resource = null;
+    try {
+        resource = decode();
+    } catch (OutOfMemoryError e) {
+        if (Log.isLoggable(TAG, Log.VERBOSE)) {
+            Log.v(TAG, &quot;Out Of Memory Error decoding&quot;, e);
+        }
+        exception = new ErrorWrappingGlideException(e);
+    } catch (Exception e) {
+        if (Log.isLoggable(TAG, Log.VERBOSE)) {
+            Log.v(TAG, &quot;Exception decoding&quot;, e);
+        }
+        exception = e;
+    }
+
+    if (isCancelled) {
+        if (resource != null) {
+            resource.recycle();
+        }
+        return;
+    }
+
+    if (resource == null) {
+        onLoadFailed(exception);
+    } else {
+        onLoadComplete(resource);
+    }
+}
+
+private Resource&lt;?&gt; decode() throws Exception {
+    if (isDecodingFromCache()) {
+        return decodeFromCache();
+    } else {
+        return decodeFromSource();
+    }
+}
+
+private Resource&lt;?&gt; decodeFromSource() throws Exception {
+    return decodeJob.decodeFromSource();
+}</code></pre><p>}</p>
+<p>```</p>
+<h4 id="了解更多"><a href="#了解更多" class="headerlink" title="了解更多"></a>了解更多</h4><p><a href="https://blog.csdn.net/u011733020/article/details/52446902" target="_blank" rel="noopener">1. Glide（图片异步加载缓存库）发起request获取resource</a></p>
+<p><a href="https://juejin.im/post/5e2109e25188254c257c40c6#heading-42" target="_blank" rel="noopener">2. Android主流三方库源码分析（三、深入理解Glide源码）</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E5%BC%80%E6%BA%90%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># Android开源框架源码分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/31/Picasso%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" rel="prev" title="Picasso 源码剖析">
+      <i class="fa fa-chevron-left"></i> Picasso 源码剖析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/31/Kotlin%20%E5%AE%9E%E6%88%98/" rel="next" title="Kotlin 实战">
+      Kotlin 实战 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#Glide-源码剖析"><span class="nav-number">1.</span> <span class="nav-text">Glide 源码剖析</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#对比图片加载框架"><span class="nav-number">1.1.</span> <span class="nav-text">对比图片加载框架</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-with-Context-方法，返回RequestManager"><span class="nav-number">1.1.1.</span> <span class="nav-text">1. with(Context)方法，返回RequestManager</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#了解更多"><span class="nav-number">2.</span> <span class="nav-text">了解更多</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

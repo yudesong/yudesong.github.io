@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="上几篇文章中我们分析了Dialog的加载绘制流程，也分析了Acvityi的加载绘制流程，说白了Android系统中窗口的展示都是通过Window对象控制，通过ViewRootImpl对象执行绘制操作来完成的，那么窗口的取消绘制流程是怎么样的呢？这篇文章就以Dialog为例说明Window窗口是如何取消绘制的。 有的同学可能会问前几篇文章介绍Activity的加载绘制流程的时候为何没有讲Activi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="20 Dialog取消绘制流程">
+<meta property="og:url" content="http://yoursite.com/2020/05/30/20%20Dialog%E5%8F%96%E6%B6%88%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="上几篇文章中我们分析了Dialog的加载绘制流程，也分析了Acvityi的加载绘制流程，说白了Android系统中窗口的展示都是通过Window对象控制，通过ViewRootImpl对象执行绘制操作来完成的，那么窗口的取消绘制流程是怎么样的呢？这篇文章就以Dialog为例说明Window窗口是如何取消绘制的。 有的同学可能会问前几篇文章介绍Activity的加载绘制流程的时候为何没有讲Activi">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-29T16:29:04.620Z">
+<meta property="article:modified_time" content="2020-05-31T03:02:03.819Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android系统层">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/30/20%20Dialog%E5%8F%96%E6%B6%88%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>20 Dialog取消绘制流程 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/30/20%20Dialog%E5%8F%96%E6%B6%88%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          20 Dialog取消绘制流程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-30 00:29:04" itemprop="dateCreated datePublished" datetime="2020-05-30T00:29:04+08:00">2020-05-30</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>上几篇文章中我们分析了Dialog的加载绘制流程，也分析了Acvityi的加载绘制流程，说白了Android系统中窗口的展示都是通过Window对象控制，通过ViewRootImpl对象执行绘制操作来完成的，那么窗口的取消绘制流程是怎么样的呢？这篇文章就以Dialog为例说明Window窗口是如何取消绘制的。</p>
+<p>有的同学可能会问前几篇文章介绍Activity的加载绘制流程的时候为何没有讲Activity的窗口取消流程，这里说明一下。那是因为当时说明的重点是Activity的加载与绘制流程，而取消绘制流程由于混杂在Activity的生命周期管理，可能不太明显，所以这里将Window窗口的取消绘制流程放在Dialog中，其实他们的取消绘制流程都是相似的，看完Dialog的取消绘制流程之后，再看一下Activity的取消绘制流程就很简单了。</p>
+<p>还记得我们上一篇文章关于Dialog的例子么？我们通过AlertDialog.Builder创建了一个AlertDialog，并通过Activity中的按钮点击事件来显示这个AlertDialog，而在AlertDialog中定义了一个“知道了”按钮，点击这个按钮就会触发alertDialog.cancel方法，通过执行这个方法，我们的alertDialog就不在显示了，很明显的，cancel方法执行过程中就执行了取消绘制的逻辑，这里我们先看一下我们的例子核心代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">title.setOnClickListener(new View.OnClickListener() &#123;</span><br><span class="line">            @Override</span><br><span class="line">            public void onClick(View v) &#123;</span><br><span class="line">                AlertDialog.Builder builder &#x3D; new AlertDialog.Builder(MainActivity.this.getApplication());</span><br><span class="line">                builder.setIcon(R.mipmap.ic_launcher);</span><br><span class="line">                builder.setMessage(&quot;this is the content view!!!&quot;);</span><br><span class="line">                builder.setTitle(&quot;this is the title view!!!&quot;);</span><br><span class="line">                builder.setView(R.layout.activity_second);</span><br><span class="line">                builder.setPositiveButton(&quot;知道了&quot;, new DialogInterface.OnClickListener() &#123;</span><br><span class="line">                    @Override</span><br><span class="line">                    public void onClick(DialogInterface dialog, int which) &#123;</span><br><span class="line">                        alertDialog.cannel();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line">                alertDialog &#x3D; builder.create();</span><br><span class="line">                alertDialog.show();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br></pre></td></tr></table></figure>
+<p>这里的title就是我们自己的Activity中的一个TextView，通过注册这个TextView的点击事件，来显示一个AlertDialog，通过注册AlertDialog中按钮的点击事件，执行alertDialog的cancel方法。</p>
+<p>好吧，看一下Dialog的cannel方法的具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public void cancel() &#123;</span><br><span class="line">        if (!mCanceled &amp;&amp; mCancelMessage !&#x3D; null) &#123;</span><br><span class="line">            mCanceled &#x3D; true;</span><br><span class="line">            &#x2F;&#x2F; Obtain a new message so this dialog can be re-used</span><br><span class="line">            Message.obtain(mCancelMessage).sendToTarget();</span><br><span class="line">        &#125;</span><br><span class="line">        dismiss();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到方法体中，若当前Dialog没有取消，并且设置了取消message，则调用Message.obtain(mCancel).sendToTarget()，前面已经分析过这里的sendToTarget方法会回调我们注册的异步消息处理逻辑：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public void setOnCancelListener(final OnCancelListener listener) &#123;</span><br><span class="line">        if (mCancelAndDismissTaken !&#x3D; null) &#123;</span><br><span class="line">            throw new IllegalStateException(</span><br><span class="line">                    &quot;OnCancelListener is already taken by &quot;</span><br><span class="line">                    + mCancelAndDismissTaken + &quot; and can not be replaced.&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">        if (listener !&#x3D; null) &#123;</span><br><span class="line">            mCancelMessage &#x3D; mListenersHandler.obtainMessage(CANCEL, listener);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            mCancelMessage &#x3D; null;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到如果我们在初始化AlertDialog.Builder时，设置了setOnCancelListener，那么我们就会执行mListenersHandler的异步消息处理，好吧，这里看一下mListenersHandler的定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">private static final class ListenersHandler extends Handler &#123;</span><br><span class="line">        private WeakReference&lt;DialogInterface&gt; mDialog;</span><br><span class="line"></span><br><span class="line">        public ListenersHandler(Dialog dialog) &#123;</span><br><span class="line">            mDialog &#x3D; new WeakReference&lt;DialogInterface&gt;(dialog);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void handleMessage(Message msg) &#123;</span><br><span class="line">            switch (msg.what) &#123;</span><br><span class="line">                case DISMISS:</span><br><span class="line">                    ((OnDismissListener) msg.obj).onDismiss(mDialog.get());</span><br><span class="line">                    break;</span><br><span class="line">                case CANCEL:</span><br><span class="line">                    ((OnCancelListener) msg.obj).onCancel(mDialog.get());</span><br><span class="line">                    break;</span><br><span class="line">                case SHOW:</span><br><span class="line">                    ((OnShowListener) msg.obj).onShow(mDialog.get());</span><br><span class="line">                    break;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>好吧，这里调用的是设置的OnCancelListener的onCancel方法，也就是说我们调用dialog.cancel方法时首先会判断dialog是否调用了setOnCancelListener若设置了，则先调用OnCancelListener的onCancel方法，然后再次执行dismiss方法，若我们没有为Dialog.Builder设置OnCancelListener那么cancel方法和dismiss方法是等效的。</p>
+<p>这样，我们来看一下dismiss方法的实现逻辑：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public void dismiss() &#123;</span><br><span class="line">        if (Looper.myLooper() &#x3D;&#x3D; mHandler.getLooper()) &#123;</span><br><span class="line">            dismissDialog();</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            mHandler.post(mDismissAction);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，这里首先判断当前线程的Looper是否是主线程的Looper（由于mHandler是在主线程中创建的，所以mHandler.getLooper返回的是主线程中创建的Looper对象），若是的话，则直接执行dismissDialog()方法，否则的话，通过mHandler发送异步消息至主线程中，简单来说就是判断当前线程是否是主线程，若是主线程则执行dismissDialog方法否则发送异步消息，我们看一下mHandler对异步消息的处理机制，由于这里的mDismissAction是一个Runnable对象，所以这里直接看一下mDismissAction的定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">private final Runnable mDismissAction &#x3D; new Runnable() &#123;</span><br><span class="line">        public void run() &#123;</span><br><span class="line">            dismissDialog();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+<p>好吧，这里的异步消息最终也是调用的dismissDialog方法。。。。</p>
+<p>所以无论我们执行的cancel方法还是dismiss方法，无论我们方法是在主线程执行还是子线程中执行，最终调用的都是dismissDialog方法，那么就看一下dismissDialog是怎么个执行逻辑。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">void dismissDialog() &#123;</span><br><span class="line">        if (mDecor &#x3D;&#x3D; null || !mShowing) &#123;</span><br><span class="line">            return;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (mWindow.isDestroyed()) &#123;</span><br><span class="line">            Log.e(TAG, &quot;Tried to dismissDialog() but the Dialog&#39;s window was already destroyed!&quot;);</span><br><span class="line">            return;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            mWindowManager.removeViewImmediate(mDecor);</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            if (mActionMode !&#x3D; null) &#123;</span><br><span class="line">                mActionMode.finish();</span><br><span class="line">            &#125;</span><br><span class="line">            mDecor &#x3D; null;</span><br><span class="line">            mWindow.closeAllPanels();</span><br><span class="line">            onStop();</span><br><span class="line">            mShowing &#x3D; false;</span><br><span class="line"></span><br><span class="line">            sendDismissMessage();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>好吧，看样子代码还不是特别多，方法体中，首先判断当前的mDector是否为空，或者当前Dialog是否在显示，若为空或者没有在显示，则直接return掉，也就是说当前我们的dialog已经不再显示了，则我们不需要往下在执行。</p>
+<p>然后我们调用了mWindow.isDestroyed()方法，判断Window对象是否已经被销毁，若已经被销毁，则直接return，并打印错误日志。</p>
+<p>然后我们调用了mWindowManager.removeViewImmediate(mDector)，这里的mDector是我们Dialog窗口的根布局，看这个方法的名字应该就是Dialog去除根布局的操作了，可以看一下这个方法的具体实现。前几篇文章中我们已经分析过了这里的mWindowManager其实是WindowManagerImpl的实例，所以这里的removeViewImmediate方法应该是WindowManagerImpl中的方法，我们看一下它的具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">    public void removeViewImmediate(View view) &#123;</span><br><span class="line">        mGlobal.removeView(view, true);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以发现，这里它调用了mGlobal.removeView方法，而这里的mGlobal是WindowManagerGlobal的实例，所以我们再看一下WIndowManagerGlobal中removeView的实现逻辑:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">public void removeView(View view, boolean immediate) &#123;</span><br><span class="line">        if (view &#x3D;&#x3D; null) &#123;</span><br><span class="line">            throw new IllegalArgumentException(&quot;view must not be null&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        synchronized (mLock) &#123;</span><br><span class="line">            int index &#x3D; findViewLocked(view, true);</span><br><span class="line">            View curView &#x3D; mRoots.get(index).getView();</span><br><span class="line">            removeViewLocked(index, immediate);</span><br><span class="line">            if (curView &#x3D;&#x3D; view) &#123;</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            throw new IllegalStateException(&quot;Calling with view &quot; + view</span><br><span class="line">                    + &quot; but the ViewAncestor is attached to &quot; + curView);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以发现，这里在获取了保存的mDector组件之后，又调用了removeViewLocked方法，我们在看一下这个方法的具体实现逻辑：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">private void removeViewLocked(int index, boolean immediate) &#123;</span><br><span class="line">        ViewRootImpl root &#x3D; mRoots.get(index);</span><br><span class="line">        View view &#x3D; root.getView();</span><br><span class="line"></span><br><span class="line">        if (view !&#x3D; null) &#123;</span><br><span class="line">            InputMethodManager imm &#x3D; InputMethodManager.getInstance();</span><br><span class="line">            if (imm !&#x3D; null) &#123;</span><br><span class="line">                imm.windowDismissed(mViews.get(index).getWindowToken());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        boolean deferred &#x3D; root.die(immediate);</span><br><span class="line">        if (view !&#x3D; null) &#123;</span><br><span class="line">            view.assignParent(null);</span><br><span class="line">            if (deferred) &#123;</span><br><span class="line">                mDyingViews.add(view);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>看到了么，我们获取了mDector组件的ViewRootImpl，然后调用了其的die方法，通过这个方法实现Window组件的销毁流程。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">boolean die(boolean immediate) &#123;</span><br><span class="line">        &#x2F;&#x2F; Make sure we do execute immediately if we are in the middle of a traversal or the damage</span><br><span class="line">        &#x2F;&#x2F; done by dispatchDetachedFromWindow will cause havoc on return.</span><br><span class="line">        if (immediate &amp;&amp; !mIsInTraversal) &#123;</span><br><span class="line">            doDie();</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (!mIsDrawing) &#123;</span><br><span class="line">            destroyHardwareRenderer();</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            Log.e(TAG, &quot;Attempting to destroy the window while drawing!\n&quot; +</span><br><span class="line">                    &quot;  window&#x3D;&quot; + this + &quot;, title&#x3D;&quot; + mWindowAttributes.getTitle());</span><br><span class="line">        &#125;</span><br><span class="line">        mHandler.sendEmptyMessage(MSG_DIE);</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到在方法体中有调用了doDie方法，看名字应该就是真正执行window销毁工作的方法了，我们在看一下doDie方法的具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">void doDie() &#123;</span><br><span class="line">        checkThread();</span><br><span class="line">        if (LOCAL_LOGV) Log.v(TAG, &quot;DIE in &quot; + this + &quot; of &quot; + mSurface);</span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            if (mRemoved) &#123;</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line">            mRemoved &#x3D; true;</span><br><span class="line">            if (mAdded) &#123;</span><br><span class="line">                dispatchDetachedFromWindow();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            if (mAdded &amp;&amp; !mFirst) &#123;</span><br><span class="line">                destroyHardwareRenderer();</span><br><span class="line"></span><br><span class="line">                if (mView !&#x3D; null) &#123;</span><br><span class="line">                    int viewVisibility &#x3D; mView.getVisibility();</span><br><span class="line">                    boolean viewVisibilityChanged &#x3D; mViewVisibility !&#x3D; viewVisibility;</span><br><span class="line">                    if (mWindowAttributesChanged || viewVisibilityChanged) &#123;</span><br><span class="line">                        &#x2F;&#x2F; If layout params have been changed, first give them</span><br><span class="line">                        &#x2F;&#x2F; to the window manager to make sure it has the correct</span><br><span class="line">                        &#x2F;&#x2F; animation info.</span><br><span class="line">                        try &#123;</span><br><span class="line">                            if ((relayoutWindow(mWindowAttributes, viewVisibility, false)</span><br><span class="line">                                    &amp; WindowManagerGlobal.RELAYOUT_RES_FIRST_TIME) !&#x3D; 0) &#123;</span><br><span class="line">                                mWindowSession.finishDrawing(mWindow);</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125; catch (RemoteException e) &#123;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    mSurface.release();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            mAdded &#x3D; false;</span><br><span class="line">        &#125;</span><br><span class="line">        WindowManagerGlobal.getInstance().doRemoveView(this);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到方法体中，首先调用了checkThread方法，介绍Activity的绘制流程的时候有过介绍，判断当前执行代码的线程，若不是主线程，则抛出异常：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">void checkThread() &#123;</span><br><span class="line">        if (mThread !&#x3D; Thread.currentThread()) &#123;</span><br><span class="line">            throw new CalledFromWrongThreadException(</span><br><span class="line">                    &quot;Only the original thread that created a view hierarchy can touch its views.&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>我们顺着doDie的方法往下看，又调用了dispatchDetachedFromWindow()方法，这个方法主要是销毁Window中的各中成员变量，临时变量等</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">void dispatchDetachedFromWindow() &#123;</span><br><span class="line">        if (mView !&#x3D; null &amp;&amp; mView.mAttachInfo !&#x3D; null) &#123;</span><br><span class="line">            mAttachInfo.mTreeObserver.dispatchOnWindowAttachedChange(false);</span><br><span class="line">            mView.dispatchDetachedFromWindow();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mAccessibilityInteractionConnectionManager.ensureNoConnection();</span><br><span class="line">        mAccessibilityManager.removeAccessibilityStateChangeListener(</span><br><span class="line">                mAccessibilityInteractionConnectionManager);</span><br><span class="line">        mAccessibilityManager.removeHighTextContrastStateChangeListener(</span><br><span class="line">                mHighContrastTextManager);</span><br><span class="line">        removeSendWindowContentChangedCallback();</span><br><span class="line"></span><br><span class="line">        destroyHardwareRenderer();</span><br><span class="line"></span><br><span class="line">        setAccessibilityFocus(null, null);</span><br><span class="line"></span><br><span class="line">        mView.assignParent(null);</span><br><span class="line">        mView &#x3D; null;</span><br><span class="line">        mAttachInfo.mRootView &#x3D; null;</span><br><span class="line"></span><br><span class="line">        mSurface.release();</span><br><span class="line"></span><br><span class="line">        if (mInputQueueCallback !&#x3D; null &amp;&amp; mInputQueue !&#x3D; null) &#123;</span><br><span class="line">            mInputQueueCallback.onInputQueueDestroyed(mInputQueue);</span><br><span class="line">            mInputQueue.dispose();</span><br><span class="line">            mInputQueueCallback &#x3D; null;</span><br><span class="line">            mInputQueue &#x3D; null;</span><br><span class="line">        &#125;</span><br><span class="line">        if (mInputEventReceiver !&#x3D; null) &#123;</span><br><span class="line">            mInputEventReceiver.dispose();</span><br><span class="line">            mInputEventReceiver &#x3D; null;</span><br><span class="line">        &#125;</span><br><span class="line">        try &#123;</span><br><span class="line">            mWindowSession.remove(mWindow);</span><br><span class="line">        &#125; catch (RemoteException e) &#123;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; Dispose the input channel after removing the window so the Window Manager</span><br><span class="line">        &#x2F;&#x2F; doesn&#39;t interpret the input channel being closed as an abnormal termination.</span><br><span class="line">        if (mInputChannel !&#x3D; null) &#123;</span><br><span class="line">            mInputChannel.dispose();</span><br><span class="line">            mInputChannel &#x3D; null;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">     mDisplayManager.unregisterDisplayListener(mDisplayListener);</span><br><span class="line"></span><br><span class="line">        unscheduleTraversals();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到我们在方法中调用了mView.dispatchDetachedFromWindow方法，这个方法的作用就是将mView从Window中detach出来，我们可以看一下这个方法的具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">void dispatchDetachedFromWindow() &#123;</span><br><span class="line">        AttachInfo info &#x3D; mAttachInfo;</span><br><span class="line">        if (info !&#x3D; null) &#123;</span><br><span class="line">            int vis &#x3D; info.mWindowVisibility;</span><br><span class="line">            if (vis !&#x3D; GONE) &#123;</span><br><span class="line">                onWindowVisibilityChanged(GONE);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        onDetachedFromWindow();</span><br><span class="line">        onDetachedFromWindowInternal();</span><br><span class="line"></span><br><span class="line">        InputMethodManager imm &#x3D; InputMethodManager.peekInstance();</span><br><span class="line">        if (imm !&#x3D; null) &#123;</span><br><span class="line">            imm.onViewDetachedFromWindow(this);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        ListenerInfo li &#x3D; mListenerInfo;</span><br><span class="line">        final CopyOnWriteArrayList&lt;OnAttachStateChangeListener&gt; listeners &#x3D;</span><br><span class="line">                li !&#x3D; null ? li.mOnAttachStateChangeListeners : null;</span><br><span class="line">        if (listeners !&#x3D; null &amp;&amp; listeners.size() &gt; 0) &#123;</span><br><span class="line">            &#x2F;&#x2F; NOTE: because of the use of CopyOnWriteArrayList, we *must* use an iterator to</span><br><span class="line">            &#x2F;&#x2F; perform the dispatching. The iterator is a safe guard against listeners that</span><br><span class="line">            &#x2F;&#x2F; could mutate the list by calling the various add&#x2F;remove methods. This prevents</span><br><span class="line">            &#x2F;&#x2F; the array from being modified while we iterate it.</span><br><span class="line">            for (OnAttachStateChangeListener listener : listeners) &#123;</span><br><span class="line">                listener.onViewDetachedFromWindow(this);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if ((mPrivateFlags &amp; PFLAG_SCROLL_CONTAINER_ADDED) !&#x3D; 0) &#123;</span><br><span class="line">            mAttachInfo.mScrollContainers.remove(this);</span><br><span class="line">            mPrivateFlags &amp;&#x3D; ~PFLAG_SCROLL_CONTAINER_ADDED;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mAttachInfo &#x3D; null;</span><br><span class="line">        if (mOverlay !&#x3D; null) &#123;</span><br><span class="line">            mOverlay.getOverlayView().dispatchDetachedFromWindow();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>其中onDetachedFromWindow方法是一个空的回调方法，这里我们重点看一下onDetachedFromWindowInternal方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">protected void onDetachedFromWindowInternal() &#123;</span><br><span class="line">        mPrivateFlags &amp;&#x3D; ~PFLAG_CANCEL_NEXT_UP_EVENT;</span><br><span class="line">        mPrivateFlags3 &amp;&#x3D; ~PFLAG3_IS_LAID_OUT;</span><br><span class="line"></span><br><span class="line">        removeUnsetPressCallback();</span><br><span class="line">        removeLongPressCallback();</span><br><span class="line">        removePerformClickCallback();</span><br><span class="line">        removeSendViewScrolledAccessibilityEventCallback();</span><br><span class="line">        stopNestedScroll();</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; Anything that started animating right before detach should already</span><br><span class="line">        &#x2F;&#x2F; be in its final state when re-attached.</span><br><span class="line">        jumpDrawablesToCurrentState();</span><br><span class="line"></span><br><span class="line">        destroyDrawingCache();</span><br><span class="line"></span><br><span class="line">        cleanupDraw();</span><br><span class="line">        mCurrentAnimation &#x3D; null;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>onDetachedFromWindowInternal方法的方法体也不是特别长，都是一些调用函数，这里看一下destropDrawingCache方法，这个方法主要是销毁View的缓存Drawing，我们来看一下具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public void destroyDrawingCache() &#123;</span><br><span class="line">        if (mDrawingCache !&#x3D; null) &#123;</span><br><span class="line">            mDrawingCache.recycle();</span><br><span class="line">            mDrawingCache &#x3D; null;</span><br><span class="line">        &#125;</span><br><span class="line">        if (mUnscaledDrawingCache !&#x3D; null) &#123;</span><br><span class="line">            mUnscaledDrawingCache.recycle();</span><br><span class="line">            mUnscaledDrawingCache &#x3D; null;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里的mDrawingCache其实就是一个Bitmap类型的成员变量，而这里调用的recycler和置空操作其实就是把View中执行draw方法之后缓存的bitmap清空。</p>
+<p>这里需要说明的是，我们View组件的最终显示落实是通过draw方法实现绘制的，而我们的draw方法的参数是一个Canvas，这是一个画布的对象，通过draw方法就是操作这个对象并显示出来，而Canvas对象之所以能够实现显示的效果是因为其内部保存着一个Bitmap对象，通过操作Canvas对象实质上是操作Canvas对象内部的Bitmap对象，而View组件的显示也就是通过这里的Bitmap来实现的。</p>
+<p>而我们上文中置空了bitmap对象就相当于把View组件的显示效果置空了，就是相当于我们取消了View的draw方法的执行效果，继续回到我们的dispatchDetachedFromWindow方法，在执行了mView.dispatchDetachedFromWindow()方法之后，又调用了mView = null;方法，这里设置mView为空，这样我们有取消了View的meature和layouot的执行效果。</p>
+<p>这样经过一系列的操作之后我们的Dialog的取消绘制流程就结束了，现在我们来看一下Activity的取消绘制流程。还记得我们“Activity的销毁流程”么？可参考：<a href="http://blog.csdn.net/qq_23547831/article/details/51232309" target="_blank" rel="noopener">android源码解析之（十五）–&gt;Activity销毁流程</a><br>当我们调用activity的finish方法的时候回调用ActivityThread的handleDestroyActivity方法，我们来看一下这个方法的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">private void handleDestroyActivity(IBinder token, boolean finishing,</span><br><span class="line">            int configChanges, boolean getNonConfigInstance) &#123;</span><br><span class="line">        ...</span><br><span class="line">        wm.removeViewImmediate(v);</span><br><span class="line">        ...            </span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到这里调用了这里调用了wm.removeViewImmediate方法，这个方法不就是我们刚刚分析Dialog销毁绘制流程的起始方法么？以后的逻辑都是详细的，这样我们就实现了Activity的取消绘制流程。</p>
+<p>总结：</p>
+<ul>
+<li><p>窗口的取消绘制流程是相似的，包括Activity和Dialog等；</p>
+</li>
+<li><p>通过调用WindowManager.removeViewImmediate方法，开始执行Window窗口的取消绘制流程；</p>
+</li>
+<li><p>Window窗口的取消绘制流程，通过清空bitma撤销draw的执行效果，通过置空View撤销meature和layout的执行效果；</p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E7%B3%BB%E7%BB%9F%E5%B1%82/" rel="tag"># Android系统层</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/30/19%20Dialog%E5%8A%A0%E8%BD%BD%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/" rel="prev" title="19 Dialog加载绘制流程">
+      <i class="fa fa-chevron-left"></i> 19 Dialog加载绘制流程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/30/21%20PopupWindow%E5%8A%A0%E8%BD%BD%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/" rel="next" title="21 PopupWindow加载绘制流程">
+      21 PopupWindow加载绘制流程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

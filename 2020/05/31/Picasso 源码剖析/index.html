@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Picasso简介Picasso是鼎鼎有名的Square公司的一个开源项目，该公司同时开源了许多知名的项目，比如Okhttp，Retrofit，Otto等。Picasso继承了Okhttp的链式调用风格，使得它使用起来非常简单和方便，并且它的设计和实现也很轻量简单，使得整个库的接口数量和体积都很小，因此被很多开发者使用在项目中。下面我们来看一下Picasso的总体设计：  Picasso是通过服务">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Picasso 源码剖析">
+<meta property="og:url" content="http://yoursite.com/2020/05/31/Picasso%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Picasso简介Picasso是鼎鼎有名的Square公司的一个开源项目，该公司同时开源了许多知名的项目，比如Okhttp，Retrofit，Otto等。Picasso继承了Okhttp的链式调用风格，使得它使用起来非常简单和方便，并且它的设计和实现也很轻量简单，使得整个库的接口数量和体积都很小，因此被很多开发者使用在项目中。下面我们来看一下Picasso的总体设计：  Picasso是通过服务">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190126151924568.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L29rZ2F5cw==,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2020-05-31T03:16:36.339Z">
+<meta property="article:modified_time" content="2020-06-03T03:23:16.896Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android开源框架源码分析">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20190126151924568.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L29rZ2F5cw==,size_16,color_FFFFFF,t_70">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/31/Picasso%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Picasso 源码剖析 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/31/Picasso%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Picasso 源码剖析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-31 11:16:36" itemprop="dateCreated datePublished" datetime="2020-05-31T11:16:36+08:00">2020-05-31</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h5 id="Picasso简介"><a href="#Picasso简介" class="headerlink" title="Picasso简介"></a>Picasso简介</h5><p>Picasso是鼎鼎有名的Square公司的一个开源项目，该公司同时开源了许多知名的项目，比如Okhttp，Retrofit，Otto等。Picasso继承了Okhttp的链式调用风格，使得它使用起来非常简单和方便，并且它的设计和实现也很轻量简单，使得整个库的接口数量和体积都很小，因此被很多开发者使用在项目中。下面我们来看一下Picasso的总体设计：</p>
+<p><img src="https://img-blog.csdnimg.cn/20190126151924568.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L29rZ2F5cw==,size_16,color_FFFFFF,t_70" alt=""></p>
+<p>Picasso是通过服务器来实现的本地缓存并且都是原图，因此如果能根据图片尺寸来控制缓存图片的大小可以进一步降低本地储存的空间和图片处理的开销。(Glide 就是根据不同的图片尺寸来缓存不同的图片)</p>
+<h5 id="Picasso-源码剖析"><a href="#Picasso-源码剖析" class="headerlink" title="Picasso 源码剖析"></a>Picasso 源码剖析</h5><h6 id="get、load、with-函数"><a href="#get、load、with-函数" class="headerlink" title="get、load、with 函数"></a>get、load、with 函数</h6><p>Picasso.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><span class="line">public class Picasso &#123;</span><br><span class="line">  static volatile Picasso singleton &#x3D; null;</span><br><span class="line"></span><br><span class="line">  &#x2F;&#x2F; 单例模式</span><br><span class="line">  public static Picasso get() &#123;</span><br><span class="line">    if (singleton &#x3D;&#x3D; null) &#123;</span><br><span class="line">      synchronized (Picasso.class) &#123;</span><br><span class="line">        if (singleton &#x3D;&#x3D; null) &#123;</span><br><span class="line">          if (PicassoProvider.context &#x3D;&#x3D; null) &#123;</span><br><span class="line">            throw new IllegalStateException(&quot;context &#x3D;&#x3D; null&quot;);</span><br><span class="line">          &#125;</span><br><span class="line">          singleton &#x3D; new Builder(PicassoProvider.context).build();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return singleton;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  &#x2F;&#x2F; 构建模式，初始化Picasso关键成员变量</span><br><span class="line">  public static class Builder &#123;</span><br><span class="line">    public Picasso build() &#123;</span><br><span class="line">      Context context &#x3D; this.context;</span><br><span class="line"></span><br><span class="line">      if (downloader &#x3D;&#x3D; null) &#123;</span><br><span class="line">        &#x2F;&#x2F; 图片下载</span><br><span class="line">        downloader &#x3D; new OkHttp3Downloader(context);</span><br><span class="line">      &#125;</span><br><span class="line">      if (cache &#x3D;&#x3D; null) &#123;</span><br><span class="line">        &#x2F;&#x2F; 内存缓存</span><br><span class="line">        cache &#x3D; new LruCache(context);</span><br><span class="line">      &#125;</span><br><span class="line">      if (service &#x3D;&#x3D; null) &#123;</span><br><span class="line">        &#x2F;&#x2F; 线程池 (默认开启3个线程, 根据网络WiFi-&gt;4 、4G-&gt;3、 3G-&gt;2, 2G-&gt;1)</span><br><span class="line">        service &#x3D; new PicassoExecutorService();</span><br><span class="line">      &#125;</span><br><span class="line">      if (transformer &#x3D;&#x3D; null) &#123;</span><br><span class="line">        transformer &#x3D; RequestTransformer.IDENTITY;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      &#x2F;&#x2F; 记录缓存命中次数、丢失次数等</span><br><span class="line">      Stats stats &#x3D; new Stats(cache);</span><br><span class="line"></span><br><span class="line">      &#x2F;&#x2F; 分发器</span><br><span class="line">      Dispatcher dispatcher &#x3D; new Dispatcher(context, service, HANDLER, downloader, cache, stats);</span><br><span class="line"></span><br><span class="line">      return new Picasso(context, dispatcher, cache, listener, transformer, requestHandlers, stats,</span><br><span class="line">          defaultBitmapConfig, indicatorsEnabled, loggingEnabled);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  static final Handler HANDLER &#x3D; new Handler(Looper.getMainLooper()) &#123;</span><br><span class="line">    @Override public void handleMessage(Message msg) &#123;</span><br><span class="line">      switch (msg.what) &#123;</span><br><span class="line">        case HUNTER_BATCH_COMPLETE: &#123;</span><br><span class="line">          &#x2F;&#x2F; 更新UI界面</span><br><span class="line">          @SuppressWarnings(&quot;unchecked&quot;) List&lt;BitmapHunter&gt; batch &#x3D; (List&lt;BitmapHunter&gt;) msg.obj;</span><br><span class="line">          &#x2F;&#x2F;noinspection ForLoopReplaceableByForEach</span><br><span class="line">          for (int i &#x3D; 0, n &#x3D; batch.size(); i &lt; n; i++) &#123;</span><br><span class="line">            BitmapHunter hunter &#x3D; batch.get(i);</span><br><span class="line">            hunter.picasso.complete(hunter); </span><br><span class="line">            &#x2F;&#x2F; 最终会调用action.complete(result, from);显示图片</span><br><span class="line">            &#x2F;&#x2F; 最终会调到这里：target.setImageDrawable(drawable)</span><br><span class="line">          &#125;</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        case REQUEST_GCED: &#123;</span><br><span class="line">          Action action &#x3D; (Action) msg.obj;</span><br><span class="line">          if (action.getPicasso().loggingEnabled) &#123;</span><br><span class="line">            log(OWNER_MAIN, VERB_CANCELED, action.request.logId(), &quot;target got garbage collected&quot;);</span><br><span class="line">          &#125;</span><br><span class="line">          action.picasso.cancelExistingRequest(action.getTarget());</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        case REQUEST_BATCH_RESUME:</span><br><span class="line">          @SuppressWarnings(&quot;unchecked&quot;) List&lt;Action&gt; batch &#x3D; (List&lt;Action&gt;) msg.obj;</span><br><span class="line">          &#x2F;&#x2F;noinspection ForLoopReplaceableByForEach</span><br><span class="line">          for (int i &#x3D; 0, n &#x3D; batch.size(); i &lt; n; i++) &#123;</span><br><span class="line">            Action action &#x3D; batch.get(i);</span><br><span class="line">            action.picasso.resumeAction(action);</span><br><span class="line">          &#125;</span><br><span class="line">          break;</span><br><span class="line">        default:</span><br><span class="line">          throw new AssertionError(&quot;Unknown handler message received: &quot; + msg.what);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;;</span><br><span class="line"></span><br><span class="line">  &#x2F;&#x2F; load URL,会创建RequestCreator对象</span><br><span class="line">  public RequestCreator load(@Nullable String path) &#123;</span><br><span class="line">    if (path &#x3D;&#x3D; null) &#123;</span><br><span class="line">      return new RequestCreator(this, null, 0);</span><br><span class="line">    &#125;</span><br><span class="line">    if (path.trim().length() &#x3D;&#x3D; 0) &#123;</span><br><span class="line">      throw new IllegalArgumentException(&quot;Path must not be empty.&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    return load(Uri.parse(path));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public RequestCreator load(@Nullable Uri uri) &#123;</span><br><span class="line">    return new RequestCreator(this, uri, 0);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  &#x2F;&#x2F; RequestCreator会在into(ImageView)方法的时候，封装ImageViewAction extends Action</span><br><span class="line">  void enqueueAndSubmit(Action action) &#123;</span><br><span class="line">    Object target &#x3D; action.getTarget();</span><br><span class="line">    if (target !&#x3D; null &amp;&amp; targetToAction.get(target) !&#x3D; action) &#123;</span><br><span class="line">      &#x2F;&#x2F; This will also check we are on the main thread.</span><br><span class="line">      cancelExistingRequest(target);</span><br><span class="line">      targetToAction.put(target, action);</span><br><span class="line">    &#125;</span><br><span class="line">    submit(action);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  void submit(Action action) &#123;</span><br><span class="line">    dispatcher.dispatchSubmit(action);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Picasso 的get()方法采用双重检验锁形式获取Picasso单例，在<strong>new Picasso()</strong> 的时候采用Builder构造模式初始化Picasso关键成员变量。主要有<strong>PicassoExecutorService</strong>、<strong>OkHttp3Downloader</strong>、<strong>LruCache</strong>、<strong>Dispatcher</strong>。值得关注的是<strong>PicassoProvider</strong>这个内容提供者，<strong>onCreate</strong>方法的调用是ActivityThread的启动的时候就已经调用了，比Application的初始化要早。像这种获取Context对象黑技术在Leakcanary里面也是一样的。</p>
+<p><strong>RequestCreator.java</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br></pre></td><td class="code"><pre><span class="line">public class RequestCreator &#123;</span><br><span class="line">  private final Picasso picasso;</span><br><span class="line">  private final Request.Builder data;</span><br><span class="line">  private boolean deferred;</span><br><span class="line"></span><br><span class="line">  RequestCreator(Picasso picasso, Uri uri, int resourceId) &#123;</span><br><span class="line">    this.picasso &#x3D; picasso;</span><br><span class="line">    this.data &#x3D; new Request.Builder(uri, resourceId, picasso.defaultBitmapConfig);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public RequestCreator fit() &#123;</span><br><span class="line">    deferred &#x3D; true;</span><br><span class="line">    return this;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public RequestCreator placeholder(@NonNull Drawable placeholderDrawable) &#123;</span><br><span class="line">    this.placeholderDrawable &#x3D; placeholderDrawable;</span><br><span class="line">    return this;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  static boolean isMain() &#123;</span><br><span class="line">    return Looper.getMainLooper().getThread() &#x3D;&#x3D; Thread.currentThread();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  static void checkMain() &#123;</span><br><span class="line">    if (!isMain()) &#123;</span><br><span class="line">      throw new IllegalStateException(&quot;Method call should happen from the main thread.&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public void into(ImageView target) &#123;</span><br><span class="line">    into(target, null);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public void into(ImageView target, Callback callback) &#123;</span><br><span class="line">    long started &#x3D; System.nanoTime();</span><br><span class="line">    checkMain();</span><br><span class="line">    &#x2F;&#x2F; 检查Uri 或者 resourceId是否为空</span><br><span class="line">    if (!data.hasImage()) &#123;  &#x2F;&#x2F; -&gt; uri !&#x3D; null || resourceId !&#x3D; 0</span><br><span class="line">      picasso.cancelRequest(target);</span><br><span class="line">      if (setPlaceholder) &#123;</span><br><span class="line">        setPlaceholder(target, getPlaceholderDrawable());</span><br><span class="line">      &#125;</span><br><span class="line">      return;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (deferred) &#123;</span><br><span class="line">      if (data.hasSize()) &#123;  &#x2F;&#x2F; -&gt; targetWidth !&#x3D; 0 || targetHeight !&#x3D; 0</span><br><span class="line">        throw new IllegalStateException(&quot;Fit cannot be used with resize.&quot;);</span><br><span class="line">      &#125;</span><br><span class="line">      int width &#x3D; target.getWidth();</span><br><span class="line">      int height &#x3D; target.getHeight();</span><br><span class="line">      if (width &#x3D;&#x3D; 0 || height &#x3D;&#x3D; 0) &#123;</span><br><span class="line">        if (setPlaceholder) &#123;</span><br><span class="line">          setPlaceholder(target, getPlaceholderDrawable());</span><br><span class="line">        &#125;</span><br><span class="line">        picasso.defer(target, new DeferredRequestCreator(this, target, callback));</span><br><span class="line">        return;</span><br><span class="line">      &#125;</span><br><span class="line">      data.resize(width, height);  &#x2F;&#x2F; -&gt; this.targetWidth &#x3D; targetWidth; this.targetHeight &#x3D; targetHeight;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Request request &#x3D; createRequest(started);</span><br><span class="line">    String requestKey &#x3D; createKey(request);</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 缓存中存在，则从缓存中获取, 取消请求，返回缓存值</span><br><span class="line">    if (shouldReadFromMemoryCache(memoryPolicy)) &#123;</span><br><span class="line">      Bitmap bitmap &#x3D; picasso.quickMemoryCacheCheck(requestKey);</span><br><span class="line">      if (bitmap !&#x3D; null) &#123;</span><br><span class="line">        picasso.cancelRequest(target);</span><br><span class="line">        setBitmap(target, picasso.context, bitmap, MEMORY, noFade, picasso.indicatorsEnabled);</span><br><span class="line">        if (picasso.loggingEnabled) &#123;</span><br><span class="line">          log(OWNER_MAIN, VERB_COMPLETED, request.plainId(), &quot;from &quot; + MEMORY);</span><br><span class="line">        &#125;</span><br><span class="line">        if (callback !&#x3D; null) &#123;</span><br><span class="line">          callback.onSuccess();</span><br><span class="line">        &#125;</span><br><span class="line">        return;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 设置placeholder</span><br><span class="line">    if (setPlaceholder) &#123;</span><br><span class="line">      setPlaceholder(target, getPlaceholderDrawable());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 创建Action用于网络请求</span><br><span class="line">    Action action &#x3D;</span><br><span class="line">        new ImageViewAction(picasso, target, request, memoryPolicy, networkPolicy, errorResId,</span><br><span class="line">            errorDrawable, requestKey, tag, callback, noFade);</span><br><span class="line"></span><br><span class="line">    picasso.enqueueAndSubmit(action);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  private Request createRequest(long started) &#123;</span><br><span class="line">    int id &#x3D; nextId.getAndIncrement();</span><br><span class="line"></span><br><span class="line">    Request request &#x3D; data.build();</span><br><span class="line">    request.id &#x3D; id;</span><br><span class="line">    request.started &#x3D; started;</span><br><span class="line"></span><br><span class="line">    boolean loggingEnabled &#x3D; picasso.loggingEnabled;</span><br><span class="line">    if (loggingEnabled) &#123;</span><br><span class="line">      log(OWNER_MAIN, VERB_CREATED, request.plainId(), request.toString());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Request transformed &#x3D; picasso.transformRequest(request);</span><br><span class="line">    if (transformed !&#x3D; request) &#123;</span><br><span class="line">      &#x2F;&#x2F; If the request was changed, copy over the id and timestamp from the original.</span><br><span class="line">      transformed.id &#x3D; id;</span><br><span class="line">      transformed.started &#x3D; started;</span><br><span class="line"></span><br><span class="line">      if (loggingEnabled) &#123;</span><br><span class="line">        log(OWNER_MAIN, VERB_CHANGED, transformed.logId(), &quot;into &quot; + transformed);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return transformed;</span><br><span class="line">  &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>RequestCreator</strong>, 在into(ImageView)的时候会进行必要的参数校验，创建Request请求对象，从LruCache缓存中检测是否有已经请求的返回结果，如果有的则直接返回，否则创建ImageViewAction对象后面进行网络请求。<strong>picasso.enqueueAndSubmit(action)</strong> 最终会调到<strong>dispatcher.dispatchSubmit(action);</strong></p>
+<p><strong>Dispatcher.java</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br></pre></td><td class="code"><pre><span class="line">class Dispatcher &#123;</span><br><span class="line">  final Map&lt;String, BitmapHunter&gt; hunterMap;</span><br><span class="line">  final Map&lt;Object, Action&gt; failedActions;</span><br><span class="line">  final Map&lt;Object, Action&gt; pausedActions;</span><br><span class="line"></span><br><span class="line">  private static class DispatcherHandler extends Handler &#123;</span><br><span class="line">    private final Dispatcher dispatcher;</span><br><span class="line"></span><br><span class="line">    DispatcherHandler(Looper looper, Dispatcher dispatcher) &#123;</span><br><span class="line">      super(looper);</span><br><span class="line">      this.dispatcher &#x3D; dispatcher;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override public void handleMessage(final Message msg) &#123;</span><br><span class="line">      switch (msg.what) &#123;</span><br><span class="line">        case REQUEST_SUBMIT: &#123;</span><br><span class="line">          Action action &#x3D; (Action) msg.obj;</span><br><span class="line">          dispatcher.performSubmit(action);</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        case REQUEST_CANCEL: &#123;</span><br><span class="line">          Action action &#x3D; (Action) msg.obj;</span><br><span class="line">          dispatcher.performCancel(action);</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        case TAG_PAUSE: &#123;</span><br><span class="line">          Object tag &#x3D; msg.obj;</span><br><span class="line">          dispatcher.performPauseTag(tag);</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        case TAG_RESUME: &#123;</span><br><span class="line">          Object tag &#x3D; msg.obj;</span><br><span class="line">          dispatcher.performResumeTag(tag);</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F; 网络请求成功，会回调到此处</span><br><span class="line">        case HUNTER_COMPLETE: &#123;</span><br><span class="line">          BitmapHunter hunter &#x3D; (BitmapHunter) msg.obj;</span><br><span class="line">          dispatcher.performComplete(hunter);</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        case HUNTER_RETRY: &#123;</span><br><span class="line">          BitmapHunter hunter &#x3D; (BitmapHunter) msg.obj;</span><br><span class="line">          dispatcher.performRetry(hunter);</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        case HUNTER_DECODE_FAILED: &#123;</span><br><span class="line">          BitmapHunter hunter &#x3D; (BitmapHunter) msg.obj;</span><br><span class="line">          dispatcher.performError(hunter, false);</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        case HUNTER_DELAY_NEXT_BATCH: &#123;</span><br><span class="line">          dispatcher.performBatchComplete();</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        case NETWORK_STATE_CHANGE: &#123;</span><br><span class="line">          NetworkInfo info &#x3D; (NetworkInfo) msg.obj;</span><br><span class="line">          dispatcher.performNetworkStateChange(info);</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        case AIRPLANE_MODE_CHANGE: &#123;</span><br><span class="line">          dispatcher.performAirplaneModeChange(msg.arg1 &#x3D;&#x3D; AIRPLANE_MODE_ON);</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        default:</span><br><span class="line">          Picasso.HANDLER.post(new Runnable() &#123;</span><br><span class="line">            @Override public void run() &#123;</span><br><span class="line">              throw new AssertionError(&quot;Unknown handler message received: &quot; + msg.what);</span><br><span class="line">            &#125;</span><br><span class="line">          &#125;);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  &#x2F;&#x2F; 通过handler发送REQUEST_SUBMIT消息，最终会走到performSubmit(action)</span><br><span class="line">  void dispatchSubmit(Action action) &#123;</span><br><span class="line">    handler.sendMessage(handler.obtainMessage(REQUEST_SUBMIT, action));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  void performSubmit(Action action) &#123;</span><br><span class="line">    performSubmit(action, true);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  &#x2F;**</span><br><span class="line">   * performSubmit执行过程：</span><br><span class="line">   * 1. 检查action 是否在pausedTags集合中，如果存在则直接替换覆盖</span><br><span class="line">   * 2. 如果action 存在hunterMap中， 则直接attach</span><br><span class="line">   * 3. 创建BitmapHunter，添加到PicassoExecutorService线程池</span><br><span class="line">   *&#x2F;</span><br><span class="line">  void performSubmit(Action action, boolean dismissFailed) &#123;</span><br><span class="line">    if (pausedTags.contains(action.getTag())) &#123;</span><br><span class="line">      pausedActions.put(action.getTarget(), action);</span><br><span class="line">      if (action.getPicasso().loggingEnabled) &#123;</span><br><span class="line">        log(OWNER_DISPATCHER, VERB_PAUSED, action.request.logId(),</span><br><span class="line">            &quot;because tag &#39;&quot; + action.getTag() + &quot;&#39; is paused&quot;);</span><br><span class="line">      &#125;</span><br><span class="line">      return;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    BitmapHunter hunter &#x3D; hunterMap.get(action.getKey());</span><br><span class="line">    if (hunter !&#x3D; null) &#123;</span><br><span class="line">      hunter.attach(action);</span><br><span class="line">      return;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (service.isShutdown()) &#123;</span><br><span class="line">      if (action.getPicasso().loggingEnabled) &#123;</span><br><span class="line">        log(OWNER_DISPATCHER, VERB_IGNORED, action.request.logId(), &quot;because shut down&quot;);</span><br><span class="line">      &#125;</span><br><span class="line">      return;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    hunter &#x3D; forRequest(action.getPicasso(), this, cache, stats, action);</span><br><span class="line">    hunter.future &#x3D; service.submit(hunter);</span><br><span class="line">    hunterMap.put(action.getKey(), hunter);</span><br><span class="line">    if (dismissFailed) &#123;</span><br><span class="line">      failedActions.remove(action.getTarget());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (action.getPicasso().loggingEnabled) &#123;</span><br><span class="line">      log(OWNER_DISPATCHER, VERB_ENQUEUED, action.request.logId());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  &#x2F;**</span><br><span class="line">   * 创建BitmapHunter对象</span><br><span class="line">   * 1. picasso.getRequestHandlers() 类似于拦截器作用，依次从ResourceRequestHandler、</span><br><span class="line">   * ContactsPhotoRequestHandler、MediaStoreRequestHandler、ContentStreamRequestHandler、</span><br><span class="line">   * AssetRequestHandler、FileRequestHandler、NetworkRequestHandler 调用canHandleRequest方法，判断交给那个Handler处理， 一般的网络图片就是NetworkRequestHandler</span><br><span class="line">   * </span><br><span class="line">   *&#x2F;</span><br><span class="line">  static BitmapHunter forRequest(Picasso picasso, Dispatcher dispatcher, Cache cache, Stats stats,</span><br><span class="line">      Action action) &#123;</span><br><span class="line">    Request request &#x3D; action.getRequest();</span><br><span class="line">    List&lt;RequestHandler&gt; requestHandlers &#x3D; picasso.getRequestHandlers();</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; Index-based loop to avoid allocating an iterator.</span><br><span class="line">    &#x2F;&#x2F;noinspection ForLoopReplaceableByForEach</span><br><span class="line">    for (int i &#x3D; 0, count &#x3D; requestHandlers.size(); i &lt; count; i++) &#123;</span><br><span class="line">      RequestHandler requestHandler &#x3D; requestHandlers.get(i);</span><br><span class="line">      if (requestHandler.canHandleRequest(request)) &#123;</span><br><span class="line">        return new BitmapHunter(picasso, dispatcher, cache, stats, action, requestHandler);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return new BitmapHunter(picasso, dispatcher, cache, stats, action, ERRORING_HANDLER);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  &#x2F;&#x2F; 网络请求成功会回调到performComplete</span><br><span class="line">  void performComplete(BitmapHunter hunter) &#123;</span><br><span class="line">    &#x2F;&#x2F; 添加到Cache缓存</span><br><span class="line">    if (shouldWriteToMemoryCache(hunter.getMemoryPolicy())) &#123;</span><br><span class="line">      cache.set(hunter.getKey(), hunter.getResult());</span><br><span class="line">    &#125;</span><br><span class="line">    hunterMap.remove(hunter.getKey());</span><br><span class="line">    batch(hunter);</span><br><span class="line">    if (hunter.getPicasso().loggingEnabled) &#123;</span><br><span class="line">      log(OWNER_DISPATCHER, VERB_BATCHED, getLogIdsForHunter(hunter), &quot;for completion&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  &#x2F;&#x2F; 网络返回结果，将hunter添加到batch之中，延迟200ms发送HUNTER_DELAY_NEXT_BATCH</span><br><span class="line">  private void batch(BitmapHunter hunter) &#123;</span><br><span class="line">    if (hunter.isCancelled()) &#123;</span><br><span class="line">      return;</span><br><span class="line">    &#125;</span><br><span class="line">    if (hunter.result !&#x3D; null) &#123;</span><br><span class="line">      hunter.result.prepareToDraw();</span><br><span class="line">    &#125;</span><br><span class="line">    batch.add(hunter);</span><br><span class="line">    if (!handler.hasMessages(HUNTER_DELAY_NEXT_BATCH)) &#123;</span><br><span class="line">      handler.sendEmptyMessageDelayed(HUNTER_DELAY_NEXT_BATCH, BATCH_DELAY);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  &#x2F;&#x2F; 通知主线程更新UI界面</span><br><span class="line">  void performBatchComplete() &#123;</span><br><span class="line">    List&lt;BitmapHunter&gt; copy &#x3D; new ArrayList&lt;&gt;(batch);</span><br><span class="line">    batch.clear();</span><br><span class="line">    mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(HUNTER_BATCH_COMPLETE, copy));</span><br><span class="line">    logBatch(copy);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>Dispatcher</strong>分发器的作用就是：调度网络请求，回调返回结果</p>
+<p><strong>BitmapHunter.java</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line">class BitmapHunter implements Runnable &#123;</span><br><span class="line"></span><br><span class="line">  @Override public void run() &#123;</span><br><span class="line">      ...</span><br><span class="line">      result &#x3D; hunt();</span><br><span class="line">      if (result &#x3D;&#x3D; null) &#123;</span><br><span class="line">        dispatcher.dispatchFailed(this);</span><br><span class="line">      &#125; else &#123;</span><br><span class="line">        &#x2F;&#x2F; 网络请求成功，回调到Dispatcher</span><br><span class="line">        dispatcher.dispatchComplete(this);</span><br><span class="line">      &#125;</span><br><span class="line">      ...</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  Bitmap hunt() throws IOException &#123;</span><br><span class="line">    Bitmap bitmap &#x3D; null;</span><br><span class="line"></span><br><span class="line">    if (shouldReadFromMemoryCache(memoryPolicy)) &#123;</span><br><span class="line">      bitmap &#x3D; cache.get(key);</span><br><span class="line">      if (bitmap !&#x3D; null) &#123;</span><br><span class="line">        stats.dispatchCacheHit();</span><br><span class="line">        loadedFrom &#x3D; MEMORY;</span><br><span class="line">        if (picasso.loggingEnabled) &#123;</span><br><span class="line">          log(OWNER_HUNTER, VERB_DECODED, data.logId(), &quot;from cache&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">        return bitmap;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    networkPolicy &#x3D; retryCount &#x3D;&#x3D; 0 ? NetworkPolicy.OFFLINE.index : networkPolicy;</span><br><span class="line">    RequestHandler.Result result &#x3D; requestHandler.load(data, networkPolicy);</span><br><span class="line">    if (result !&#x3D; null) &#123;</span><br><span class="line">      loadedFrom &#x3D; result.getLoadedFrom();</span><br><span class="line">      exifOrientation &#x3D; result.getExifOrientation();</span><br><span class="line">      bitmap &#x3D; result.getBitmap();</span><br><span class="line"></span><br><span class="line">      &#x2F;&#x2F; If there was no Bitmap then we need to decode it from the stream.</span><br><span class="line">      if (bitmap &#x3D;&#x3D; null) &#123;</span><br><span class="line">        Source source &#x3D; result.getSource();</span><br><span class="line">        try &#123;</span><br><span class="line">          bitmap &#x3D; decodeStream(source, data);</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">          try &#123;</span><br><span class="line">            &#x2F;&#x2F;noinspection ConstantConditions If bitmap is null then source is guranteed non-null.</span><br><span class="line">            source.close();</span><br><span class="line">          &#125; catch (IOException ignored) &#123;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (bitmap !&#x3D; null) &#123;</span><br><span class="line">      if (picasso.loggingEnabled) &#123;</span><br><span class="line">        log(OWNER_HUNTER, VERB_DECODED, data.logId());</span><br><span class="line">      &#125;</span><br><span class="line">      stats.dispatchBitmapDecoded(bitmap);</span><br><span class="line">      if (data.needsTransformation() || exifOrientation !&#x3D; 0) &#123;</span><br><span class="line">        synchronized (DECODE_LOCK) &#123;</span><br><span class="line">          if (data.needsMatrixTransform() || exifOrientation !&#x3D; 0) &#123;</span><br><span class="line">            bitmap &#x3D; transformResult(data, bitmap, exifOrientation);</span><br><span class="line">            if (picasso.loggingEnabled) &#123;</span><br><span class="line">              log(OWNER_HUNTER, VERB_TRANSFORMED, data.logId());</span><br><span class="line">            &#125;</span><br><span class="line">          &#125;</span><br><span class="line">          if (data.hasCustomTransformations()) &#123;</span><br><span class="line">            bitmap &#x3D; applyCustomTransformations(data.transformations, bitmap);</span><br><span class="line">            if (picasso.loggingEnabled) &#123;</span><br><span class="line">              log(OWNER_HUNTER, VERB_TRANSFORMED, data.logId(), &quot;from custom transformations&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        if (bitmap !&#x3D; null) &#123;</span><br><span class="line">          stats.dispatchBitmapTransformed(bitmap);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return bitmap;</span><br><span class="line">  &#125;  </span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>BitmapHunter</strong> 的run方法就是利用OKHttpClient进行网络请求</p>
+<p>NetworkRequestHandler.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">class NetworkRequestHandler extends RequestHandler &#123;</span><br><span class="line"></span><br><span class="line">  @Override public Result load(Request request, int networkPolicy) throws IOException &#123;</span><br><span class="line">    okhttp3.Request downloaderRequest &#x3D; createRequest(request, networkPolicy);</span><br><span class="line">    Response response &#x3D; downloader.load(downloaderRequest);</span><br><span class="line">    ResponseBody body &#x3D; response.body();</span><br><span class="line"></span><br><span class="line">    if (!response.isSuccessful()) &#123;</span><br><span class="line">      body.close();</span><br><span class="line">      throw new ResponseException(response.code(), request.networkPolicy);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; Cache response is only null when the response comes fully from the network. Both completely</span><br><span class="line">    &#x2F;&#x2F; cached and conditionally cached responses will have a non-null cache response.</span><br><span class="line">    Picasso.LoadedFrom loadedFrom &#x3D; response.cacheResponse() &#x3D;&#x3D; null ? NETWORK : DISK;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; Sometimes response content length is zero when requests are being replayed. Haven&#39;t found</span><br><span class="line">    &#x2F;&#x2F; root cause to this but retrying the request seems safe to do so.</span><br><span class="line">    if (loadedFrom &#x3D;&#x3D; DISK &amp;&amp; body.contentLength() &#x3D;&#x3D; 0) &#123;</span><br><span class="line">      body.close();</span><br><span class="line">      throw new ContentLengthException(&quot;Received response with 0 content-length header.&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    if (loadedFrom &#x3D;&#x3D; NETWORK &amp;&amp; body.contentLength() &gt; 0) &#123;</span><br><span class="line">      stats.dispatchDownloadFinished(body.contentLength());</span><br><span class="line">    &#125;</span><br><span class="line">    return new Result(body.source(), loadedFrom);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>OkHttp3Downloader.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public final class OkHttp3Downloader implements Downloader &#123;</span><br><span class="line">  @VisibleForTesting final Call.Factory client;</span><br><span class="line"></span><br><span class="line">  &#x2F;&#x2F; 创建磁盘缓存目录</span><br><span class="line">  public OkHttp3Downloader(final Context context) &#123;</span><br><span class="line">    this(Utils.createDefaultCacheDir(context));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  @NonNull @Override public Response load(@NonNull Request request) throws IOException &#123;</span><br><span class="line">    return client.newCall(request).execute();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>Picasso 缓存策略： 首先从内存缓存 -&gt; OkHttp磁盘缓存 -&gt; 网络请求</strong></p>
+<h5 id="了解更多"><a href="#了解更多" class="headerlink" title="了解更多"></a>了解更多</h5><p><a href="https://www.jianshu.com/p/a5a79d861787" target="_blank" rel="noopener">1. picasso详解及其源码简析</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E5%BC%80%E6%BA%90%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># Android开源框架源码分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/31/OkHttp%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/" rel="prev" title="OkHttp 原理剖析">
+      <i class="fa fa-chevron-left"></i> OkHttp 原理剖析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/31/Glide%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" rel="next" title="Glide 源码剖析">
+      Glide 源码剖析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#Picasso简介"><span class="nav-number">1.</span> <span class="nav-text">Picasso简介</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Picasso-源码剖析"><span class="nav-number">2.</span> <span class="nav-text">Picasso 源码剖析</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#get、load、with-函数"><span class="nav-number">2.1.</span> <span class="nav-text">get、load、with 函数</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#了解更多"><span class="nav-number">3.</span> <span class="nav-text">了解更多</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

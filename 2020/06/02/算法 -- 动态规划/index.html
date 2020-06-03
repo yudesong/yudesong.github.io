@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="0. 青蛙跳台阶问题描述：一只青蛙一次可以跳上1级台阶，也可以跳上2级。求该青蛙跳上一个n级的台阶总共有多少种跳法 1234567891011private static int fun(int n) &amp;#123;    if (n &#x3D;&#x3D; 0) return 0;    if (n &#x3D;&#x3D; 1) return 1;    if (n &#x3D;&#x3D;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="算法 -- 动态规划">
+<meta property="og:url" content="http://yoursite.com/2020/06/02/%E7%AE%97%E6%B3%95%20--%20%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="0. 青蛙跳台阶问题描述：一只青蛙一次可以跳上1级台阶，也可以跳上2级。求该青蛙跳上一个n级的台阶总共有多少种跳法 1234567891011private static int fun(int n) &amp;#123;    if (n &#x3D;&#x3D; 0) return 0;    if (n &#x3D;&#x3D; 1) return 1;    if (n &#x3D;&#x3D;">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-06-02T11:19:17.490Z">
+<meta property="article:modified_time" content="2020-06-03T01:09:26.506Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="算法">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/06/02/%E7%AE%97%E6%B3%95%20--%20%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>算法 -- 动态规划 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/02/%E7%AE%97%E6%B3%95%20--%20%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          算法 -- 动态规划
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-02 19:19:17" itemprop="dateCreated datePublished" datetime="2020-06-02T19:19:17+08:00">2020-06-02</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="0-青蛙跳台阶"><a href="#0-青蛙跳台阶" class="headerlink" title="0. 青蛙跳台阶"></a>0. 青蛙跳台阶</h4><p>问题描述：一只青蛙一次可以跳上1级台阶，也可以跳上2级。求该青蛙跳上一个n级的台阶总共有多少种跳法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">private static int fun(int n) &#123;</span><br><span class="line">    if (n &#x3D;&#x3D; 0) return 0;</span><br><span class="line">    if (n &#x3D;&#x3D; 1) return 1;</span><br><span class="line">    if (n &#x3D;&#x3D; 2) return 2;</span><br><span class="line">    int[] dp &#x3D; new int[n + 1];</span><br><span class="line">    dp[1] &#x3D; 1; dp[2] &#x3D; 2;</span><br><span class="line">    for (int i &#x3D; 3; i &lt;&#x3D; n; i++) &#123;</span><br><span class="line">        dp[i] &#x3D; dp[i - 1] + dp[i - 2];</span><br><span class="line">    &#125;</span><br><span class="line">    return dp[n];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="1-最大连续子序列和"><a href="#1-最大连续子序列和" class="headerlink" title="1. 最大连续子序列和"></a>1. 最大连续子序列和</h4><p>给定k个整数的序列{N1,N2,…,Nk }，其任意连续子序列可表示为{ Ni, Ni+1, …, Nj }，其中 1 &lt;= i &lt;= j &lt;= k。最大连续子序列是所有连续子序中元素和最大的一个，例如给定序列{ -2, 11, -4, 13, -5, -2 }，其最大连续子序列为{11,-4,13}，最大连续子序列和即为20。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 状态转移方程 dp[i] &#x3D; max&#123;dp[i-1] + A[i], A[i]&#125;</span><br><span class="line">private static int MaxSubSequence2(int[] A) &#123;</span><br><span class="line">    int[] dp &#x3D; new int[A.length];</span><br><span class="line">    for (int i &#x3D; 0; i &lt; A.length; i++) &#123;</span><br><span class="line">        dp[i] &#x3D; 0;</span><br><span class="line">        if (i &#x3D;&#x3D; 0) continue;</span><br><span class="line">        if (A[i] &gt; dp[i - 1] + A[i]) &#123;</span><br><span class="line">            dp[i] &#x3D; A[i];</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            dp[i] &#x3D; dp[i - 1] + A[i];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    int max &#x3D; dp[0];</span><br><span class="line">    for (int i &#x3D; 0; i &lt; dp.length; i++) &#123;</span><br><span class="line">        if (max &lt; dp[i]) max &#x3D; dp[i];</span><br><span class="line">    &#125;</span><br><span class="line">    return max;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-最长递增子序列（LIS）"><a href="#2-最长递增子序列（LIS）" class="headerlink" title="2. 最长递增子序列（LIS）"></a>2. 最长递增子序列（LIS）</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * 【最长递增子序列（LIS）】</span><br><span class="line"> * 1.若arr[i]&gt;arr[j],说明第i个元素可以接在第j个元素后面作为新的递增序列的结尾,即dp[i] &#x3D; max(dp[j])+1 &#x3D; max(dp[j] + 1)</span><br><span class="line"> * 2.若arr[i]&lt;&#x3D;arr[j],说明第i个元素比前面所有的数都小,此时以i元素作为结尾的递增序列长度为1,即dp[i] &#x3D; 1</span><br><span class="line"> *&#x2F;</span><br><span class="line">private static int LIS(int[] A) &#123;</span><br><span class="line">    int[] dp &#x3D; new int[A.length];</span><br><span class="line">    for (int i &#x3D; 0; i &lt; A.length; i++) &#123;</span><br><span class="line">        dp[i] &#x3D; 1;</span><br><span class="line">        for (int j &#x3D; 0; j &lt; i; j++) &#123;</span><br><span class="line">            if (A[i] &gt; A[j] &amp;&amp; dp[i] &lt; (dp[j] + 1)) &#123;</span><br><span class="line">                dp[i] &#x3D; dp[j] + 1;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    int temp &#x3D; dp[0];</span><br><span class="line">    for (int m &#x3D; 0; m &lt; dp.length; m++) &#123;</span><br><span class="line">        if (temp &lt; dp[m]) &#123;</span><br><span class="line">            temp &#x3D; dp[m];</span><br><span class="line">            &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return temp;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-最长公共子序列（LCS）"><a href="#3-最长公共子序列（LCS）" class="headerlink" title="3. 最长公共子序列（LCS）"></a>3. 最长公共子序列（LCS）</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * 【最长公共子序列（LCS）】</span><br><span class="line"> * 设序列X&#x3D;&#123;x1,x2,…,xm&#125;和Y&#x3D;&#123;y1,y2,…,yn&#125;的最长公共子序列为Z&#x3D;&#123;z1,z2,…,zk&#125;</span><br><span class="line"> *&#x2F;</span><br><span class="line">private static int LCS(int[] X, int[] Y) &#123;</span><br><span class="line">	int m &#x3D; X.length;</span><br><span class="line">	int n &#x3D; Y.length;</span><br><span class="line">	int[][] L &#x3D; new int[m][n];</span><br><span class="line"></span><br><span class="line">	for (int i &#x3D; 0; i &lt; m; i++)</span><br><span class="line">	for (int j &#x3D; 0; j &lt; n; j++) &#123;</span><br><span class="line">		if (X[i] &#x3D;&#x3D; Y[j]) &#123;</span><br><span class="line">			if (i &gt; 0 &amp;&amp; j &gt; 0) &#123;</span><br><span class="line">			L[i][j] &#x3D; L[i - 1][j - 1] + 1;</span><br><span class="line">		&#125; else &#123;</span><br><span class="line">			L[i][j] &#x3D; 1;</span><br><span class="line">		&#125;</span><br><span class="line">		&#125; else if (i &gt; 0 &amp;&amp; j &gt; 0) &#123;</span><br><span class="line">			if (L[i - 1][j] &gt; L[i][j - 1]) &#123;</span><br><span class="line">			L[i][j] &#x3D; L[i - 1][j];</span><br><span class="line">		&#125; else &#123;</span><br><span class="line">			L[i][j] &#x3D; L[i][j - 1];</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	return L[m - 1][n - 1];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-编辑距离"><a href="#4-编辑距离" class="headerlink" title="4. 编辑距离"></a>4. 编辑距离</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * 编辑距离</span><br><span class="line"> * 1、维护一个dp数组，其中dp[i][j]表示s1[0]---s1[i]和s2[0]--s2[j]相同需要进行的最少步骤；</span><br><span class="line"> * 2、边界条件初始化，dp[i][0]&#x3D;i，相当于将s1挨个变成空所要进行的步数，对于dp[0][j]&#x3D;j同理；</span><br><span class="line"> * 3、状态转移方程，我们要得到dp[i][j]的值，假设s1[i-1]和s2[j-1]之前的都已经相等了，那么如果s1[i]&#x3D;&#x3D;s2[j]，显然不需要进行操作，dp[i][j]&#x3D;&#x3D;dp[i-1][j-1]；如果s1[i]!&#x3D;s2[j]，那么到达dp[i][j]的就有三条路，分别从dp[i-1][j-1]、dp[i-1][j]、dp[i][j-1]，对应的含义分别是修改字符、删除字符和插入字符，在三种操作下，经历的步数都要+1，所以我们只要找三者的最小值然后+1就可以了。</span><br><span class="line">*&#x2F;</span><br><span class="line">private static int editDistance(String s1, String s2) &#123;</span><br><span class="line">    int s1_len &#x3D; s1.length();</span><br><span class="line">    int s2_len &#x3D; s2.length();</span><br><span class="line">    int[][] dp &#x3D; new int[s1_len][s2_len];</span><br><span class="line"></span><br><span class="line">    for (int i &#x3D; 0; i &lt; s1_len; i++) &#123;</span><br><span class="line">        dp[i][0] &#x3D; i;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    for (int j &#x3D; 0; j &lt; s2_len; j++) &#123;</span><br><span class="line">        dp[0][j] &#x3D; j;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    for (int i &#x3D; 1; i &lt; s1_len; i++)</span><br><span class="line">        for (int j &#x3D; 1; j &lt; s2_len; j++) &#123;</span><br><span class="line">            if (s1.charAt(i) &#x3D;&#x3D; s2.charAt(j)) &#123;</span><br><span class="line">                dp[i][j] &#x3D; dp[i - 1][j - 1];</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                dp[i][j] &#x3D; Math.min(dp[i][j], dp[i - 1][j - 1] + 1);</span><br><span class="line">                dp[i][j] &#x3D; Math.min(dp[i][j], dp[i][j - 1] + 1);</span><br><span class="line">                dp[i][j] &#x3D; Math.min(dp[i][j], dp[i - 1][j] + 1);</span><br><span class="line">            &#125;</span><br><span class="line">    	&#125;</span><br><span class="line"></span><br><span class="line">    return dp[s1_len - 1][s2_len - 1];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="5-最长回文子串"><a href="#5-最长回文子串" class="headerlink" title="5. 最长回文子串"></a>5. 最长回文子串</h4><p>给定一个字符串 s，找到 s 中最长的回文子串。你可以假设 s 的最大长度为1000。</p>
+<p><strong>1. 暴力破解算法</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">public String longestPalindrome(String s) &#123;</span><br><span class="line">    if (s.isEmpty()) &#123;</span><br><span class="line">        return s;</span><br><span class="line">    &#125;</span><br><span class="line">    String res &#x3D; s.substring(0, 1);</span><br><span class="line">    for (int i &#x3D; 0; i &lt; s.length(); i++) &#123;</span><br><span class="line">        for (int j &#x3D; i + 1; j &lt;&#x3D; s.length(); j++) &#123;</span><br><span class="line">            String k &#x3D; s.substring(i, j);</span><br><span class="line">            String rk &#x3D; new StringBuffer(k).reverse().toString();</span><br><span class="line">            if (k.equals(rk) &amp;&amp; k.length() &gt; res.length()) &#123;</span><br><span class="line">                res &#x3D; k;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return res;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>2. 动态规划</strong></p>
+<p>创建一个二维数组，boolean[][] dp, 其中dp[i][j]表示字符串第i到j是否为回文。</p>
+<ol>
+<li><a href="https://mp.weixin.qq.com/s?__biz=Mzg2NzA4MTkxNQ==&mid=2247486294&idx=1&sn=dd8968700d19ea8b1db29065dc2f7b01&chksm=ce404082f937c994444393163a2bf53f32e18f9a752aad610c3d4988f31c328cae203a84809b&scene=21#wechat_redirect" target="_blank" rel="noopener">告别动态规划，连刷40道动规算法题，我总结了动规的套路</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"># 算法</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%20--%20%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/" rel="prev" title="数据结构 -- 布隆过滤器">
+      <i class="fa fa-chevron-left"></i> 数据结构 -- 布隆过滤器
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/03/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%B9%9D%EF%BC%89%EF%BC%9A%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%9F%BA%E7%A1%80%E6%A6%82%E8%BF%B0/" rel="next" title="啃碎并发（九）：内存模型之基础概述">
+      啃碎并发（九）：内存模型之基础概述 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#0-青蛙跳台阶"><span class="nav-number">1.</span> <span class="nav-text">0. 青蛙跳台阶</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-最大连续子序列和"><span class="nav-number">2.</span> <span class="nav-text">1. 最大连续子序列和</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-最长递增子序列（LIS）"><span class="nav-number">3.</span> <span class="nav-text">2. 最长递增子序列（LIS）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-最长公共子序列（LCS）"><span class="nav-number">4.</span> <span class="nav-text">3. 最长公共子序列（LCS）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-编辑距离"><span class="nav-number">5.</span> <span class="nav-text">4. 编辑距离</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-最长回文子串"><span class="nav-number">6.</span> <span class="nav-text">5. 最长回文子串</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

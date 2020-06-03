@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="概述本文基于Volley 1.1.1版本的源码。 Volley是Google官方出的一套小而巧的异步请求库，该框架封装的扩展性很强，支持HttpClient、HttpUrlConnection，甚至支持OkHttp。Volley不适用于下载大量内容的操作或流式传输操作，因为在解析过程中，Volley会将所有响应存储在内存中，因此Volley不适合上传和下载大文件。 添加依赖： 1implement">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Volley源码解析">
+<meta property="og:url" content="http://yoursite.com/2020/05/31/Volley%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="概述本文基于Volley 1.1.1版本的源码。 Volley是Google官方出的一套小而巧的异步请求库，该框架封装的扩展性很强，支持HttpClient、HttpUrlConnection，甚至支持OkHttp。Volley不适用于下载大量内容的操作或流式传输操作，因为在解析过程中，Volley会将所有响应存储在内存中，因此Volley不适合上传和下载大文件。 添加依赖： 1implement">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-31T03:26:01.913Z">
+<meta property="article:modified_time" content="2020-05-31T03:35:52.723Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android开源框架源码分析">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/31/Volley%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Volley源码解析 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/31/Volley%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Volley源码解析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-05-31 11:26:01 / 修改时间：11:35:52" itemprop="dateCreated datePublished" datetime="2020-05-31T11:26:01+08:00">2020-05-31</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h5 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h5><p>本文基于Volley 1.1.1版本的源码。</p>
+<p>Volley是Google官方出的一套小而巧的异步请求库，该框架封装的扩展性很强，支持HttpClient、HttpUrlConnection，甚至支持OkHttp。Volley不适用于下载大量内容的操作或流式传输操作，因为在解析过程中，Volley会将所有响应存储在内存中，因此Volley不适合上传和下载大文件。</p>
+<p>添加依赖：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">implementation &#39;com.android.volley:volley:1.1.1&#39;</span><br></pre></td></tr></table></figure>
+<p>使用：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">RequestQueue queue &#x3D; Volley.newRequestQueue(context);</span><br><span class="line">String url &#x3D;&quot;http:&#x2F;&#x2F;www.google.com&quot;;</span><br><span class="line"></span><br><span class="line">StringRequest stringRequest &#x3D; new StringRequest(Request.Method.GET, url,</span><br><span class="line">            new Response.Listener&lt;String&gt;() &#123;</span><br><span class="line">    </span><br><span class="line">    public void onResponse(String response) &#123;</span><br><span class="line">        &#x2F;&#x2F; in UI Thread</span><br><span class="line">    &#125;</span><br><span class="line">&#125;, new Response.ErrorListener() &#123;</span><br><span class="line">    </span><br><span class="line">    public void onErrorResponse(VolleyError error) &#123;</span><br><span class="line">        &#x2F;&#x2F; in UI Thread</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line">stringRequest.setTag(TAG);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; Add the request to the RequestQueue.</span><br><span class="line">queue.add(stringRequest);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; onStop</span><br><span class="line">queue.cancelAll(TAG);</span><br></pre></td></tr></table></figure>
+
+<h5 id="创建请求队列"><a href="#创建请求队列" class="headerlink" title="创建请求队列"></a>创建请求队列</h5><p>Volley类中有多个重载的newRequestQueue静态方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">public class Volley &#123;</span><br><span class="line">    private static final String DEFAULT_CACHE_DIR &#x3D; &quot;volley&quot;;</span><br><span class="line"></span><br><span class="line">    public static RequestQueue newRequestQueue(Context context) &#123;</span><br><span class="line">        return newRequestQueue(context, (BaseHttpStack) null);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestQueue newRequestQueue(Context context, BaseHttpStack stack) &#123;</span><br><span class="line">        BasicNetwork network;</span><br><span class="line">        if (stack &#x3D;&#x3D; null) &#123;</span><br><span class="line">            if (Build.VERSION.SDK_INT &gt;&#x3D; 9) &#123;</span><br><span class="line">                network &#x3D; new BasicNetwork(new HurlStack());</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                &#x2F;&#x2F; ...</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            network &#x3D; new BasicNetwork(stack);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        return newRequestQueue(context, network);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static RequestQueue newRequestQueue(Context context, Network network) &#123;</span><br><span class="line">        final Context appContext &#x3D; context.getApplicationContext();</span><br><span class="line">        DiskBasedCache.FileSupplier cacheSupplier &#x3D;</span><br><span class="line">                new DiskBasedCache.FileSupplier() &#123;</span><br><span class="line">                    private File cacheDir &#x3D; null;</span><br><span class="line"></span><br><span class="line">                    </span><br><span class="line">                    public File get() &#123;</span><br><span class="line">                        if (cacheDir &#x3D;&#x3D; null) &#123;</span><br><span class="line">                            cacheDir &#x3D; new File(appContext.getCacheDir(), DEFAULT_CACHE_DIR);</span><br><span class="line">                        &#125;</span><br><span class="line">                        return cacheDir;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;;</span><br><span class="line">        RequestQueue queue &#x3D; new RequestQueue(new DiskBasedCache(cacheSupplier), network);</span><br><span class="line">        queue.start();</span><br><span class="line">        return queue;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>RequestQueue类构造方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">public class RequestQueue &#123;</span><br><span class="line">    private static final int DEFAULT_NETWORK_THREAD_POOL_SIZE &#x3D; 4;</span><br><span class="line">    private final Cache mCache;</span><br><span class="line">    private final Network mNetwork;</span><br><span class="line">    private final ResponseDelivery mDelivery;</span><br><span class="line">    private final NetworkDispatcher[] mDispatchers;</span><br><span class="line">    private CacheDispatcher mCacheDispatcher;</span><br><span class="line"></span><br><span class="line">    public RequestQueue(</span><br><span class="line">            Cache cache, Network network, int threadPoolSize, ResponseDelivery delivery) &#123;</span><br><span class="line">        mCache &#x3D; cache;</span><br><span class="line">        mNetwork &#x3D; network;</span><br><span class="line">        mDispatchers &#x3D; new NetworkDispatcher[threadPoolSize];</span><br><span class="line">        mDelivery &#x3D; delivery;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public RequestQueue(Cache cache, Network network, int threadPoolSize) &#123;</span><br><span class="line">        this(cache, network, threadPoolSize, new ExecutorDelivery(new Handler(Looper.getMainLooper())));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public RequestQueue(Cache cache, Network network) &#123;</span><br><span class="line">        this(cache, network, DEFAULT_NETWORK_THREAD_POOL_SIZE);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>RequestQueue#start()方法如下，可以看出就是启动了一个Cache Dispatcher和指定数目的Network Dispatcher：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;** Starts the dispatchers in this queue. *&#x2F;</span><br><span class="line">public void start() &#123;</span><br><span class="line">    &#x2F;&#x2F; Make sure any currently running dispatchers are stopped.</span><br><span class="line">    stop();</span><br><span class="line">    &#x2F;&#x2F; Create the cache dispatcher and start it.</span><br><span class="line">    mCacheDispatcher &#x3D; new CacheDispatcher(mCacheQueue, mNetworkQueue, mCache, mDelivery);</span><br><span class="line">    mCacheDispatcher.start();</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; Create network dispatchers (and corresponding threads) up to the pool size.</span><br><span class="line">    for (int i &#x3D; 0; i &lt; mDispatchers.length; i++) &#123;</span><br><span class="line">        NetworkDispatcher networkDispatcher &#x3D; new NetworkDispatcher(mNetworkQueue, mNetwork, mCache, mDelivery);</span><br><span class="line">        mDispatchers[i] &#x3D; networkDispatcher;</span><br><span class="line">        networkDispatcher.start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;** Stops the cache and network dispatchers. *&#x2F;</span><br><span class="line">public void stop() &#123;</span><br><span class="line">    if (mCacheDispatcher !&#x3D; null) &#123;</span><br><span class="line">        mCacheDispatcher.quit();</span><br><span class="line">    &#125;</span><br><span class="line">    for (final NetworkDispatcher mDispatcher : mDispatchers) &#123;</span><br><span class="line">        if (mDispatcher !&#x3D; null) &#123;</span><br><span class="line">            mDispatcher.quit();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="RequestQueue事件"><a href="#RequestQueue事件" class="headerlink" title="RequestQueue事件"></a>RequestQueue事件</h5><p>在RequestQueue类中定义了一些事件：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">public  RequestEvent &#123;</span><br><span class="line">    &#x2F;** The request was added to the queue. *&#x2F;</span><br><span class="line">    public static final int REQUEST_QUEUED &#x3D; 0;</span><br><span class="line">    &#x2F;** Cache lookup started for the request. *&#x2F;</span><br><span class="line">    public static final int REQUEST_CACHE_LOOKUP_STARTED &#x3D; 1;</span><br><span class="line">    &#x2F;** Cache lookup finished for the request and cached response is delivered or request is queued for network dispatching. *&#x2F;</span><br><span class="line">    public static final int REQUEST_CACHE_LOOKUP_FINISHED &#x3D; 2;</span><br><span class="line">    &#x2F;** Network dispatch started for the request. *&#x2F;</span><br><span class="line">    public static final int REQUEST_NETWORK_DISPATCH_STARTED &#x3D; 3;</span><br><span class="line">    &#x2F;** The network dispatch finished for the request and response (if any) is delivered. *&#x2F;</span><br><span class="line">    public static final int REQUEST_NETWORK_DISPATCH_FINISHED &#x3D; 4;</span><br><span class="line">    &#x2F;** All the work associated with the request is finished and request is removed from all the queues. *&#x2F;</span><br><span class="line">    public static final int REQUEST_FINISHED &#x3D; 5;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public interface RequestEventListener &#123;</span><br><span class="line">    void onRequestEvent(Request&lt;?&gt; request, @RequestEvent int event);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private final List&lt;RequestEventListener&gt; mEventListeners &#x3D; new ArrayList&lt;&gt;();</span><br><span class="line">可以通过下面几个方法操作这些事件：</span><br><span class="line"></span><br><span class="line">void sendRequestEvent(Request&lt;?&gt; request, @RequestEvent int event) &#123;</span><br><span class="line">    synchronized (mEventListeners) &#123;</span><br><span class="line">        for (RequestEventListener listener : mEventListeners) &#123;</span><br><span class="line">            listener.onRequestEvent(request, event);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public void addRequestEventListener(RequestEventListener listener) &#123;</span><br><span class="line">    synchronized (mEventListeners) &#123;</span><br><span class="line">        mEventListeners.add(listener);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public void removeRequestEventListener(RequestEventListener listener) &#123;</span><br><span class="line">    synchronized (mEventListeners) &#123;</span><br><span class="line">        mEventListeners.remove(listener);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="发送请求"><a href="#发送请求" class="headerlink" title="发送请求"></a>发送请求</h5><p>RequestQueue#add()方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">private final AtomicInteger mSequenceGenerator &#x3D; new AtomicInteger();</span><br><span class="line">private final Set&lt;Request&lt;?&gt;&gt; mCurrentRequests &#x3D; new HashSet&lt;&gt;();</span><br><span class="line">private final PriorityBlockingQueue&lt;Request&lt;?&gt;&gt; mCacheQueue &#x3D; new PriorityBlockingQueue&lt;&gt;();</span><br><span class="line">private final PriorityBlockingQueue&lt;Request&lt;?&gt;&gt; mNetworkQueue &#x3D; new PriorityBlockingQueue&lt;&gt;();</span><br><span class="line"></span><br><span class="line">public &lt;T&gt; Request&lt;T&gt; add(Request&lt;T&gt; request) &#123;</span><br><span class="line">    &#x2F;&#x2F; Tag the request as belonging to this queue and add it to the set of current requests.</span><br><span class="line">    request.setRequestQueue(this);</span><br><span class="line">    synchronized (mCurrentRequests) &#123;</span><br><span class="line">        mCurrentRequests.add(request);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; Process requests in the order they are added.</span><br><span class="line">    request.setSequence(getSequenceNumber());</span><br><span class="line">    request.addMarker(&quot;add-to-queue&quot;);</span><br><span class="line">    sendRequestEvent(request, RequestEvent.REQUEST_QUEUED);</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 如果请求不需要缓存的话，直接交给网络请求队列去执行，默认是需要缓存的</span><br><span class="line">    if (!request.shouldCache()) &#123;</span><br><span class="line">        mNetworkQueue.add(request);</span><br><span class="line">        return request;</span><br><span class="line">    &#125;</span><br><span class="line">    mCacheQueue.add(request);</span><br><span class="line">    return request;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这个方法中把请求交给了缓存队列或者网络队列去处理。</p>
+<h5 id="CacheDispatcher"><a href="#CacheDispatcher" class="headerlink" title="CacheDispatcher"></a>CacheDispatcher</h5><p>CacheDispatcher继承自Thread，在RequestQueue#start()方法中已经将其启动了，因此直接看run方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br></pre></td><td class="code"><pre><span class="line">public class CacheDispatcher extends Thread &#123;</span><br><span class="line">    private final BlockingQueue&lt;Request&lt;?&gt;&gt; mCacheQueue;</span><br><span class="line">    private final BlockingQueue&lt;Request&lt;?&gt;&gt; mNetworkQueue;</span><br><span class="line">    private final Cache mCache;</span><br><span class="line">    private final ResponseDelivery mDelivery;</span><br><span class="line">    private volatile boolean mQuit &#x3D; false;</span><br><span class="line"></span><br><span class="line">    &#x2F;** Manage list of waiting requests and de-duplicate requests with same cache key. *&#x2F;</span><br><span class="line">    private final WaitingRequestManager mWaitingRequestManager;</span><br><span class="line"></span><br><span class="line">    public CacheDispatcher(</span><br><span class="line">            BlockingQueue&lt;Request&lt;?&gt;&gt; cacheQueue,</span><br><span class="line">            BlockingQueue&lt;Request&lt;?&gt;&gt; networkQueue,</span><br><span class="line">            Cache cache,</span><br><span class="line">            ResponseDelivery delivery) &#123;</span><br><span class="line">        mCacheQueue &#x3D; cacheQueue;</span><br><span class="line">        mNetworkQueue &#x3D; networkQueue;</span><br><span class="line">        mCache &#x3D; cache;</span><br><span class="line">        mDelivery &#x3D; delivery;</span><br><span class="line">        mWaitingRequestManager &#x3D; new WaitingRequestManager(this);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void quit() &#123;</span><br><span class="line">        mQuit &#x3D; true;</span><br><span class="line">        interrupt();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public void run() &#123;</span><br><span class="line">        if (DEBUG) VolleyLog.v(&quot;start new dispatcher&quot;);</span><br><span class="line">        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; Make a blocking call to initialize the cache.</span><br><span class="line">        mCache.initialize();</span><br><span class="line"></span><br><span class="line">        while (true) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                processRequest();</span><br><span class="line">            &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                &#x2F;&#x2F; We may have been interrupted because it was time to quit.</span><br><span class="line">                if (mQuit) &#123;</span><br><span class="line">                    Thread.currentThread().interrupt();</span><br><span class="line">                    return;</span><br><span class="line">                &#125;</span><br><span class="line">                VolleyLog.e(&quot;Ignoring spurious interrupt of CacheDispatcher thread; &quot; + &quot;use quit() to terminate it&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private void processRequest() throws InterruptedException &#123;</span><br><span class="line">        &#x2F;&#x2F; 阻塞式队列</span><br><span class="line">        final Request&lt;?&gt; request &#x3D; mCacheQueue.take();</span><br><span class="line">        processRequest(request);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    void processRequest(final Request&lt;?&gt; request) throws InterruptedException &#123;</span><br><span class="line">        request.addMarker(&quot;cache-queue-take&quot;);</span><br><span class="line">        request.sendEvent(RequestQueue.RequestEvent.REQUEST_CACHE_LOOKUP_STARTED);</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            &#x2F;&#x2F; If the request has been canceled, don&#39;t bother dispatching it.</span><br><span class="line">            if (request.isCanceled()) &#123;</span><br><span class="line">                request.finish(&quot;cache-discard-canceled&quot;);</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Attempt to retrieve this item from cache.</span><br><span class="line">            Cache.Entry entry &#x3D; mCache.get(request.getCacheKey());</span><br><span class="line">            if (entry &#x3D;&#x3D; null) &#123;</span><br><span class="line">                request.addMarker(&quot;cache-miss&quot;);</span><br><span class="line">                &#x2F;&#x2F; Cache miss; send off to the network dispatcher.</span><br><span class="line">                if (!mWaitingRequestManager.maybeAddToWaitingRequests(request)) &#123;</span><br><span class="line">                    mNetworkQueue.put(request);</span><br><span class="line">                &#125;</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; If it is completely expired, just send it to the network.</span><br><span class="line">            if (entry.isExpired()) &#123;</span><br><span class="line">                request.addMarker(&quot;cache-hit-expired&quot;);</span><br><span class="line">                request.setCacheEntry(entry);</span><br><span class="line">                if (!mWaitingRequestManager.maybeAddToWaitingRequests(request)) &#123;</span><br><span class="line">                    mNetworkQueue.put(request);</span><br><span class="line">                &#125;</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; We have a cache hit; parse its data for delivery back to the request.</span><br><span class="line">            request.addMarker(&quot;cache-hit&quot;);</span><br><span class="line">            Response&lt;?&gt; response &#x3D; request.parseNetworkResponse(new NetworkResponse(entry.data, entry.responseHeaders));</span><br><span class="line">            request.addMarker(&quot;cache-hit-parsed&quot;);</span><br><span class="line"></span><br><span class="line">            if (!response.isSuccess()) &#123;</span><br><span class="line">                request.addMarker(&quot;cache-parsing-failed&quot;);</span><br><span class="line">                mCache.invalidate(request.getCacheKey(), true);</span><br><span class="line">                request.setCacheEntry(null);</span><br><span class="line">                if (!mWaitingRequestManager.maybeAddToWaitingRequests(request)) &#123;</span><br><span class="line">                    mNetworkQueue.put(request);</span><br><span class="line">                &#125;</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line">            if (!entry.refreshNeeded()) &#123;</span><br><span class="line">                &#x2F;&#x2F; 缓存不需要刷新，直接交给ResponseDelivery去处理</span><br><span class="line">                mDelivery.postResponse(request, response);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                &#x2F;&#x2F; 软过期的缓存命中，可以分发缓存的response，但是我们还需要将请求发送到网络以进行刷新。</span><br><span class="line">                request.addMarker(&quot;cache-hit-refresh-needed&quot;);</span><br><span class="line">                request.setCacheEntry(entry);</span><br><span class="line">                &#x2F;&#x2F; Mark the response as intermediate.</span><br><span class="line">                response.intermediate &#x3D; true;</span><br><span class="line"></span><br><span class="line">                if (!mWaitingRequestManager.maybeAddToWaitingRequests(request)) &#123;</span><br><span class="line">                    &#x2F;&#x2F; 将intermediate响应发回给用户，然后将请求转发到网络。</span><br><span class="line">                    mDelivery.postResponse(</span><br><span class="line">                            request,</span><br><span class="line">                            response,</span><br><span class="line">                            new Runnable() &#123;</span><br><span class="line">                                </span><br><span class="line">                                public void run() &#123;</span><br><span class="line">                                    try &#123;</span><br><span class="line">                                        &#x2F;&#x2F; 如果缓存需要刷新，这个地方还需要再重新请求网络</span><br><span class="line">                                        mNetworkQueue.put(request);</span><br><span class="line">                                    &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                                        &#x2F;&#x2F; Restore the interrupted status</span><br><span class="line">                                        Thread.currentThread().interrupt();</span><br><span class="line">                                    &#125;</span><br><span class="line">                                &#125;</span><br><span class="line">                            &#125;);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    &#x2F;&#x2F; 该请求已添加到等待请求的列表中，以便在第一个请求返回时从第一个请求接收网络响应。</span><br><span class="line">                    mDelivery.postResponse(request, response);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            request.sendEvent(RequestQueue.RequestEvent.REQUEST_CACHE_LOOKUP_FINISHED);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果有缓存，就取出来去处理，没有或者过期等，就加入到网络请求队列中去请求，需要网络请求的有几个地方：</p>
+<ul>
+<li>请求不需要缓存</li>
+<li>请求在缓存中没有找到</li>
+<li>请求的缓存过期</li>
+<li>请求的缓存需要刷新</li>
+</ul>
+<h5 id="NetworkDispatcher"><a href="#NetworkDispatcher" class="headerlink" title="NetworkDispatcher"></a>NetworkDispatcher</h5><p>NetworkDispatcher<br>NetworkDispatcher也继承自Thread，它们在RequestQueue#start()方法中已经被启动了，因此直接看run方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line">public class NetworkDispatcher extends Thread &#123;</span><br><span class="line">    private final BlockingQueue&lt;Request&lt;?&gt;&gt; mQueue;</span><br><span class="line">    private final Network mNetwork;</span><br><span class="line">    private final Cache mCache;</span><br><span class="line">    private final ResponseDelivery mDelivery;</span><br><span class="line">    private volatile boolean mQuit &#x3D; false;</span><br><span class="line"></span><br><span class="line">    public NetworkDispatcher(</span><br><span class="line">            BlockingQueue&lt;Request&lt;?&gt;&gt; queue,</span><br><span class="line">            Network network,</span><br><span class="line">            Cache cache,</span><br><span class="line">            ResponseDelivery delivery) &#123;</span><br><span class="line">        mQueue &#x3D; queue;</span><br><span class="line">        mNetwork &#x3D; network;</span><br><span class="line">        mCache &#x3D; cache;</span><br><span class="line">        mDelivery &#x3D; delivery;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void quit() &#123;</span><br><span class="line">        mQuit &#x3D; true;</span><br><span class="line">        interrupt();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public void run() &#123;</span><br><span class="line">        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);</span><br><span class="line">        while (true) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                processRequest();</span><br><span class="line">            &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                &#x2F;&#x2F; We may have been interrupted because it was time to quit.</span><br><span class="line">                if (mQuit) &#123;</span><br><span class="line">                    Thread.currentThread().interrupt();</span><br><span class="line">                    return;</span><br><span class="line">                &#125;</span><br><span class="line">                VolleyLog.e(&quot;Ignoring spurious interrupt of NetworkDispatcher thread; &quot; + &quot;use quit() to terminate it&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private void processRequest() throws InterruptedException &#123;</span><br><span class="line">        Request&lt;?&gt; request &#x3D; mQueue.take();</span><br><span class="line">        processRequest(request);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    void processRequest(Request&lt;?&gt; request) &#123;</span><br><span class="line">        long startTimeMs &#x3D; SystemClock.elapsedRealtime();</span><br><span class="line">        request.sendEvent(RequestQueue.RequestEvent.REQUEST_NETWORK_DISPATCH_STARTED);</span><br><span class="line">        try &#123;</span><br><span class="line">            request.addMarker(&quot;network-queue-take&quot;);</span><br><span class="line"></span><br><span class="line">            if (request.isCanceled()) &#123;</span><br><span class="line">                request.finish(&quot;network-discard-cancelled&quot;);</span><br><span class="line">                request.notifyListenerResponseNotUsable();</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            addTrafficStatsTag(request);</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; 执行网络请求</span><br><span class="line">            NetworkResponse networkResponse &#x3D; mNetwork.performRequest(request);</span><br><span class="line">            request.addMarker(&quot;network-http-complete&quot;);</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; If the server returned 304 AND we delivered a response already,</span><br><span class="line">            &#x2F;&#x2F; we&#39;re done -- don&#39;t deliver a second identical response.</span><br><span class="line">            if (networkResponse.notModified &amp;&amp; request.hasHadResponseDelivered()) &#123;</span><br><span class="line">                request.finish(&quot;not-modified&quot;);</span><br><span class="line">                request.notifyListenerResponseNotUsable();</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Parse the response here on the worker thread.</span><br><span class="line">            Response&lt;?&gt; response &#x3D; request.parseNetworkResponse(networkResponse);</span><br><span class="line">            request.addMarker(&quot;network-parse-complete&quot;);</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Write to cache if applicable.</span><br><span class="line">            &#x2F;&#x2F; TODO: Only update cache metadata instead of entire record for 304s.</span><br><span class="line">            if (request.shouldCache() &amp;&amp; response.cacheEntry !&#x3D; null) &#123;</span><br><span class="line">                mCache.put(request.getCacheKey(), response.cacheEntry);</span><br><span class="line">                request.addMarker(&quot;network-cache-written&quot;);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Post the response back.</span><br><span class="line">            request.markDelivered();</span><br><span class="line">            mDelivery.postResponse(request, response);</span><br><span class="line">            request.notifyListenerResponseReceived(response);</span><br><span class="line">        &#125; catch (VolleyError volleyError) &#123;</span><br><span class="line">            volleyError.setNetworkTimeMs(SystemClock.elapsedRealtime() - startTimeMs);</span><br><span class="line">            parseAndDeliverNetworkError(request, volleyError);</span><br><span class="line">            request.notifyListenerResponseNotUsable();</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            VolleyLog.e(e, &quot;Unhandled exception %s&quot;, e.toString());</span><br><span class="line">            VolleyError volleyError &#x3D; new VolleyError(e);</span><br><span class="line">            volleyError.setNetworkTimeMs(SystemClock.elapsedRealtime() - startTimeMs);</span><br><span class="line">            mDelivery.postError(request, volleyError);</span><br><span class="line">            request.notifyListenerResponseNotUsable();</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            request.sendEvent(RequestQueue.RequestEvent.REQUEST_NETWORK_DISPATCH_FINISHED);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，在NetworkDispatcher中，最主要的就是调用了mNetwork.performRequest(request)执行网络请求，而在Network是个接口，具体实现类是BasicNetwork。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line">BasicNetwork</span><br><span class="line">public NetworkResponse performRequest(Request&lt;?&gt; request) throws VolleyError &#123;</span><br><span class="line">    long requestStart &#x3D; SystemClock.elapsedRealtime();</span><br><span class="line">    while (true) &#123;</span><br><span class="line">        &#x2F;&#x2F; ...</span><br><span class="line">        try &#123;</span><br><span class="line">            &#x2F;&#x2F; ...</span><br><span class="line">            httpResponse &#x3D; mBaseHttpStack.executeRequest(request, additionalRequestHeaders);</span><br><span class="line">            &#x2F;&#x2F; return NetworkResponse</span><br><span class="line">        &#125; catch (SocketTimeoutException e) &#123;</span><br><span class="line">            attemptRetryOnException(&quot;socket&quot;, request, new TimeoutError());</span><br><span class="line">        &#125; catch (MalformedURLException e) &#123;</span><br><span class="line">            throw new RuntimeException(&quot;Bad URL &quot; + request.getUrl(), e);</span><br><span class="line">        &#125; catch (IOException e) &#123;</span><br><span class="line">            int statusCode;</span><br><span class="line">            if (httpResponse !&#x3D; null) &#123;</span><br><span class="line">                statusCode &#x3D; httpResponse.getStatusCode();</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                throw new NoConnectionError(e);</span><br><span class="line">            &#125;</span><br><span class="line">            VolleyLog.e(&quot;Unexpected response code %d for %s&quot;, statusCode, request.getUrl());</span><br><span class="line">            NetworkResponse networkResponse;</span><br><span class="line">            if (responseContents !&#x3D; null) &#123;</span><br><span class="line">                networkResponse &#x3D;</span><br><span class="line">                        new NetworkResponse(</span><br><span class="line">                                statusCode,</span><br><span class="line">                                responseContents,</span><br><span class="line">                                &#x2F;* notModified&#x3D; *&#x2F; false,</span><br><span class="line">                                SystemClock.elapsedRealtime() - requestStart,</span><br><span class="line">                                responseHeaders);</span><br><span class="line">                if (statusCode &#x3D;&#x3D; HttpURLConnection.HTTP_UNAUTHORIZED</span><br><span class="line">                        || statusCode &#x3D;&#x3D; HttpURLConnection.HTTP_FORBIDDEN) &#123;</span><br><span class="line">                    attemptRetryOnException(</span><br><span class="line">                            &quot;auth&quot;, request, new AuthFailureError(networkResponse));</span><br><span class="line">                &#125; else if (statusCode &gt;&#x3D; 400 &amp;&amp; statusCode &lt;&#x3D; 499) &#123;</span><br><span class="line">                    &#x2F;&#x2F; Don&#39;t retry other client errors.</span><br><span class="line">                    throw new ClientError(networkResponse);</span><br><span class="line">                &#125; else if (statusCode &gt;&#x3D; 500 &amp;&amp; statusCode &lt;&#x3D; 599) &#123;</span><br><span class="line">                    if (request.shouldRetryServerErrors()) &#123;</span><br><span class="line">                        attemptRetryOnException(</span><br><span class="line">                                &quot;server&quot;, request, new ServerError(networkResponse));</span><br><span class="line">                    &#125; else &#123;</span><br><span class="line">                        throw new ServerError(networkResponse);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    &#x2F;&#x2F; 3xx? No reason to retry.</span><br><span class="line">                    throw new ServerError(networkResponse);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                attemptRetryOnException(&quot;network&quot;, request, new NetworkError());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 请求重试</span><br><span class="line">private static void attemptRetryOnException(</span><br><span class="line">        String logPrefix, Request&lt;?&gt; request, VolleyError exception) throws VolleyError &#123;</span><br><span class="line">    RetryPolicy retryPolicy &#x3D; request.getRetryPolicy();</span><br><span class="line">    int oldTimeout &#x3D; request.getTimeoutMs();</span><br><span class="line"></span><br><span class="line">    try &#123;</span><br><span class="line">        retryPolicy.retry(exception);</span><br><span class="line">    &#125; catch (VolleyError e) &#123;</span><br><span class="line">        request.addMarker(String.format(&quot;%s-timeout-giveup [timeout&#x3D;%s]&quot;, logPrefix, oldTimeout));</span><br><span class="line">        throw e;</span><br><span class="line">    &#125;</span><br><span class="line">    request.addMarker(String.format(&quot;%s-retry [timeout&#x3D;%s]&quot;, logPrefix, oldTimeout));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class DefaultRetryPolicy implements RetryPolicy &#123;</span><br><span class="line">    </span><br><span class="line">    public void retry(VolleyError error) throws VolleyError &#123;</span><br><span class="line">        mCurrentRetryCount++;</span><br><span class="line">        mCurrentTimeoutMs +&#x3D; (int) (mCurrentTimeoutMs * mBackoffMultiplier);</span><br><span class="line">        if (!hasAttemptRemaining()) &#123;</span><br><span class="line">            throw error;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;** Returns true if this policy has attempts remaining, false otherwise. *&#x2F;</span><br><span class="line">    protected boolean hasAttemptRemaining() &#123;</span><br><span class="line">        return mCurrentRetryCount &lt;&#x3D; mMaxNumRetries;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在BasicNetwork#performRequest()中调用了httpResponse = mBaseHttpStack.executeRequest(request, additionalRequestHeaders);，这里的mBaseHttpStack就是前面创建RequestQueue时新建的HurlStack和HttpClientStack(@Deprecated，上面RequestQueue的构造函数中还有个新建了HttpClientStack对象的方法，不过已经废弃了，不做解析)。因此在 HttpStack的executeRequest()中就是具体的网络请求。</p>
+<p>HurlStack</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class HurlStack extends BaseHttpStack &#123;</span><br><span class="line">    </span><br><span class="line">    public HttpResponse executeRequest(Request&lt;?&gt; request, Map&lt;String, String&gt; additionalHeaders)</span><br><span class="line">            throws IOException, AuthFailureError &#123;</span><br><span class="line">        &#x2F;&#x2F; 这个类是使用HttpURLConnection来实现真的的网络请求，可以自定义</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="ResponseDelivery"><a href="#ResponseDelivery" class="headerlink" title="ResponseDelivery"></a>ResponseDelivery</h5><p>ResponseDelivery是一个接口：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line">public interface ResponseDelivery &#123;</span><br><span class="line">    &#x2F;** Parses a response from the network or cache and delivers it. *&#x2F;</span><br><span class="line">    void postResponse(Request&lt;?&gt; request, Response&lt;?&gt; response);</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Parses a response from the network or cache and delivers it. The provided Runnable will be</span><br><span class="line">     * executed after delivery.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    void postResponse(Request&lt;?&gt; request, Response&lt;?&gt; response, Runnable runnable);</span><br><span class="line"></span><br><span class="line">    &#x2F;** Posts an error for the given request. *&#x2F;</span><br><span class="line">    void postError(Request&lt;?&gt; request, VolleyError error);</span><br><span class="line">&#125;</span><br><span class="line">具体实现类是ExecutorDelivery，它保证了客户端调用的回调运行在UI线程：</span><br><span class="line"></span><br><span class="line">public class ExecutorDelivery implements ResponseDelivery &#123;</span><br><span class="line">    private final Executor mResponsePoster;</span><br><span class="line">    &#x2F;&#x2F; 在上面的分析中可以看到这里的handle &#x3D; new Handler(Looper.getMainLooper())</span><br><span class="line">    public ExecutorDelivery(final Handler handler) &#123;</span><br><span class="line">        mResponsePoster &#x3D; new Executor() &#123;</span><br><span class="line">                </span><br><span class="line">                public void execute(Runnable command) &#123;</span><br><span class="line">                    handler.post(command);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public ExecutorDelivery(Executor executor) &#123;</span><br><span class="line">        mResponsePoster &#x3D; executor;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public void postResponse(Request&lt;?&gt; request, Response&lt;?&gt; response) &#123;</span><br><span class="line">        postResponse(request, response, null);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public void postResponse(Request&lt;?&gt; request, Response&lt;?&gt; response, Runnable runnable) &#123;</span><br><span class="line">        request.markDelivered();</span><br><span class="line">        request.addMarker(&quot;post-response&quot;);</span><br><span class="line">        mResponsePoster.execute(new ResponseDeliveryRunnable(request, response, runnable));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public void postError(Request&lt;?&gt; request, VolleyError error) &#123;</span><br><span class="line">        request.addMarker(&quot;post-error&quot;);</span><br><span class="line">        Response&lt;?&gt; response &#x3D; Response.error(error);</span><br><span class="line">        mResponsePoster.execute(new ResponseDeliveryRunnable(request, response, null));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static class ResponseDeliveryRunnable implements Runnable &#123;</span><br><span class="line">        private final Request mRequest;</span><br><span class="line">        private final Response mResponse;</span><br><span class="line">        private final Runnable mRunnable;</span><br><span class="line"></span><br><span class="line">        public ResponseDeliveryRunnable(Request request, Response response, Runnable runnable) &#123;</span><br><span class="line">            mRequest &#x3D; request;</span><br><span class="line">            mResponse &#x3D; response;</span><br><span class="line">            mRunnable &#x3D; runnable;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        (&quot;unchecked&quot;)</span><br><span class="line">        </span><br><span class="line">        public void run() &#123;</span><br><span class="line">            if (mRequest.isCanceled()) &#123;</span><br><span class="line">                mRequest.finish(&quot;canceled-at-delivery&quot;);</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; 这里会调用在创建Request时传入的回调</span><br><span class="line">            if (mResponse.isSuccess()) &#123;</span><br><span class="line">                mRequest.deliverResponse(mResponse.result);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                mRequest.deliverError(mResponse.error);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            if (mResponse.intermediate) &#123;</span><br><span class="line">                mRequest.addMarker(&quot;intermediate-response&quot;);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                mRequest.finish(&quot;done&quot;);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; 如果有需要执行的任务，如前面缓存需要刷新等，就会在这个地方进行调用</span><br><span class="line">            if (mRunnable !&#x3D; null) &#123;</span><br><span class="line">                mRunnable.run();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>Volley中主要的类有这些：</p>
+<ul>
+<li>Volley: 提供了构建RequestQueue的统一方法，我们也可以不通过Volley类而是自己构建RequestQueue；</li>
+<li>RequestQueue: 负责分发请求到不同的请求队列中；</li>
+<li>CacheDispatcher: 处理缓存请求；</li>
+<li>NetworkDispatcher: 处理网络请求；</li>
+<li>ResponseDelivery: 获取请求后进行处理，具体实现类为ExecutorDelivery；</li>
+<li>Cache: 缓存接口，具体实现类有DiskBasedCache；</li>
+<li>Network: 网络接口，具体实现类有BasicNetwork；</li>
+<li>HttpStack: 真正执行请求，具体实现类有HttpClientStack(已废弃)，BaseHttpStack(子类有HurlStack，AdaptedHttpStack等)；</li>
+<li>Request: 封装请求信息并处理回调，具体实现类有StringRequest，JsonRequest，ImageRequest等；</li>
+<li>NetworkResponse：请求网络时的返回的response；</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E5%BC%80%E6%BA%90%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># Android开源框架源码分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/31/Kotlin%20%E5%AE%9E%E6%88%98/" rel="prev" title="Kotlin 实战">
+      <i class="fa fa-chevron-left"></i> Kotlin 实战
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/31/ThreadLocal%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/" rel="next" title="ThreadLocal 原理剖析">
+      ThreadLocal 原理剖析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#创建请求队列"><span class="nav-number">2.</span> <span class="nav-text">创建请求队列</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#RequestQueue事件"><span class="nav-number">3.</span> <span class="nav-text">RequestQueue事件</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#发送请求"><span class="nav-number">4.</span> <span class="nav-text">发送请求</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#CacheDispatcher"><span class="nav-number">5.</span> <span class="nav-text">CacheDispatcher</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#NetworkDispatcher"><span class="nav-number">6.</span> <span class="nav-text">NetworkDispatcher</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#ResponseDelivery"><span class="nav-number">7.</span> <span class="nav-text">ResponseDelivery</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#总结"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

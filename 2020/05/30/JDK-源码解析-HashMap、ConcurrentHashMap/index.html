@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="HashMap ：先说HashMap，HashMap是线程不安全的，在并发环境下，可能会形成环状链表（扩容时可能造成，具体原因自行百度google或查看源码分析），导致get操作时，cpu空转，所以，在并发环境中使用HashMap是非常危险的。 HashTable ： HashTable和HashMap的实现原理几乎一样，差别无非是1.HashTable不允许key和value为null；2.H">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JDK 源码解析 -- HashMap、ConcurrentHashMap">
+<meta property="og:url" content="http://yoursite.com/2020/05/30/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-HashMap%E3%80%81ConcurrentHashMap/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="HashMap ：先说HashMap，HashMap是线程不安全的，在并发环境下，可能会形成环状链表（扩容时可能造成，具体原因自行百度google或查看源码分析），导致get操作时，cpu空转，所以，在并发环境中使用HashMap是非常危险的。 HashTable ： HashTable和HashMap的实现原理几乎一样，差别无非是1.HashTable不允许key和value为null；2.H">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2169292-f46bc2b4b818d8de.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2169292-ab0b9d4d53b3d2d0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2169292-f4c022a8e6a1d0f7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="article:published_time" content="2020-05-29T16:10:36.074Z">
+<meta property="article:modified_time" content="2020-05-29T16:10:53.293Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="JDK源码分析">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/2169292-f46bc2b4b818d8de.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/30/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-HashMap%E3%80%81ConcurrentHashMap/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>JDK 源码解析 -- HashMap、ConcurrentHashMap | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/30/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-HashMap%E3%80%81ConcurrentHashMap/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JDK 源码解析 -- HashMap、ConcurrentHashMap
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-05-30 00:10:36 / 修改时间：00:10:53" itemprop="dateCreated datePublished" datetime="2020-05-30T00:10:36+08:00">2020-05-30</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <ul>
+<li>HashMap ：先说HashMap，HashMap是线程不安全的，在并发环境下，可能会形成环状链表（扩容时可能造成，具体原因自行百度google或查看源码分析），导致get操作时，cpu空转，所以，在并发环境中使用HashMap是非常危险的。</li>
+<li>HashTable ： HashTable和HashMap的实现原理几乎一样，差别无非是1.HashTable不允许key和value为null；2.HashTable是线程安全的。但是HashTable线程安全的策略实现代价却太大了，简单粗暴，get/put所有相关操作都是synchronized的，这相当于给整个哈希表加了一把大锁，多线程访问时候，只要有一个线程访问或操作该对象，那其他线程只能阻塞，相当于将所有的操作串行化，在竞争激烈的并发场景中性能就会非常差。HashTable性能差主要是由于所有操作需要竞争同一把锁，而如果容器中有多把锁，每一把锁锁一段数据，这样在多线程访问时不同段的数据时，就不会存在锁竞争了，这样便可以有效地提高并发效率。这就是ConcurrentHashMap所采用的”分段锁”思想。</li>
+</ul>
+<h4 id="HashMap"><a href="#HashMap" class="headerlink" title="HashMap"></a>HashMap</h4><p>首先看看HashMap的结构图,采用了数组+链表的方式。<br><img src="http://upload-images.jianshu.io/upload_images/2169292-f46bc2b4b818d8de.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="屏幕快照 2018-01-29 21.28.36.png"></p>
+<p>实现原理<br><img src="http://upload-images.jianshu.io/upload_images/2169292-ab0b9d4d53b3d2d0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="屏幕快照 2018-01-29 21.40.44.png"></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line">public class HashMap&lt;K,V&gt; extends AbstractMap&lt;K,V&gt; implements Map&lt;K,V&gt;, </span><br><span class="line">Cloneable, Serializable &#123;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;实际存储的key-value键值对的个数</span><br><span class="line">transient int size;</span><br><span class="line">&#x2F;&#x2F;阈值，当table &#x3D;&#x3D; &#123;&#125;时，该值为初始容量（初始容量默认为16）；当table被填充了，也就是为table分配内存空间后，threshold一般为 capacity*loadFactory。HashMap在进行扩容时需要参考threshold，后面会详细谈到</span><br><span class="line">int threshold;</span><br><span class="line">&#x2F;&#x2F;负载因子，代表了table的填充度有多少，默认是0.75</span><br><span class="line">final float loadFactor;</span><br><span class="line">&#x2F;&#x2F;用于快速失败，由于HashMap非线程安全，在对HashMap进行迭代时，如果期间其他线程的参与导致HashMap的结构发生变化了（比如put，remove等操作），需要抛出异常ConcurrentModificationException</span><br><span class="line">transient int modCount;</span><br><span class="line">&#x2F;&#x2F;HashMap的主干数组，可以看到就是一个Entry数组，初始值为空数组&#123;&#125;，主干数组的长度一定是2的次幂，至于为什么这么做，后面会有详细分析。</span><br><span class="line">transient Entry&lt;K,V&gt;[] table &#x3D; (Entry&lt;K,V&gt;[]) EMPTY_TABLE;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">public HashMap(int initialCapacity, float loadFactor) &#123;</span><br><span class="line">　&#x2F;&#x2F;此处对传入的初始容量进行校验，最大不能超过MAXIMUM_CAPACITY &#x3D; 1&lt;&lt;30(230)</span><br><span class="line">    if (initialCapacity &lt; 0)</span><br><span class="line">        throw new IllegalArgumentException(&quot;Illegal initial capacity: &quot; +</span><br><span class="line">                                               initialCapacity);</span><br><span class="line">        if (initialCapacity &gt; MAXIMUM_CAPACITY)</span><br><span class="line">            initialCapacity &#x3D; MAXIMUM_CAPACITY;</span><br><span class="line">        if (loadFactor &lt;&#x3D; 0 || Float.isNaN(loadFactor))</span><br><span class="line">            throw new IllegalArgumentException(&quot;Illegal load factor: &quot; +</span><br><span class="line">                                               loadFactor);</span><br><span class="line"></span><br><span class="line">        this.loadFactor &#x3D; loadFactor;</span><br><span class="line">        threshold &#x3D; initialCapacity;</span><br><span class="line">　　　　　</span><br><span class="line">        init();&#x2F;&#x2F;init方法在HashMap中没有实际实现，不过在其子类如 linkedHashMap中就会有对应实现</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public V put(K key, V value) &#123;</span><br><span class="line">        &#x2F;&#x2F;如果table数组为空数组&#123;&#125;，进行数组填充（为table分配实际内存空间），入参为threshold，此时threshold为initialCapacity 默认是1&lt;&lt;4(24&#x3D;16)</span><br><span class="line">        if (table &#x3D;&#x3D; EMPTY_TABLE) &#123;</span><br><span class="line">            inflateTable(threshold);</span><br><span class="line">        &#125;</span><br><span class="line">       &#x2F;&#x2F;如果key为null，存储位置为table[0]或table[0]的冲突链上</span><br><span class="line">        if (key &#x3D;&#x3D; null)</span><br><span class="line">            return putForNullKey(value);</span><br><span class="line">        int hash &#x3D; hash(key);&#x2F;&#x2F;对key的hashcode进一步计算，确保散列均匀</span><br><span class="line">        int i &#x3D; indexFor(hash, table.length);&#x2F;&#x2F;获取在table中的实际位置</span><br><span class="line">        for (Entry&lt;K,V&gt; e &#x3D; table[i]; e !&#x3D; null; e &#x3D; e.next) &#123;</span><br><span class="line">        &#x2F;&#x2F;如果该对应数据已存在，执行覆盖操作。用新value替换旧value，并返回旧value</span><br><span class="line">            Object k;</span><br><span class="line">            if (e.hash &#x3D;&#x3D; hash &amp;&amp; ((k &#x3D; e.key) &#x3D;&#x3D; key || key.equals(k))) &#123;</span><br><span class="line">                V oldValue &#x3D; e.value;</span><br><span class="line">                e.value &#x3D; value;</span><br><span class="line">                e.recordAccess(this);</span><br><span class="line">                return oldValue;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        modCount++;&#x2F;&#x2F;保证并发访问时，若HashMap内部结构发生变化，快速响应失败</span><br><span class="line">        addEntry(hash, key, value, i);&#x2F;&#x2F;新增一个entry</span><br><span class="line">        return null;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public V get(Object key) &#123;</span><br><span class="line">　　　　 &#x2F;&#x2F;如果key为null,则直接去table[0]处去检索即可。</span><br><span class="line">        if (key &#x3D;&#x3D; null)</span><br><span class="line">            return getForNullKey();</span><br><span class="line">        Entry&lt;K,V&gt; entry &#x3D; getEntry(key);</span><br><span class="line">        return null &#x3D;&#x3D; entry ? null : entry.getValue();</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line">final Entry&lt;K,V&gt; getEntry(Object key) &#123;</span><br><span class="line">            </span><br><span class="line">        if (size &#x3D;&#x3D; 0) &#123;</span><br><span class="line">            return null;</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F;通过key的hashcode值计算hash值</span><br><span class="line">        int hash &#x3D; (key &#x3D;&#x3D; null) ? 0 : hash(key);</span><br><span class="line">        &#x2F;&#x2F;indexFor (hash&amp;length-1) 获取最终数组索引，然后遍历链表，通过equals方法比对找出对应记录</span><br><span class="line">        for (Entry&lt;K,V&gt; e &#x3D; table[indexFor(hash, table.length)];</span><br><span class="line">             e !&#x3D; null;</span><br><span class="line">             e &#x3D; e.next) &#123;</span><br><span class="line">            Object k;</span><br><span class="line">            if (e.hash &#x3D;&#x3D; hash &amp;&amp; </span><br><span class="line">                ((k &#x3D; e.key) &#x3D;&#x3D; key || (key !&#x3D; null &amp;&amp; key.equals(k))))</span><br><span class="line">                return e;</span><br><span class="line">        &#125;</span><br><span class="line">        return null;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">static class Entry&lt;K,V&gt; implements Map.Entry&lt;K,V&gt; &#123;</span><br><span class="line">    final K key;</span><br><span class="line">    V value;</span><br><span class="line">    Entry&lt;K,V&gt; next;&#x2F;&#x2F;存储指向下一个Entry的引用，单链表结构</span><br><span class="line">    int hash;&#x2F;&#x2F;对key的hashcode值进行hash运算后得到的值，存储在Entry，避免重复计算</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Creates new entry.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    Entry(int h, K k, V v, Entry&lt;K,V&gt; n) &#123;</span><br><span class="line">        value &#x3D; v;</span><br><span class="line">        next &#x3D; n;</span><br><span class="line">        key &#x3D; k;</span><br><span class="line">        hash &#x3D; h;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="ConcurrentHashMap"><a href="#ConcurrentHashMap" class="headerlink" title="ConcurrentHashMap"></a>ConcurrentHashMap</h4><p><img src="http://upload-images.jianshu.io/upload_images/2169292-f4c022a8e6a1d0f7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="屏幕快照 2018-01-29 22.00.36.png"></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br></pre></td><td class="code"><pre><span class="line">public ConcurrentHashMap(int initialCapacity,</span><br><span class="line">                               float loadFactor, int concurrencyLevel) &#123;</span><br><span class="line">          if (!(loadFactor &gt; 0) || initialCapacity &lt; 0 || concurrencyLevel &lt;&#x3D; 0)</span><br><span class="line">              throw new IllegalArgumentException();</span><br><span class="line">          &#x2F;&#x2F;MAX_SEGMENTS 为1&lt;&lt;16&#x3D;65536，也就是最大并发数为65536</span><br><span class="line">          if (concurrencyLevel &gt; MAX_SEGMENTS)</span><br><span class="line">              concurrencyLevel &#x3D; MAX_SEGMENTS;</span><br><span class="line">          &#x2F;&#x2F;2的sshif次方等于ssize，例:ssize&#x3D;16,sshift&#x3D;4;ssize&#x3D;32,sshif&#x3D;5</span><br><span class="line">         int sshift &#x3D; 0;</span><br><span class="line">         &#x2F;&#x2F;ssize 为segments数组长度，根据concurrentLevel计算得出</span><br><span class="line">         int ssize &#x3D; 1;</span><br><span class="line">         while (ssize &lt; concurrencyLevel) &#123;</span><br><span class="line">             ++sshift;</span><br><span class="line">             ssize &lt;&lt;&#x3D; 1;</span><br><span class="line">         &#125;</span><br><span class="line">         &#x2F;&#x2F;segmentShift和segmentMask这两个变量在定位segment时会用到，后面会详细讲</span><br><span class="line">         this.segmentShift &#x3D; 32 - sshift;</span><br><span class="line">         this.segmentMask &#x3D; ssize - 1;</span><br><span class="line">         if (initialCapacity &gt; MAXIMUM_CAPACITY)</span><br><span class="line">             initialCapacity &#x3D; MAXIMUM_CAPACITY;</span><br><span class="line">         &#x2F;&#x2F;计算cap的大小，即Segment中HashEntry的数组长度，cap也一定为2的n次方.</span><br><span class="line">         int c &#x3D; initialCapacity &#x2F; ssize;</span><br><span class="line">         if (c * ssize &lt; initialCapacity)</span><br><span class="line">             ++c;</span><br><span class="line">         int cap &#x3D; MIN_SEGMENT_TABLE_CAPACITY;</span><br><span class="line">         while (cap &lt; c)</span><br><span class="line">             cap &lt;&lt;&#x3D; 1;</span><br><span class="line">         &#x2F;&#x2F;创建segments数组并初始化第一个Segment，其余的Segment延迟初始化</span><br><span class="line">         Segment&lt;K,V&gt; s0 &#x3D;</span><br><span class="line">             new Segment&lt;K,V&gt;(loadFactor, (int)(cap * loadFactor),</span><br><span class="line">                              (HashEntry&lt;K,V&gt;[])new HashEntry[cap]);</span><br><span class="line">         Segment&lt;K,V&gt;[] ss &#x3D; (Segment&lt;K,V&gt;[])new Segment[ssize];</span><br><span class="line">         UNSAFE.putOrderedObject(ss, SBASE, s0); </span><br><span class="line">         this.segments &#x3D; ss;</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">public V put(K key, V value) &#123;</span><br><span class="line">        Segment&lt;K,V&gt; s;</span><br><span class="line">        &#x2F;&#x2F;concurrentHashMap不允许key&#x2F;value为空</span><br><span class="line">        if (value &#x3D;&#x3D; null)</span><br><span class="line">            throw new NullPointerException();</span><br><span class="line">        &#x2F;&#x2F;hash函数对key的hashCode重新散列，避免差劲的不合理的hashcode，保证散列均匀</span><br><span class="line">        int hash &#x3D; hash(key);</span><br><span class="line">        &#x2F;&#x2F;返回的hash值无符号右移segmentShift位与段掩码进行位运算，定位segment</span><br><span class="line">        int j &#x3D; (hash &gt;&gt;&gt; segmentShift) &amp; segmentMask;</span><br><span class="line">        if ((s &#x3D; (Segment&lt;K,V&gt;)UNSAFE.getObject          &#x2F;&#x2F; nonvolatile; recheck</span><br><span class="line">             (segments, (j &lt;&lt; SSHIFT) + SBASE)) &#x3D;&#x3D; null) &#x2F;&#x2F;  in ensureSegment</span><br><span class="line">            s &#x3D; ensureSegment(j);</span><br><span class="line">        return s.put(key, hash, value, false);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">public V get(Object key) &#123;</span><br><span class="line">        Segment&lt;K,V&gt; s; </span><br><span class="line">        HashEntry&lt;K,V&gt;[] tab;</span><br><span class="line">        int h &#x3D; hash(key);</span><br><span class="line">        long u &#x3D; (((h &gt;&gt;&gt; segmentShift) &amp; segmentMask) &lt;&lt; SSHIFT) + SBASE;</span><br><span class="line">        &#x2F;&#x2F;先定位Segment，再定位HashEntry</span><br><span class="line">        if ((s &#x3D; (Segment&lt;K,V&gt;)UNSAFE.getObjectVolatile(segments, u)) !&#x3D; null &amp;&amp;</span><br><span class="line">            (tab &#x3D; s.table) !&#x3D; null) &#123;</span><br><span class="line">            for (HashEntry&lt;K,V&gt; e &#x3D; (HashEntry&lt;K,V&gt;) UNSAFE.getObjectVolatile</span><br><span class="line">                     (tab, ((long)(((tab.length - 1) &amp; h)) &lt;&lt; TSHIFT) + TBASE);</span><br><span class="line">                 e !&#x3D; null; e &#x3D; e.next) &#123;</span><br><span class="line">                K k;</span><br><span class="line">                if ((k &#x3D; e.key) &#x3D;&#x3D; key || (e.hash &#x3D;&#x3D; h &amp;&amp; key.equals(k)))</span><br><span class="line">                    return e.value;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">final V put(K key, int hash, V value, boolean onlyIfAbsent) &#123;</span><br><span class="line">            HashEntry&lt;K,V&gt; node &#x3D; tryLock() ? null :</span><br><span class="line">                scanAndLockForPut(key, hash, value);&#x2F;&#x2F;tryLock不成功时会遍历定位到的HashEnry位置的链表（遍历主要是为了使CPU缓存链表），若找不到，则创建HashEntry。tryLock一定次数后（MAX_SCAN_RETRIES变量决定），则lock。若遍历过程中，由于其他线程的操作导致链表头结点变化，则需要重新遍历。</span><br><span class="line">            V oldValue;</span><br><span class="line">            try &#123;</span><br><span class="line">                HashEntry&lt;K,V&gt;[] tab &#x3D; table;</span><br><span class="line">                int index &#x3D; (tab.length - 1) &amp; hash;&#x2F;&#x2F;定位HashEntry，可以看到，这个hash值在定位Segment时和在Segment中定位HashEntry都会用到，只不过定位Segment时只用到高几位。</span><br><span class="line">                HashEntry&lt;K,V&gt; first &#x3D; entryAt(tab, index);</span><br><span class="line">                for (HashEntry&lt;K,V&gt; e &#x3D; first;;) &#123;</span><br><span class="line">                    if (e !&#x3D; null) &#123;</span><br><span class="line">                        K k;</span><br><span class="line">                        if ((k &#x3D; e.key) &#x3D;&#x3D; key ||</span><br><span class="line">                            (e.hash &#x3D;&#x3D; hash &amp;&amp; key.equals(k))) &#123;</span><br><span class="line">                            oldValue &#x3D; e.value;</span><br><span class="line">                            if (!onlyIfAbsent) &#123;</span><br><span class="line">                                e.value &#x3D; value;</span><br><span class="line">                                ++modCount;</span><br><span class="line">                            &#125;</span><br><span class="line">                            break;</span><br><span class="line">                        &#125;</span><br><span class="line">                        e &#x3D; e.next;</span><br><span class="line">                    &#125;</span><br><span class="line">                    else &#123;</span><br><span class="line">                        if (node !&#x3D; null)</span><br><span class="line">                            node.setNext(first);</span><br><span class="line">                        else</span><br><span class="line">                            node &#x3D; new HashEntry&lt;K,V&gt;(hash, key, value, first);</span><br><span class="line">                        int c &#x3D; count + 1;</span><br><span class="line">　　　　　　　　　　　　　　&#x2F;&#x2F;若c超出阈值threshold，需要扩容并rehash。扩容后的容量是当前容量的2倍。这样可以最大程度避免之前散列好的entry重新散列，具体在另一篇文章中有详细分析，不赘述。扩容并rehash的这个过程是比较消耗资源的。</span><br><span class="line">                        if (c &gt; threshold &amp;&amp; tab.length &lt; MAXIMUM_CAPACITY)</span><br><span class="line">                            rehash(node);</span><br><span class="line">                        else</span><br><span class="line">                            setEntryAt(tab, index, node);</span><br><span class="line">                        ++modCount;</span><br><span class="line">                        count &#x3D; c;</span><br><span class="line">                        oldValue &#x3D; null;</span><br><span class="line">                        break;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; finally &#123;</span><br><span class="line">                unlock();</span><br><span class="line">            &#125;</span><br><span class="line">            return oldValue;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="CopyOnWriteArrayList"><a href="#CopyOnWriteArrayList" class="headerlink" title="CopyOnWriteArrayList"></a>CopyOnWriteArrayList</h4><p>CopyOnWriteArrayList是Java并发包中提供的一个并发容器，它是个线程安全且读操作无锁的ArrayList，写操作则通过创建底层数组的新副本来实现，是一种读写分离的并发策略，我们也可以称这种容器为”写时复制器”，Java并发包中类似的容器还有CopyOnWriteSet。</p>
+<p><strong>实现原理</strong><br>我们都知道，集合框架中的ArrayList是非线程安全的，Vector虽是线程安全的，但由于简单粗暴的锁同步机制，性能较差。而CopyOnWriteArrayList则提供了另一种不同的并发处理策略。很多时候，我们的系统应对的都是读多写少的并发场景。CopyOnWriteArrayList容器允许并发读，读操作是无锁的，性能较高。至于写操作，比如向容器中添加一个元素，则首先将当前容器复制一份，然后在新副本上执行写操作，结束之后再将原容器的引用指向新容器。</p>
+<p><strong>优缺点分析</strong><br>了解了CopyOnWriteArrayList的实现原理，分析它的优缺点及使用场景就很容易了。</p>
+<ul>
+<li><p>优点：读操作性能很高，因为无需任何同步措施，比较适用于读多写少的并发场景。Java的list在遍历时，若中途有别的线程对list容器进行修改，则会抛出ConcurrentModificationException异常。而CopyOnWriteArrayList由于其”读写分离”的思想，遍历和修改操作分别作用在不同的list容器，所以在使用迭代器进行遍历时候，也就不会抛出ConcurrentModificationException异常了</p>
+</li>
+<li><p>缺点：缺点也很明显，一是内存占用问题，毕竟每次执行写操作都要将原容器拷贝一份，数据量大时，对内存压力较大，可能会引起频繁GC；二是无法保证实时性，Vector对于读写操作均加锁同步，可以保证读和写的强一致性。而CopyOnWriteArrayList由于其实现策略的原因，写和读分别作用在新老不同容器上，在写操作执行过程中，读不会阻塞但读取到的却是老容器的数据。</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line">public boolean add(E e) &#123;</span><br><span class="line">        &#x2F;&#x2F;ReentrantLock加锁，保证线程安全</span><br><span class="line">        final ReentrantLock lock &#x3D; this.lock;</span><br><span class="line">        lock.lock();</span><br><span class="line">        try &#123;</span><br><span class="line">            Object[] elements &#x3D; getArray();</span><br><span class="line">            int len &#x3D; elements.length;</span><br><span class="line">            &#x2F;&#x2F;拷贝原容器，长度为原容器长度加一</span><br><span class="line">            Object[] newElements &#x3D; Arrays.copyOf(elements, len + 1);</span><br><span class="line">            &#x2F;&#x2F;在新副本上执行添加操作</span><br><span class="line">            newElements[len] &#x3D; e;</span><br><span class="line">            &#x2F;&#x2F;将原容器引用指向新副本</span><br><span class="line">            setArray(newElements);</span><br><span class="line">            return true;</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            &#x2F;&#x2F;解锁</span><br><span class="line">            lock.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public E remove(int index) &#123;</span><br><span class="line">        &#x2F;&#x2F;加锁</span><br><span class="line">        final ReentrantLock lock &#x3D; this.lock;</span><br><span class="line">        lock.lock();</span><br><span class="line">        try &#123;</span><br><span class="line">            Object[] elements &#x3D; getArray();</span><br><span class="line">            int len &#x3D; elements.length;</span><br><span class="line">            E oldValue &#x3D; get(elements, index);</span><br><span class="line">            int numMoved &#x3D; len - index - 1;</span><br><span class="line">            if (numMoved &#x3D;&#x3D; 0)</span><br><span class="line">                &#x2F;&#x2F;如果要删除的是列表末端数据，拷贝前len-1个数据到新副本上，再切换引用</span><br><span class="line">                setArray(Arrays.copyOf(elements, len - 1));</span><br><span class="line">            else &#123;</span><br><span class="line">                &#x2F;&#x2F;否则，将除要删除元素之外的其他元素拷贝到新副本中，并切换引用</span><br><span class="line">                Object[] newElements &#x3D; new Object[len - 1];</span><br><span class="line">                System.arraycopy(elements, 0, newElements, 0, index);</span><br><span class="line">                System.arraycopy(elements, index + 1, newElements, index,</span><br><span class="line">                                 numMoved);</span><br><span class="line">                setArray(newElements);</span><br><span class="line">            &#125;</span><br><span class="line">            return oldValue;</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            &#x2F;&#x2F;解锁</span><br><span class="line">            lock.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public E get(int index) &#123;</span><br><span class="line">        return get(getArray(), index);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private E get(Object[] a, int index) &#123;</span><br><span class="line">        return (E) a[index];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>参考博客<br><a href="http://www.cnblogs.com/chengxiao/p/6059914.html" target="_blank" rel="noopener">1.HashMap实现原理及源码分析</a><br><a href="http://www.cnblogs.com/chengxiao/p/6881974.html" target="_blank" rel="noopener">2.CopyOnWriteArrayList实现原理及源码分析</a><br><a href="http://blog.csdn.net/eson_15/article/details/51543812" target="_blank" rel="noopener">3. 造成HashMap非线程安全的原因</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/JDK%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># JDK源码分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/30/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-AtomicInteger/" rel="prev" title="JDK 源码解析 -- AtomicInteger">
+      <i class="fa fa-chevron-left"></i> JDK 源码解析 -- AtomicInteger
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/30/30%20%E8%A7%A6%E6%91%B8%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%B5%81%E7%A8%8B/" rel="next" title="30 触摸事件分发流程">
+      30 触摸事件分发流程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#HashMap"><span class="nav-number">1.</span> <span class="nav-text">HashMap</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ConcurrentHashMap"><span class="nav-number">2.</span> <span class="nav-text">ConcurrentHashMap</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CopyOnWriteArrayList"><span class="nav-number">3.</span> <span class="nav-text">CopyOnWriteArrayList</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="1 前言在JDK5之前，Java多线程以及其性能一直是个软肋，只有synchronized、Thread.sleep()、Object.wait&#x2F;notify这样有限的方法，而synchronized的效率还特别地低，开销比较大。 在JDK5之后，相对于前面版本有了重大改进，不仅在Java语法上有了很多改进，包括：泛型、装箱、for循环、变参等，在多线程上也有了彻底提高，其引进了并发编程大师Dou">
+<meta property="og:type" content="article">
+<meta property="og:title" content="啃碎并发（一）：Java线程总述与概念">
+<meta property="og:url" content="http://yoursite.com/2020/05/31/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8B%E6%80%BB%E8%BF%B0%E4%B8%8E%E6%A6%82%E5%BF%B5/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="1 前言在JDK5之前，Java多线程以及其性能一直是个软肋，只有synchronized、Thread.sleep()、Object.wait&#x2F;notify这样有限的方法，而synchronized的效率还特别地低，开销比较大。 在JDK5之后，相对于前面版本有了重大改进，不仅在Java语法上有了很多改进，包括：泛型、装箱、for循环、变参等，在多线程上也有了彻底提高，其引进了并发编程大师Dou">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-31T13:14:46.815Z">
+<meta property="article:modified_time" content="2020-05-31T13:23:46.007Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="JAVA并发">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/31/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8B%E6%80%BB%E8%BF%B0%E4%B8%8E%E6%A6%82%E5%BF%B5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>啃碎并发（一）：Java线程总述与概念 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/31/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8B%E6%80%BB%E8%BF%B0%E4%B8%8E%E6%A6%82%E5%BF%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          啃碎并发（一）：Java线程总述与概念
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-05-31 21:14:46 / 修改时间：21:23:46" itemprop="dateCreated datePublished" datetime="2020-05-31T21:14:46+08:00">2020-05-31</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="1-前言"><a href="#1-前言" class="headerlink" title="1 前言"></a>1 前言</h4><p>在JDK5之前，Java多线程以及其性能一直是个软肋，只有synchronized、Thread.sleep()、Object.wait/notify这样有限的方法，而synchronized的效率还特别地低，开销比较大。</p>
+<p>在JDK5之后，相对于前面版本有了重大改进，不仅在Java语法上有了很多改进，包括：泛型、装箱、for循环、变参等，在多线程上也有了彻底提高，其引进了并发编程大师Doug Lea的java.util.concurrent包(后面简称J.U.C)，支持了现代CPU的CAS原语，不仅在性能上有了很大提升，在自由度上也有了更多的选择，此时 J.U.C的效率在高并发环境下的效率远优于synchronized。</p>
+<p>在JDK6（Mustang 野马）中，对synchronized的内在机制做了大量显著的优化，加入了CAS的概念以及偏向锁、轻量级锁，使得synchronized的效率与J.U.C不相上下，并且官方说后面该关键字还有继续优化的空间，所以在现 在JDK7时代，synchronized已经成为一般情况下的首选，在某些特殊场景：可中断的锁、条件锁、等待获得锁一段时间如果失败则停止，J.U.C是适用的，所以对于 多线程研究来说，了解其原理以及各自的适用场景是必要的。</p>
+<h4 id="2-基本概念"><a href="#2-基本概念" class="headerlink" title="2 基本概念"></a>2 基本概念</h4><h5 id="2-1-线程"><a href="#2-1-线程" class="headerlink" title="2.1 线程"></a>2.1 线程</h5><p>线程是依附于进程的，进程是分配资源的最小单位，一个进程可以生成多个线程，这些线程拥有共享的进程资源。就每个线程而言，只有很少的独有资源，如：控制线程运行的线程控制块，保留局部变量和少数参数的栈空间等。线程有就绪、阻塞和运行三种状态，并可以在这之间切换。也正因为多个线程会共享进程资源，所以当它们对同一个共享变量/对象进行操作的时候，线程的冲突和不一致性就产生了。</p>
+<p>多线程并发环境下，本质上要解决地是这两个问题：</p>
+<blockquote>
+<ol>
+<li>线程之间如何通信；</li>
+<li>线程之间如何同步；</li>
+</ol>
+</blockquote>
+<p>概括起来说就是：线程之间如何正确地通信。虽然说的是在Java层面如何保证，但会涉及到 Java虚拟机、Java内存模型，以及Java这样的高级语言最终是要映射到CPU来执行（关键原因：如今的CPU有缓存、并且是多核的），虽然有些难懂，但对于深刻把握多线程是至关重要的，所以需要多花一些时间。</p>
+<h5 id="2-2-锁"><a href="#2-2-锁" class="headerlink" title="2.2 锁"></a>2.2 锁</h5><p>当多个线程对同一个共享变量/对象进行操作，即使是最简单的操作，如：i++，在处理上实际也涉及到读取、自增、赋值这三个操作，也就是说 这中间存在时间差，导致多个线程没有按照如程序编写者所设想的去顺序执行，出现错位，从而导致最终结果与预期不一致。</p>
+<p>Java中的多线程同步是通过锁的概念来体现。锁不是一个对象、不是一个具体的东西，而是一种机制的名称。锁机制需要保证如下两种特性：</p>
+<blockquote>
+<p>互斥性：即在同一时间只允许一个线程持有某个对象锁，通过这种特性来实现多线程中的协调机制，这样在同一时间只有一个线程对需同步的代码块(复合操作)进行访问。互斥性我们也往往称为操作的原子性；<br>可见性：必须确保在锁被释放之前，对共享变量所做的修改，对于随后获得该锁的另一个线程是可见的（即在获得锁时应获得最新共享变量的值），否则另一个线程可能是在本地缓存的某个副本上继续操作从而引起不一致；</p>
+</blockquote>
+<h5 id="2-3-挂起、休眠、阻塞与非阻塞"><a href="#2-3-挂起、休眠、阻塞与非阻塞" class="headerlink" title="2.3 挂起、休眠、阻塞与非阻塞"></a>2.3 挂起、休眠、阻塞与非阻塞</h5><p>挂起（Suspend）：当线程被挂起的时候，其会失去CPU的使用时间，直到被其他线程（用户线程或调度线程）唤醒。</p>
+<p>休眠（Sleep）：同样是会失去CPU的使用时间，但是在过了指定的休眠时间之后，它会自动激活，无需唤醒（整个唤醒表面看是自动的，但实际上也得有守护线程去唤醒，只是不需编程者手动干预）。</p>
+<p>阻塞（Block）：在线程执行时，所需要的资源不能得到，则线程被挂起，直到满足可操作的条件。</p>
+<p>非阻塞(Block)：在线程执行时，所需要的资源不能得到，则线程不是被挂起等待，而是继续执行其余事情，待条件满足了之后，收到了通知（同样是守护线程去做）再执行。</p>
+<p>挂起和休眠是独立的操作系统的概念，而阻塞与非阻塞则是在资源不能得到时的两种处理方式，不限于操作系统，当资源申请不到时，要么挂起线程等待、要么继续执行其他操作，资源被满足后再通知该线程重新请求。显然非阻塞的效率要高于阻塞，相应的实现的复杂度也要高一些。</p>
+<p>在Java中显式的挂起之前是通过Thread的suspend方法来体现，现在此概念已经消失，原因是suspend/resume方法已经被废弃，它们容易产生死锁，在suspend方法的注释里有这么一段话：当suspend的线程持有某个对象锁，而resume它的线程又正好需要使用此锁的时候，死锁就产生了。</p>
+<p>所以，现在的JDK版本中，挂起是JVM的系统行为，程序员无需干涉。休眠的过程中也不会释放锁，但它一定会在某个时间后被唤醒，所以不会死锁。现在我们所说的挂起，往往并非指编写者的程序里主动挂起，而是由操作系统的线程调度器去控制。</p>
+<p>所以，我们常常说的“线程在申请锁失败后会被挂起、然后等待调度”这样有一定歧义，因为这里的“挂起”是操作系统级别的挂起，其实是在申请资源失败时的阻塞，和Java中的线程的挂起（可能已经获得锁，也可能没有锁，总之和锁无关）不是一个概念，很容易混淆，所以在后文中说的挂起，一般指的是操作系统的操作，而不是Thread中的suspend()。</p>
+<p>相应地有必要提下java.lang.Object的wait/notify，这两个方法同样是等待/通知，但它们的前提是已经获得了锁，且在wait（等待）期间会释放锁。在wait方法的注释里明确提到：线程要调用wait方法，必须先获得该对象的锁，在调用wait之后，当前线程释放该对象锁并进入休眠（这里到底是进入休眠还是挂起？文档没有细说，从该方法能指定等待时间来看，更可能是休眠，没有指定等待时间的，则可能是挂起，不管如何，在休眠/挂起之前，JVM都会从当前线程中把该对象锁释放掉），只有以下几种情况下会被唤醒：其他线程调用了该对象的notify或notifyAll、当前线程被中断、调用wait时指定的时间已到。</p>
+<h5 id="2-4-内核态与用户态"><a href="#2-4-内核态与用户态" class="headerlink" title="2.4 内核态与用户态"></a>2.4 内核态与用户态</h5><p>这是两个操作系统的概念，但理解它们对我们理解Java的线程机制有着一定帮助。</p>
+<p>有一些系统级的调用，比如：清除时钟、创建进程等这些系统指令，如果这些底层系统级指令能够被应用程序任意访问的话，那么后果是危险的，系统随时可能崩溃，所以 CPU将所执行的指令设置为多个特权级别，在硬件执行每条指令时都会校验指令的特权，比如：Intel x86架构的CPU将特权分为0-3四个特权级，0级的权限最高，3权限最低。</p>
+<p>而操作系统根据这系统调用的安全性分为两种：内核态和用户态。内核态执行的指令的特权是0，用户态执行的指令的特权是3。</p>
+<blockquote>
+<p>1.当一个任务（进程）执行系统调用而进入内核指令执行时，进程处于内核运行态（或简称为内核态）；<br>2. 当任务（进程）执行自己的代码时，进程就处于用户态；</p>
+</blockquote>
+<p>明白了内核态和用户态的概念之后，那么在这两种状态之间切换会造成什么样的效率影响？</p>
+<blockquote>
+<p>在执行系统级调用时，需要将变量传递进去、可能要拷贝、计数、保存一些上下文信息，然后内核态执行完成之后需要再将参数传递到用户进程中去，这个切换的代价相对来说是比较大的，所以应该是 尽量避免频繁地在内核态和用户态之间切换。</p>
+</blockquote>
+<p>那操作系统的这两种形态和我们的线程主题有什么关系呢？这里是关键。Java并没有自己的线程模型，而是使用了操作系统的原生线程！</p>
+<p>如果要实现自己的线程模型，那么有些问题就特别复杂，难以解决，比如：如何处理阻塞、如何在多CPU之间合理地分配线程、如何锁定，包括创建、销毁线程这些，都需要Java自己来做，在JDK1.2之前Java曾经使用过自己实现的线程模型，后来放弃了，转向使用操作系统的线程模型，因此创建、销毁、调度、阻塞等这些事都交由操作系统来做，而 线程方面的事在操作系统来说属于系统级的调用，需要在内核态完成，所以如果频繁地执行线程挂起、调度，就会频繁造成在内核态和用户态之间切换，影响效率（当然，操作系统的线程操作是不允许外界（包括Java虚拟机）直接访问的，而是开放了叫“轻量级进程”的接口供外界使用，其与内核线程在Window和Linux上是一对一的关系，这里不多叙述）。</p>
+<blockquote>
+<p>前面说JDK5之前的synchronized效率低下，是 因为在阻塞时线程就会被挂起、然后等待重新调度，而线程操作属于内核态，这频繁的挂起、调度使得操作系统频繁处于内核态和用户态的转换，造成频繁的变量传递、上下文保存等，从而性能较低。</p>
+</blockquote>
+<h5 id="3-线程优势"><a href="#3-线程优势" class="headerlink" title="3 线程优势"></a>3 线程优势</h5><p>尽管面临很多挑战，多线程有一些优点使得它一直被使用。这些优点是：</p>
+<blockquote>
+<ol>
+<li>资源利用率更好；</li>
+<li>程序设计在某些情况下更简单；</li>
+<li>程序响应更快速；</li>
+</ol>
+</blockquote>
+<h5 id="4-创建运行"><a href="#4-创建运行" class="headerlink" title="4 创建运行"></a>4 创建运行</h5><p>编写线程运行时执行的代码有两种方式：一种是创建Thread子类的一个实例并重写run方法，第二种是创建类的时候实现Runnable接口。</p>
+<h5 id="5-Main线程与子线程关系"><a href="#5-Main线程与子线程关系" class="headerlink" title="5 Main线程与子线程关系"></a>5 Main线程与子线程关系</h5><p><strong>1. Main线程是个非守护线程，不能设置成守护线程</strong></p>
+<p>这是因为，Main线程是由Java虚拟机在启动的时候创建的。main方法开始执行的时候，主线程已经创建好并在运行了。对于运行中的线程，调用Thread.setDaemon()会抛出异常Exception in thread “main” java.lang.IllegalThreadStateException。</p>
+<p><strong>2. Main线程结束，其他线程一样可以正常运行</strong></p>
+<p>主线程，只是个普通的非守护线程，用来启动应用程序，不能设置成守护线程；除此之外，它跟其他非守护线程没有什么不同。主线程执行结束，其他线程一样可以正常执行。</p>
+<p>这样其实是很合理的，按照操作系统的理论，进程是资源分配的基本单位，线程是CPU调度的基本单位。对于CPU来说，其实并不存在java的主线程和子线程之分，都只是个普通的线程。进程的资源是线程共享的，只要进程还在，线程就可以正常执行，换句话说线程是强依赖于进程的。也就是说：</p>
+<blockquote>
+<p>线程其实并不存在互相依赖的关系，一个线程的死亡从理论上来说，不会对其他线程有什么影响。</p>
+</blockquote>
+<p><strong>3. Main线程结束，其他线程也可以立刻结束，当且仅当这些子线程都是守护线程</strong></p>
+<p>Java虚拟机（相当于进程）退出的时机是：虚拟机中所有存活的线程都是守护线程。只要还有存活的非守护线程虚拟机就不会退出，而是等待非守护线程执行完毕；反之，如果虚拟机中的线程都是守护线程，那么不管这些线程的死活java虚拟机都会退出。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/JAVA%E5%B9%B6%E5%8F%91/" rel="tag"># JAVA并发</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/31/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%20--%20%E6%9F%A5%E6%89%BE/" rel="prev" title="数据结构 -- 查找">
+      <i class="fa fa-chevron-left"></i> 数据结构 -- 查找
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/31/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%B8%89%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8B%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2/" rel="next" title="啃碎并发（三）：Java线程上下文切换">
+      啃碎并发（三）：Java线程上下文切换 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-前言"><span class="nav-number">1.</span> <span class="nav-text">1 前言</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-基本概念"><span class="nav-number">2.</span> <span class="nav-text">2 基本概念</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-线程"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 线程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-锁"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-3-挂起、休眠、阻塞与非阻塞"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 挂起、休眠、阻塞与非阻塞</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-4-内核态与用户态"><span class="nav-number">2.4.</span> <span class="nav-text">2.4 内核态与用户态</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-线程优势"><span class="nav-number">2.5.</span> <span class="nav-text">3 线程优势</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-创建运行"><span class="nav-number">2.6.</span> <span class="nav-text">4 创建运行</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-Main线程与子线程关系"><span class="nav-number">2.7.</span> <span class="nav-text">5 Main线程与子线程关系</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

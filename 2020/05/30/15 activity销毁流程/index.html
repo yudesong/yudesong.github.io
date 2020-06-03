@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="继续我们的源码解析，上一篇文章我们介绍了Activity的启动流程，一个典型的场景就是Activity a 启动了一个Activity b，他们的生命周期回调方法是：onPause(a) –&gt; onCreate(b) –&gt; onStart(b) –&gt; onResume(b) –&gt; onStop(a)而我们根据源码也验证了这样的生命周期调用序列，那么Activity的销毁流程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="15 activity销毁流程">
+<meta property="og:url" content="http://yoursite.com/2020/05/30/15%20activity%E9%94%80%E6%AF%81%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="继续我们的源码解析，上一篇文章我们介绍了Activity的启动流程，一个典型的场景就是Activity a 启动了一个Activity b，他们的生命周期回调方法是：onPause(a) –&gt; onCreate(b) –&gt; onStart(b) –&gt; onResume(b) –&gt; onStop(a)而我们根据源码也验证了这样的生命周期调用序列，那么Activity的销毁流程">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-29T16:29:04.472Z">
+<meta property="article:modified_time" content="2020-05-31T02:05:18.503Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android系统层">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/30/15%20activity%E9%94%80%E6%AF%81%E6%B5%81%E7%A8%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>15 activity销毁流程 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/30/15%20activity%E9%94%80%E6%AF%81%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          15 activity销毁流程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-30 00:29:04" itemprop="dateCreated datePublished" datetime="2020-05-30T00:29:04+08:00">2020-05-30</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>继续我们的源码解析，上一篇文章我们介绍了Activity的启动流程，一个典型的场景就是Activity a 启动了一个Activity b，他们的生命周期回调方法是：<br>onPause(a) –&gt; onCreate(b) –&gt; onStart(b) –&gt; onResume(b) –&gt; onStop(a)<br>而我们根据源码也验证了这样的生命周期调用序列，那么Activity的销毁流程呢？它的生命周期的调用顺序又是这样的呢？</p>
+<p>这里我们我做一个简单的demo，让一个Activity a启动Activity b，然后在b中调用finish()方法，它们的生命周期执行顺序是：</p>
+<blockquote>
+<p>onPause(b)<br>onRestart(a)<br>onStart(a)<br>onResume(a)<br>onStop(b)<br>onDestory(b)</p>
+</blockquote>
+<p>好吧，根据我们测试的生命周期方法的回调过程开始对Activity销毁流程的分析，一般而言当我们需要销毁Activity的时候都会调用其自身的finish方法，所以我们的流程开始是以finish方法开始的。</p>
+<p><br><strong><font size="6">一：请求销毁当前Activity</p>
+<blockquote>
+<font color="red">
+MyActivity.finish()
+Activity.finish()
+ActivityManagerNative.getDefault().finishActivity()
+ActivityManagerService.finishActivity()
+ActivityStack.requestFinishActivityLocked()
+ActivityStack.finishActivityLocked()
+ActivityStack.startPausingLocked()
+</font>
+</blockquote>
+<p>首先我们在自己的Activity调用了finish方法，它实际上调用的是Activity的finish方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public void finish() &#123;</span><br><span class="line">    finish(false);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后我们可以发现其调用了finish方法的重载方法，并且传递了一个参数值：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">private void finish(boolean finishTask) &#123;</span><br><span class="line">        if (mParent &#x3D;&#x3D; null) &#123;</span><br><span class="line">            int resultCode;</span><br><span class="line">            Intent resultData;</span><br><span class="line">            synchronized (this) &#123;</span><br><span class="line">                resultCode &#x3D; mResultCode;</span><br><span class="line">                resultData &#x3D; mResultData;</span><br><span class="line">            &#125;</span><br><span class="line">            if (false) Log.v(TAG, &quot;Finishing self: token&#x3D;&quot; + mToken);</span><br><span class="line">            try &#123;</span><br><span class="line">                if (resultData !&#x3D; null) &#123;</span><br><span class="line">                    resultData.prepareToLeaveProcess();</span><br><span class="line">                &#125;</span><br><span class="line">                if (ActivityManagerNative.getDefault()</span><br><span class="line">                        .finishActivity(mToken, resultCode, resultData, finishTask)) &#123;</span><br><span class="line">                    mFinished &#x3D; true;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; catch (RemoteException e) &#123;</span><br><span class="line">                &#x2F;&#x2F; Empty</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            mParent.finishFromChild(this);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>好吧，这个参数值似乎并没什么用。。。这里就不在讨论了，然后调用了ActivityManagerNative.getDefault().finishActivity方法，好吧，根据上一篇文章的介绍，我们知道了ActivityManagerNative是一个Binder对象，这里调用的方法最终会被ActivityManagerService执行，所以这了的finishActivity最终被执行的是ActivityManagerService.finishActivity方法，好吧，我们来看一下ActivityManagerService的finishActivity方法的执行逻辑。。。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public final boolean finishActivity(IBinder token, int resultCode, Intent resultData, boolean finishTask) &#123;</span><br><span class="line">     ...</span><br><span class="line">     res &#x3D; tr.stack.requestFinishActivityLocked(token, resultCode,resultData, &quot;app-request&quot;, true);</span><br><span class="line">     ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里我们可以发现，经过一系列逻辑判断之后，最终调用了ActivityStack的requestFinishActivityLocked方法，这里应该就是执行finish Activity的逻辑了。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">final boolean requestFinishActivityLocked(IBinder token, int resultCode,</span><br><span class="line">            Intent resultData, String reason, boolean oomAdj) &#123;</span><br><span class="line">        ActivityRecord r &#x3D; isInStackLocked(token);</span><br><span class="line">        if (DEBUG_RESULTS || DEBUG_STATES) Slog.v(TAG_STATES,</span><br><span class="line">                &quot;Finishing activity token&#x3D;&quot; + token + &quot; r&#x3D;&quot;</span><br><span class="line">                + &quot;, result&#x3D;&quot; + resultCode + &quot;, data&#x3D;&quot; + resultData</span><br><span class="line">                + &quot;, reason&#x3D;&quot; + reason);</span><br><span class="line">        if (r &#x3D;&#x3D; null) &#123;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        finishActivityLocked(r, resultCode, resultData, reason, oomAdj);</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这个方法体里面又调用了finishActivityLocked方法，那我们继续看一下finishActivityLocked方法的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">final boolean finishActivityLocked(ActivityRecord r, int resultCode, Intent resultData,</span><br><span class="line">            String reason, boolean oomAdj) &#123;</span><br><span class="line">        ...</span><br><span class="line">        startPausingLocked(false, false, false, false);</span><br><span class="line">		...</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>好吧，在这里调用了startPausingLocked方法，看名字应该是开始要执行Activity的onPause方法请求了，然后我们看一下startPausingLocked方法的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">final boolean startPausingLocked(boolean userLeaving, boolean uiSleeping, boolean resuming, boolean dontWait) &#123;</span><br><span class="line">       ...</span><br><span class="line">            try &#123;</span><br><span class="line">                EventLog.writeEvent(EventLogTags.AM_PAUSE_ACTIVITY,</span><br><span class="line">                        prev.userId, System.identityHashCode(prev),</span><br><span class="line">                        prev.shortComponentName);</span><br><span class="line">                mService.updateUsageStats(prev, false);</span><br><span class="line">                prev.app.thread.schedulePauseActivity(prev.appToken, prev.finishing,</span><br><span class="line">                        userLeaving, prev.configChangeFlags, dontWait);</span><br><span class="line">            &#125; catch (Exception e) &#123;</span><br><span class="line">                &#x2F;&#x2F; Ignore exception, if process died other code will cleanup.</span><br><span class="line">                Slog.w(TAG, &quot;Exception thrown during pause&quot;, e);</span><br><span class="line">                mPausingActivity &#x3D; null;</span><br><span class="line">                mLastPausedActivity &#x3D; null;</span><br><span class="line">                mLastNoHistoryActivity &#x3D; null;</span><br><span class="line">            &#125;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这样从应用程序调用finish方法，ActivityManagerService接收请求并执行startPausingLocked方法。</p>
+<p><br><strong><font size="6">二：执行当前Activity的onPause方法</p>
+<blockquote>
+<font color="red">
+IApplicationThread.schedulePauseActivity()
+ActivityThread.schedulePauseActivity()
+ActivityThread.sendMessage()
+ActivityThread.H.sendMessage()
+ActivityThread.H.handleMessage()
+ActivityThread.handlePauseActivity()
+ActivityThread.performPauseActivity()
+Instrumentation.callActivityOnPause()
+Activity.performPause()
+Activity.onPause()
+ActivityManagerNative.getDefault().activityPaused()
+ActivityManagerService.activityPaused()
+ActivityStack.activityPausedLocked()
+ActivityStack.completePauseLocked()
+</font>
+</blockquote>
+<p>在方法startPausingLocked中我们调用了：prev.app.thread.schedulePauseActivity这里实际上调用的是IApplicationThread的schedulePauseActivity方法，IApplicationThread也是一个Binder对象，它是ActivityThread中ApplicationThread的Binder client端，所以最终会调用的是ApplicationThread的schedulePauseActivity方法，好吧我们看一下ActivityThread的schedulePauseActivity方法的具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public final void schedulePauseActivity(IBinder token, boolean finished, boolean userLeaving, int configChanges, boolean dontReport) &#123;</span><br><span class="line">   sendMessage(</span><br><span class="line">       finished ? H.PAUSE_ACTIVITY_FINISHING : H.PAUSE_ACTIVITY,</span><br><span class="line">       token, (userLeaving ? 1 : 0) | (dontReport ? 2 : 0),</span><br><span class="line">                    configChanges);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后调用了ActivityThread的sendMessage方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">private void sendMessage(int what, Object obj, int arg1, int arg2) &#123;</span><br><span class="line">        sendMessage(what, obj, arg1, arg2, false);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>然后又回调了sendMessage的重载方法。。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">private void sendMessage(int what, Object obj, int arg1, int arg2, boolean async) &#123;</span><br><span class="line">        if (DEBUG_MESSAGES) Slog.v(</span><br><span class="line">            TAG, &quot;SCHEDULE &quot; + what + &quot; &quot; + mH.codeToString(what)</span><br><span class="line">            + &quot;: &quot; + arg1 + &quot; &#x2F; &quot; + obj);</span><br><span class="line">        Message msg &#x3D; Message.obtain();</span><br><span class="line">        msg.what &#x3D; what;</span><br><span class="line">        msg.obj &#x3D; obj;</span><br><span class="line">        msg.arg1 &#x3D; arg1;</span><br><span class="line">        msg.arg2 &#x3D; arg2;</span><br><span class="line">        if (async) &#123;</span><br><span class="line">            msg.setAsynchronous(true);</span><br><span class="line">        &#125;</span><br><span class="line">        mH.sendMessage(msg);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>最终调用mH发送异步消息，然后在mH的handleMessge方法中处理异步消息并调用handlePauseActivity方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">private void handlePauseActivity(IBinder token, boolean finished,</span><br><span class="line">            boolean userLeaving, int configChanges, boolean dontReport) &#123;</span><br><span class="line">        ActivityClientRecord r &#x3D; mActivities.get(token);</span><br><span class="line">        if (r !&#x3D; null) &#123;</span><br><span class="line">            &#x2F;&#x2F;Slog.v(TAG, &quot;userLeaving&#x3D;&quot; + userLeaving + &quot; handling pause of &quot; + r);</span><br><span class="line">            if (userLeaving) &#123;</span><br><span class="line">                performUserLeavingActivity(r);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            r.activity.mConfigChangeFlags |&#x3D; configChanges;</span><br><span class="line">            performPauseActivity(token, finished, r.isPreHoneycomb());</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Make sure any pending writes are now committed.</span><br><span class="line">            if (r.isPreHoneycomb()) &#123;</span><br><span class="line">                QueuedWork.waitToFinish();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Tell the activity manager we have paused.</span><br><span class="line">            if (!dontReport) &#123;</span><br><span class="line">                try &#123;</span><br><span class="line">                    ActivityManagerNative.getDefault().activityPaused(token);</span><br><span class="line">                &#125; catch (RemoteException ex) &#123;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            mSomeActivitiesChanged &#x3D; true;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>好吧，这里回调了performPauseActivity方法，上篇文章中我们已经分析过了这段代码：</p>
+<blockquote>
+<p>performPauseActivity()<br>Instrumentation.callActivityOnPause()<br>Activity.performPause()<br>Activity.onPause()</p>
+</blockquote>
+<p>这样我们就回调了第一个生命周期方法：onPause。。。</p>
+<p>在handlePauseActivity方法中我们调用了ActivityManagerNative.getDefault().activityPaused(token)方法，好吧又是回调ActivityManagerService的方法，这样最终会调用ActivityManagerService的activityPaused方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">    public final void activityPaused(IBinder token) &#123;</span><br><span class="line">        final long origId &#x3D; Binder.clearCallingIdentity();</span><br><span class="line">        synchronized(this) &#123;</span><br><span class="line">            ActivityStack stack &#x3D; ActivityRecord.getStackLocked(token);</span><br><span class="line">            if (stack !&#x3D; null) &#123;</span><br><span class="line">                stack.activityPausedLocked(token, false);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        Binder.restoreCallingIdentity(origId);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这样，我们继续看一下activityPausedLocked方法的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">final void activityPausedLocked(IBinder token, boolean timeout) &#123;</span><br><span class="line">        ...</span><br><span class="line">        completePauseLocked(true);</span><br><span class="line">        ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>里面又经过一系列的逻辑判断之后，开始执行completePauseLocked方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">private void completePauseLocked(boolean resumeNext) &#123;</span><br><span class="line">	...                   mStackSupervisor.resumeTopActivitiesLocked(topStack, null, null);</span><br><span class="line">	...</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这样栈顶Activity的onPause操作就执行完成了，接下来就就是开始执行上一个Activity的onResume操作了。。。</p>
+<p></br><strong><font size="6">三：执行上一个Activity的onResume操作</font></strong><br>这样调用了ActivityStackSupervisor.resumeTopActivitiesLocked方法。。，又开始调用这个方法，通过上一篇文章的介绍，我们知道这个方法实际上是执行Activity的初始化，我们看一下其具体的调用过程：</p>
+<blockquote>
+<font color="red">
+ActivityStack.resumeTopActivityLocked()
+ActivityStack.resumeTopInnerLocked()
+IApplicationThread.scheduleResumeActivity()
+ActivityThread.scheduleResumeActivity()
+ActivityThread.sendMessage()
+ActivityTherad.H.sendMessage()
+ActivityThread.H.handleMessage()
+ActivityThread.H.handleResumeMessage()
+Activity.performResume()
+Activity.performRestart()
+Instrumentation.callActivityOnRestart()
+Activity.onRestart()
+Activity.performStart()
+Instrumentation.callActivityOnStart()
+Activity.onStart()
+Instrumentation.callActivityOnResume()
+Activity.onResume()
+</font>
+</blockquote>
+<p>好吧，这个过程其实上一篇文章中已经做了介绍，这里不做过多的分析了，通过这样调用过程我们最终执行了当前栈顶Activity上一个Activity的onRestart方法，onStart方法，onResume方法等，下面我们将调用栈顶Activity的onStop方法，onDestory方法。</p>
+<p></br><strong><font size="6">四：执行栈顶Activity的销毁操作</p>
+<blockquote>
+<font color="red">
+Looper.myQueue().addIdleHandler(new Idler())
+ActivityManagerNative.getDefault().activityIdle()
+ActivityManagerService.activityIdle()
+ActivityStackSupervisor.activityIdleInternalLocked()
+ActivityStack.destroyActivityLocked()
+IApplicationThread.scheduleDestoryActivity()
+ActivityThread.scheduleDestoryActivity()
+ActivityThread.sendMessage()
+ActivityThread.H.sendMessage()
+ActivityThread.H.handleMessage()
+ActivityThread.handleDestoryActivity()
+ActivityThread.performDestoryActivity()
+Activity.performStop()
+Instrumentation.callActivityOnStop()
+Activity.onStop()
+Instrumentation.callActivityOnDestory()
+Activity.performDestory()
+Acitivity.onDestory()
+ActivityManagerNative.getDefault().activityDestoryed()
+ActivityManagerService.activityDestoryed()
+ActivityStack.activityDestoryedLocked()
+</font>
+</blockquote>
+<p>我们在ActivityThread.handleResumeActivity方法中调用了Looper.myQueue().addIdleHandler(new Idler())，下面看一下这个方法的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">private class Idler implements MessageQueue.IdleHandler &#123;</span><br><span class="line">        @Override</span><br><span class="line">        public final boolean queueIdle() &#123;</span><br><span class="line">            ActivityClientRecord a &#x3D; mNewActivities;</span><br><span class="line">            boolean stopProfiling &#x3D; false;</span><br><span class="line">            if (mBoundApplication !&#x3D; null &amp;&amp; mProfiler.profileFd !&#x3D; null</span><br><span class="line">                    &amp;&amp; mProfiler.autoStopProfiler) &#123;</span><br><span class="line">                stopProfiling &#x3D; true;</span><br><span class="line">            &#125;</span><br><span class="line">            if (a !&#x3D; null) &#123;</span><br><span class="line">                mNewActivities &#x3D; null;</span><br><span class="line">                IActivityManager am &#x3D; ActivityManagerNative.getDefault();</span><br><span class="line">                ActivityClientRecord prev;</span><br><span class="line">                do &#123;</span><br><span class="line">                    if (localLOGV) Slog.v(</span><br><span class="line">                        TAG, &quot;Reporting idle of &quot; + a +</span><br><span class="line">                        &quot; finished&#x3D;&quot; +</span><br><span class="line">                        (a.activity !&#x3D; null &amp;&amp; a.activity.mFinished));</span><br><span class="line">                    if (a.activity !&#x3D; null &amp;&amp; !a.activity.mFinished) &#123;</span><br><span class="line">                        try &#123;</span><br><span class="line">                            am.activityIdle(a.token, a.createdConfig, stopProfiling);</span><br><span class="line">                            a.createdConfig &#x3D; null;</span><br><span class="line">                        &#125; catch (RemoteException ex) &#123;</span><br><span class="line">                            &#x2F;&#x2F; Ignore</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                    prev &#x3D; a;</span><br><span class="line">                    a &#x3D; a.nextIdle;</span><br><span class="line">                    prev.nextIdle &#x3D; null;</span><br><span class="line">                &#125; while (a !&#x3D; null);</span><br><span class="line">            &#125;</span><br><span class="line">            if (stopProfiling) &#123;</span><br><span class="line">                mProfiler.stopProfiling();</span><br><span class="line">            &#125;</span><br><span class="line">            ensureJitEnabled();</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>内部有一个queueIdle的回调方法，当它被添加到MessageQueue之后就会回调该方法，我们可以发现在这个方法体中调用了ActivityManagerNative.getDefault.activityIdle方法，通过上一篇文章以及上面的讲解，我们应该知道这了最终调用的是ActivityManagerService.activityIdle方法，好吧，这里看一下activityIdle方法的具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">    public final void activityIdle(IBinder token, Configuration config, boolean stopProfiling) &#123;</span><br><span class="line">        final long origId &#x3D; Binder.clearCallingIdentity();</span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            ActivityStack stack &#x3D; ActivityRecord.getStackLocked(token);</span><br><span class="line">            if (stack !&#x3D; null) &#123;</span><br><span class="line">                ActivityRecord r &#x3D;</span><br><span class="line">                        mStackSupervisor.activityIdleInternalLocked(token, false, config);</span><br><span class="line">                if (stopProfiling) &#123;</span><br><span class="line">                    if ((mProfileProc &#x3D;&#x3D; r.app) &amp;&amp; (mProfileFd !&#x3D; null)) &#123;</span><br><span class="line">                        try &#123;</span><br><span class="line">                            mProfileFd.close();</span><br><span class="line">                        &#125; catch (IOException e) &#123;</span><br><span class="line">                        &#125;</span><br><span class="line">                        clearProfilerLocked();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        Binder.restoreCallingIdentity(origId);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以发现这里又调用了ActivityStackSupervisor.activityIdleInternalLocked方法，然后我们看一下activityIdleInternalLocked方法的具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">final ActivityRecord activityIdleInternalLocked(final IBinder token, boolean fromTimeout, Configuration config) &#123;</span><br><span class="line">    ....   </span><br><span class="line">    stack.destroyActivityLocked(r, true, &quot;finish-idle&quot;);</span><br><span class="line">    ....    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到这里调用ActivityStack.destroyActivityLocked方法，可以看一下其具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">final boolean destroyActivityLocked(ActivityRecord r, boolean removeFromApp, String reason) &#123;</span><br><span class="line">      ...</span><br><span class="line">      r.app.thread.scheduleDestroyActivity(r.appToken, r.finishing, r.configChangeFlags);</span><br><span class="line">      ...      </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>好吧，这里又开始执行IApplicationThread.scheduleDestoryActivity方法，上文已经做了说明这里最终调用的是ActivityThread.scheduleDestroyActivity方法，好吧，看一下ActivityThread.scheduleDestryActivity方法的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public final void scheduleDestroyActivity(IBinder token, boolean finishing, int configChanges) &#123;</span><br><span class="line">    sendMessage(H.DESTROY_ACTIVITY, token, finishing ? 1 : 0,</span><br><span class="line">                    configChanges);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里有开始执行sendMessage方法，通过一系列的调用sendMessage方法最终调用了handleDestroyActivity方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line">private void handleDestroyActivity(IBinder token, boolean finishing,</span><br><span class="line">            int configChanges, boolean getNonConfigInstance) &#123;</span><br><span class="line">        ActivityClientRecord r &#x3D; performDestroyActivity(token, finishing,</span><br><span class="line">                configChanges, getNonConfigInstance);</span><br><span class="line">        if (r !&#x3D; null) &#123;</span><br><span class="line">            cleanUpPendingRemoveWindows(r);</span><br><span class="line">            WindowManager wm &#x3D; r.activity.getWindowManager();</span><br><span class="line">            View v &#x3D; r.activity.mDecor;</span><br><span class="line">            if (v !&#x3D; null) &#123;</span><br><span class="line">                if (r.activity.mVisibleFromServer) &#123;</span><br><span class="line">                    mNumVisibleActivities--;</span><br><span class="line">                &#125;</span><br><span class="line">                IBinder wtoken &#x3D; v.getWindowToken();</span><br><span class="line">                if (r.activity.mWindowAdded) &#123;</span><br><span class="line">                    if (r.onlyLocalRequest) &#123;</span><br><span class="line">                        &#x2F;&#x2F; Hold off on removing this until the new activity&#39;s</span><br><span class="line">                        &#x2F;&#x2F; window is being added.</span><br><span class="line">                        r.mPendingRemoveWindow &#x3D; v;</span><br><span class="line">                        r.mPendingRemoveWindowManager &#x3D; wm;</span><br><span class="line">                    &#125; else &#123;</span><br><span class="line">                        wm.removeViewImmediate(v);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                if (wtoken !&#x3D; null &amp;&amp; r.mPendingRemoveWindow &#x3D;&#x3D; null) &#123;</span><br><span class="line">                    WindowManagerGlobal.getInstance().closeAll(wtoken,</span><br><span class="line">                            r.activity.getClass().getName(), &quot;Activity&quot;);</span><br><span class="line">                &#125;</span><br><span class="line">                r.activity.mDecor &#x3D; null;</span><br><span class="line">            &#125;</span><br><span class="line">            if (r.mPendingRemoveWindow &#x3D;&#x3D; null) &#123;</span><br><span class="line">                &#x2F;&#x2F; If we are delaying the removal of the activity window, then</span><br><span class="line">                &#x2F;&#x2F; we can&#39;t clean up all windows here.  Note that we can&#39;t do</span><br><span class="line">                &#x2F;&#x2F; so later either, which means any windows that aren&#39;t closed</span><br><span class="line">                &#x2F;&#x2F; by the app will leak.  Well we try to warning them a lot</span><br><span class="line">                &#x2F;&#x2F; about leaking windows, because that is a bug, so if they are</span><br><span class="line">                &#x2F;&#x2F; using this recreate facility then they get to live with leaks.</span><br><span class="line">                WindowManagerGlobal.getInstance().closeAll(token,</span><br><span class="line">                        r.activity.getClass().getName(), &quot;Activity&quot;);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Mocked out contexts won&#39;t be participating in the normal</span><br><span class="line">            &#x2F;&#x2F; process lifecycle, but if we&#39;re running with a proper</span><br><span class="line">            &#x2F;&#x2F; ApplicationContext we need to have it tear down things</span><br><span class="line">            &#x2F;&#x2F; cleanly.</span><br><span class="line">            Context c &#x3D; r.activity.getBaseContext();</span><br><span class="line">            if (c instanceof ContextImpl) &#123;</span><br><span class="line">                ((ContextImpl) c).scheduleFinalCleanup(</span><br><span class="line">                        r.activity.getClass().getName(), &quot;Activity&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        if (finishing) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                ActivityManagerNative.getDefault().activityDestroyed(token);</span><br><span class="line">            &#125; catch (RemoteException ex) &#123;</span><br><span class="line">                &#x2F;&#x2F; If the system process has died, it&#39;s game over for everyone.</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        mSomeActivitiesChanged &#x3D; true;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到这里调用了performDestroyActivity方法，用来执行Avtivity的onDestroy方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">private ActivityClientRecord performDestroyActivity(IBinder token, boolean finishing,</span><br><span class="line">            int configChanges, boolean getNonConfigInstance) &#123;</span><br><span class="line">       ...     </span><br><span class="line">       r.activity.performStop();</span><br><span class="line">       ...</span><br><span class="line">       mInstrumentation.callActivityOnDestroy(r.activity);</span><br><span class="line">	   ...</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>然后调用了Activity.performStop()方法，查看performStop方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">final void performStop() &#123;</span><br><span class="line">        ...</span><br><span class="line">        mInstrumentation.callActivityOnStop(this);</span><br><span class="line">        ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后调用了Instrumentation.callActivityOnStop()方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public void callActivityOnStop(Activity activity) &#123;</span><br><span class="line">        activity.onStop();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>好吧，终于调用了Activity的onStop方法。。。</p>
+<p>我们继续看一下Instrumentation.callActivityOnDestroy()。。。。又是通过Instrumentation来调用Activity的onDestroy方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public void callActivityOnDestroy(Activity activity) &#123;</span><br><span class="line">    ...</span><br><span class="line">    activity.performDestroy();</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后看一下Activity的performDestroy()方法的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">final void performDestroy() &#123;</span><br><span class="line">        mDestroyed &#x3D; true;</span><br><span class="line">        mWindow.destroy();</span><br><span class="line">        mFragments.dispatchDestroy();</span><br><span class="line">        onDestroy();</span><br><span class="line">        mFragments.doLoaderDestroy();</span><br><span class="line">        if (mVoiceInteractor !&#x3D; null) &#123;</span><br><span class="line">            mVoiceInteractor.detachActivity();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>O(∩_∩)O哈哈~，终于回调了Activity的onDestroy方法。。。。</p>
+<p></br></br></br><br><strong><font size="5">总结：</p>
+<ul>
+<li><p>Activity的销毁流程是从finish方法开始的</p>
+</li>
+<li><p>Activity销毁过程是：onPause –&gt; onRestart –&gt; onStart –&gt; onResume –&gt; onStop –&gt; onDestroy</p>
+</li>
+<li><p>Activity的销毁流程是ActivityThread与ActivityManagerService相互配合销毁的</p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E7%B3%BB%E7%BB%9F%E5%B1%82/" rel="tag"># Android系统层</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/30/14%20activity%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" rel="prev" title="14 activity启动流程">
+      <i class="fa fa-chevron-left"></i> 14 activity启动流程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/30/16%20%E5%BA%94%E7%94%A8%E8%BF%9B%E7%A8%8BContext%E5%88%9B%E5%BB%BA%E6%B5%81%E7%A8%8B/" rel="next" title="16 应用进程Context创建流程">
+      16 应用进程Context创建流程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

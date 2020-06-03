@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="好吧，终于要开始讲讲Activity的布局加载流程了，大家都知道在Android体系中Activity扮演了一个界面展示的角色，这也是它与android中另外一个很重要的组件Service最大的不同，但是这个展示的界面的功能是Activity直接控制的么？界面的布局文件是如何加载到内存并被Activity管理的？android中的View是一个怎样的概念？加载到内存中的布局文件是如何绘制出来的？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="17 Activity布局加载流程">
+<meta property="og:url" content="http://yoursite.com/2020/05/30/17%20Activity%E5%B8%83%E5%B1%80%E5%8A%A0%E8%BD%BD%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="好吧，终于要开始讲讲Activity的布局加载流程了，大家都知道在Android体系中Activity扮演了一个界面展示的角色，这也是它与android中另外一个很重要的组件Service最大的不同，但是这个展示的界面的功能是Activity直接控制的么？界面的布局文件是如何加载到内存并被Activity管理的？android中的View是一个怎样的概念？加载到内存中的布局文件是如何绘制出来的？">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-29T16:29:04.539Z">
+<meta property="article:modified_time" content="2020-05-31T03:01:36.868Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android系统层">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/30/17%20Activity%E5%B8%83%E5%B1%80%E5%8A%A0%E8%BD%BD%E6%B5%81%E7%A8%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>17 Activity布局加载流程 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/30/17%20Activity%E5%B8%83%E5%B1%80%E5%8A%A0%E8%BD%BD%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          17 Activity布局加载流程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-30 00:29:04" itemprop="dateCreated datePublished" datetime="2020-05-30T00:29:04+08:00">2020-05-30</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>好吧，终于要开始讲讲Activity的布局加载流程了，大家都知道在Android体系中Activity扮演了一个界面展示的角色，这也是它与android中另外一个很重要的组件Service最大的不同，但是这个展示的界面的功能是Activity直接控制的么？界面的布局文件是如何加载到内存并被Activity管理的？android中的View是一个怎样的概念？加载到内存中的布局文件是如何绘制出来的？</p>
+<p>要想回答这些问题，我们就需要对android的界面加载与绘制流程有所了解，这里我们先来学习一下Activity的布局加载的流程。而至于Acitivty的布局绘制流程我们在下一篇中在做介绍。</p>
+<p>其实Activity对界面布局的管理是都是通过Window对象来实现的，Window对象，顾名思义就是一个窗口对象，而Activity从用户角度就是一个个的窗口实例，因此不难想象每个Activity中都对应着一个Window对象，而这个Window对象就是负责加载显示界面的。至于window对象是如何展示不同的界面的，那是通过定义不同的View组件实现不同的界面展示。</p>
+<p>废话不多说了，不知道大家是否还记得我们讲过的Activity的启动流程么？不熟悉的童鞋可以参考：<a href="http://blog.csdn.net/qq_23547831/article/details/51224992" target="_blank" rel="noopener"> android源码解析之（十四）–&gt;Activity启动流程</a> ，在文章中我们介绍到当ActivityManagerService接收到启动Activity的请求之后会通过IApplicationThread进程间通讯告知ApplicationThread并执行handleLauncherActivity方法，这里我们可以下其具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line">private void handleLaunchActivity(ActivityClientRecord r, Intent customIntent) &#123;</span><br><span class="line">        &#x2F;&#x2F; If we are getting ready to gc after going to the background, well</span><br><span class="line">        &#x2F;&#x2F; we are back active so skip it.</span><br><span class="line">        unscheduleGcIdler();</span><br><span class="line">        mSomeActivitiesChanged &#x3D; true;</span><br><span class="line"></span><br><span class="line">        if (r.profilerInfo !&#x3D; null) &#123;</span><br><span class="line">            mProfiler.setProfiler(r.profilerInfo);</span><br><span class="line">            mProfiler.startProfiling();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; Make sure we are running with the most recent config.</span><br><span class="line">        handleConfigurationChanged(null, null);</span><br><span class="line"></span><br><span class="line">        if (localLOGV) Slog.v(</span><br><span class="line">            TAG, &quot;Handling launch of &quot; + r);</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; Initialize before creating the activity</span><br><span class="line">        WindowManagerGlobal.initialize();</span><br><span class="line"></span><br><span class="line">        Activity a &#x3D; performLaunchActivity(r, customIntent);</span><br><span class="line"></span><br><span class="line">        if (a !&#x3D; null) &#123;</span><br><span class="line">            r.createdConfig &#x3D; new Configuration(mConfiguration);</span><br><span class="line">            Bundle oldState &#x3D; r.state;</span><br><span class="line">            handleResumeActivity(r.token, false, r.isForward,</span><br><span class="line">                    !r.activity.mFinished &amp;&amp; !r.startsNotResumed);</span><br><span class="line"></span><br><span class="line">            if (!r.activity.mFinished &amp;&amp; r.startsNotResumed) &#123;</span><br><span class="line">                &#x2F;&#x2F; The activity manager actually wants this one to start out</span><br><span class="line">                &#x2F;&#x2F; paused, because it needs to be visible but isn&#39;t in the</span><br><span class="line">                &#x2F;&#x2F; foreground.  We accomplish this by going through the</span><br><span class="line">                &#x2F;&#x2F; normal startup (because activities expect to go through</span><br><span class="line">                &#x2F;&#x2F; onResume() the first time they run, before their window</span><br><span class="line">                &#x2F;&#x2F; is displayed), and then pausing it.  However, in this case</span><br><span class="line">                &#x2F;&#x2F; we do -not- need to do the full pause cycle (of freezing</span><br><span class="line">                &#x2F;&#x2F; and such) because the activity manager assumes it can just</span><br><span class="line">                &#x2F;&#x2F; retain the current state it has.</span><br><span class="line">                try &#123;</span><br><span class="line">                    r.activity.mCalled &#x3D; false;</span><br><span class="line">                    mInstrumentation.callActivityOnPause(r.activity);</span><br><span class="line">                    &#x2F;&#x2F; We need to keep around the original state, in case</span><br><span class="line">                    &#x2F;&#x2F; we need to be created again.  But we only do this</span><br><span class="line">                    &#x2F;&#x2F; for pre-Honeycomb apps, which always save their state</span><br><span class="line">                    &#x2F;&#x2F; when pausing, so we can not have them save their state</span><br><span class="line">                    &#x2F;&#x2F; when restarting from a paused state.  For HC and later,</span><br><span class="line">                    &#x2F;&#x2F; we want to (and can) let the state be saved as the normal</span><br><span class="line">                    &#x2F;&#x2F; part of stopping the activity.</span><br><span class="line">                    if (r.isPreHoneycomb()) &#123;</span><br><span class="line">                        r.state &#x3D; oldState;</span><br><span class="line">                    &#125;</span><br><span class="line">                    if (!r.activity.mCalled) &#123;</span><br><span class="line">                        throw new SuperNotCalledException(</span><br><span class="line">                            &quot;Activity &quot; + r.intent.getComponent().toShortString() +</span><br><span class="line">                            &quot; did not call through to super.onPause()&quot;);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                &#125; catch (SuperNotCalledException e) &#123;</span><br><span class="line">                    throw e;</span><br><span class="line"></span><br><span class="line">                &#125; catch (Exception e) &#123;</span><br><span class="line">                    if (!mInstrumentation.onException(r.activity, e)) &#123;</span><br><span class="line">                        throw new RuntimeException(</span><br><span class="line">                                &quot;Unable to pause activity &quot;</span><br><span class="line">                                + r.intent.getComponent().toShortString()</span><br><span class="line">                                + &quot;: &quot; + e.toString(), e);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                r.paused &#x3D; true;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            &#x2F;&#x2F; If there was an error, for any reason, tell the activity</span><br><span class="line">            &#x2F;&#x2F; manager to stop us.</span><br><span class="line">            try &#123;</span><br><span class="line">                ActivityManagerNative.getDefault()</span><br><span class="line">                    .finishActivity(r.token, Activity.RESULT_CANCELED, null, false);</span><br><span class="line">            &#125; catch (RemoteException ex) &#123;</span><br><span class="line">                &#x2F;&#x2F; Ignore</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以发现这里的handleLauncherActivity方法内部调用了performLaunchActivity方法，这个方法也是具体启动Activity的方法，我们来看一下它的具体实现逻辑：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">private Activity performLaunchActivity(ActivityClientRecord r, Intent customIntent) &#123;</span><br><span class="line">        ...</span><br><span class="line">        Activity activity &#x3D; null;</span><br><span class="line">        try &#123;</span><br><span class="line">            java.lang.ClassLoader cl &#x3D; r.packageInfo.getClassLoader();</span><br><span class="line">            activity &#x3D; mInstrumentation.newActivity(</span><br><span class="line">                    cl, component.getClassName(), r.intent);</span><br><span class="line">            StrictMode.incrementExpectedActivityCount(activity.getClass());</span><br><span class="line">            r.intent.setExtrasClassLoader(cl);</span><br><span class="line">            r.intent.prepareToEnterProcess();</span><br><span class="line">            if (r.state !&#x3D; null) &#123;</span><br><span class="line">                r.state.setClassLoader(cl);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            if (!mInstrumentation.onException(activity, e)) &#123;</span><br><span class="line">                throw new RuntimeException(</span><br><span class="line">                    &quot;Unable to instantiate activity &quot; + component</span><br><span class="line">                    + &quot;: &quot; + e.toString(), e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">		...</span><br><span class="line">            Application app &#x3D; r.packageInfo.makeApplication(false, mInstrumentation);</span><br><span class="line"></span><br><span class="line">            if (localLOGV) Slog.v(TAG, &quot;Performing launch of &quot; + r);</span><br><span class="line">            if (localLOGV) Slog.v(</span><br><span class="line">                    TAG, r + &quot;: app&#x3D;&quot; + app</span><br><span class="line">                    + &quot;, appName&#x3D;&quot; + app.getPackageName()</span><br><span class="line">                    + &quot;, pkg&#x3D;&quot; + r.packageInfo.getPackageName()</span><br><span class="line">                    + &quot;, comp&#x3D;&quot; + r.intent.getComponent().toShortString()</span><br><span class="line">                    + &quot;, dir&#x3D;&quot; + r.packageInfo.getAppDir());</span><br><span class="line"></span><br><span class="line">            if (activity !&#x3D; null) &#123;</span><br><span class="line">                Context appContext &#x3D; createBaseContextForActivity(r, activity);</span><br><span class="line">                CharSequence title &#x3D; r.activityInfo.loadLabel(appContext.getPackageManager());</span><br><span class="line">                Configuration config &#x3D; new Configuration(mCompatConfiguration);</span><br><span class="line">                if (DEBUG_CONFIGURATION) Slog.v(TAG, &quot;Launching activity &quot;</span><br><span class="line">                        + r.activityInfo.name + &quot; with config &quot; + config);</span><br><span class="line">                activity.attach(appContext, this, getInstrumentation(), r.token,</span><br><span class="line">                        r.ident, app, r.intent, r.activityInfo, title, r.parent,</span><br><span class="line">                        r.embeddedID, r.lastNonConfigurationInstances, config,</span><br><span class="line">                        r.referrer, r.voiceInteractor);</span><br><span class="line"></span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line">        return activity;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>从代码中可以看到这里是通过反射的机制创建的Activity，并调用了Activity的attach方法，那么这里的attach方法是做什么的呢？我们继续来看一下attach方法的实现逻辑：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line">final void attach(Context context, ActivityThread aThread,</span><br><span class="line">            Instrumentation instr, IBinder token, int ident,</span><br><span class="line">            Application application, Intent intent, ActivityInfo info,</span><br><span class="line">            CharSequence title, Activity parent, String id,</span><br><span class="line">            NonConfigurationInstances lastNonConfigurationInstances,</span><br><span class="line">            Configuration config, String referrer, IVoiceInteractor voiceInteractor) &#123;</span><br><span class="line">        attachBaseContext(context);</span><br><span class="line"></span><br><span class="line">        mFragments.attachHost(null &#x2F;*parent*&#x2F;);</span><br><span class="line"></span><br><span class="line">        mWindow &#x3D; new PhoneWindow(this);</span><br><span class="line">        mWindow.setCallback(this);</span><br><span class="line">        mWindow.setOnWindowDismissedCallback(this);</span><br><span class="line">        mWindow.getLayoutInflater().setPrivateFactory(this);</span><br><span class="line">        if (info.softInputMode !&#x3D; WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED) &#123;</span><br><span class="line">            mWindow.setSoftInputMode(info.softInputMode);</span><br><span class="line">        &#125;</span><br><span class="line">        if (info.uiOptions !&#x3D; 0) &#123;</span><br><span class="line">            mWindow.setUiOptions(info.uiOptions);</span><br><span class="line">        &#125;</span><br><span class="line">        mUiThread &#x3D; Thread.currentThread();</span><br><span class="line"></span><br><span class="line">        mMainThread &#x3D; aThread;</span><br><span class="line">        mInstrumentation &#x3D; instr;</span><br><span class="line">        mToken &#x3D; token;</span><br><span class="line">        mIdent &#x3D; ident;</span><br><span class="line">        mApplication &#x3D; application;</span><br><span class="line">        mIntent &#x3D; intent;</span><br><span class="line">        mReferrer &#x3D; referrer;</span><br><span class="line">        mComponent &#x3D; intent.getComponent();</span><br><span class="line">        mActivityInfo &#x3D; info;</span><br><span class="line">        mTitle &#x3D; title;</span><br><span class="line">        mParent &#x3D; parent;</span><br><span class="line">        mEmbeddedID &#x3D; id;</span><br><span class="line">        mLastNonConfigurationInstances &#x3D; lastNonConfigurationInstances;</span><br><span class="line">        if (voiceInteractor !&#x3D; null) &#123;</span><br><span class="line">            if (lastNonConfigurationInstances !&#x3D; null) &#123;</span><br><span class="line">                mVoiceInteractor &#x3D; lastNonConfigurationInstances.voiceInteractor;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                mVoiceInteractor &#x3D; new VoiceInteractor(voiceInteractor, this, this,</span><br><span class="line">                        Looper.myLooper());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mWindow.setWindowManager(</span><br><span class="line">                (WindowManager)context.getSystemService(Context.WINDOW_SERVICE),</span><br><span class="line">                mToken, mComponent.flattenToString(),</span><br><span class="line">                (info.flags &amp; ActivityInfo.FLAG_HARDWARE_ACCELERATED) !&#x3D; 0);</span><br><span class="line">        if (mParent !&#x3D; null) &#123;</span><br><span class="line">            mWindow.setContainer(mParent.getWindow());</span><br><span class="line">        &#125;</span><br><span class="line">        mWindowManager &#x3D; mWindow.getWindowManager();</span><br><span class="line">        mCurrentConfig &#x3D; config;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到在attach方法这里初始化了一些Activity的成员变量，主要是mWindow对象，并且mWindow的成员实例是PhoneWindow实例，这样也从侧面说明了一个Activity对应着一个Window对象。除了window对象还初始化了一些Activity的其他成员变量，这里不再做讨论，继续回到我们的performLaunchActivity方法，在调用了Activity的attach方法之后又调用了：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mInstrumentation.callActivityOnCreate(activity, r.state);</span><br></pre></td></tr></table></figure>
+<p>这里的mInstrumentation是类Instrumentation，每个应用进程对应着一个Instrumentation和一个ActivityThread，Instrumentation就是具体操作Activity回调其生命周期方法的，我们这里看一下它的callActivityOnCreate方法的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public void callActivityOnCreate(Activity activity, Bundle icicle) &#123;</span><br><span class="line">        prePerformCreate(activity);</span><br><span class="line">        activity.performCreate(icicle);</span><br><span class="line">        postPerformCreate(activity);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里代码比较简洁，preOerformCreate方法和postPerformCreate方法我们这里暂时不管，主要的执行逻辑是调用了activity.performCreate方法，我们来看一下Activity的performCreate方法的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">final void performCreate(Bundle icicle) &#123;</span><br><span class="line">        onCreate(icicle);</span><br><span class="line">        mActivityTransitionState.readState(icicle);</span><br><span class="line">        performCreateCommon();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>原来onCreate的生命周期方法是在这里回调的，其实这里的逻辑在前面几篇文章中有讲述，也可以参考前面的文章。</p>
+<p>至此我们就回调到了我们Activity的onCreate方法，大家平时在重写onCreate方法的时候，怎么加载布局文件的呢？这里看一下我们的onCreate方法的典型写法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">    protected void onCreate(Bundle savedInstanceState) &#123;</span><br><span class="line">        super.onCreate(savedInstanceState);</span><br><span class="line">        setContentView(R.layout.activity_main);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>无论我们怎么变化，我们的onCreate方法一般都是会调用这两句话的吧？那么这里的两段代码分辨是什么含义呢？我们首先看一下super.onCreate方法的实现逻辑，由于我们的Activity类继承与Activity，所以这里的super.onCreate方法，就是调用的Activity.onCreate方法，好吧，既然这样我们来看一下Activity的onCreate方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">protected void onCreate(@Nullable Bundle savedInstanceState) &#123;</span><br><span class="line">        if (DEBUG_LIFECYCLE) Slog.v(TAG, &quot;onCreate &quot; + this + &quot;: &quot; + savedInstanceState);</span><br><span class="line">        if (mLastNonConfigurationInstances !&#x3D; null) &#123;</span><br><span class="line">            mFragments.restoreLoaderNonConfig(mLastNonConfigurationInstances.loaders);</span><br><span class="line">        &#125;</span><br><span class="line">        if (mActivityInfo.parentActivityName !&#x3D; null) &#123;</span><br><span class="line">            if (mActionBar &#x3D;&#x3D; null) &#123;</span><br><span class="line">                mEnableDefaultActionBarUp &#x3D; true;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                mActionBar.setDefaultDisplayHomeAsUpEnabled(true);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        if (savedInstanceState !&#x3D; null) &#123;</span><br><span class="line">            Parcelable p &#x3D; savedInstanceState.getParcelable(FRAGMENTS_TAG);</span><br><span class="line">            mFragments.restoreAllState(p, mLastNonConfigurationInstances !&#x3D; null</span><br><span class="line">                    ? mLastNonConfigurationInstances.fragments : null);</span><br><span class="line">        &#125;</span><br><span class="line">        mFragments.dispatchCreate();</span><br><span class="line">        getApplication().dispatchActivityCreated(this, savedInstanceState);</span><br><span class="line">        if (mVoiceInteractor !&#x3D; null) &#123;</span><br><span class="line">            mVoiceInteractor.attachActivity(this);</span><br><span class="line">        &#125;</span><br><span class="line">        mCalled &#x3D; true;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以发现，Activity的onCreate方法主要是做了一些Acitivty的初始化操作，那么如果我们不在自己的Activity调用super.onCreate方法呢？好吧，尝试之后，AndroidStudio在打开的Acitivty的onCreate方法中如果不调用super.onCreate方法的话，会报错。。。有木有搞错。。。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">FATAL EXCEPTION: main                                                              Process: com.example.aaron.helloworld, PID: 18001                                                                 android.util.SuperNotCalledException: Activity &#123;com.example.aaron.helloworld&#x2F;com.example.aaron.helloworld.SecondActivity&#125; did not call through to super.onCreate()                                                                    at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:2422)                                                                            at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:2528)                                                                               at android.app.ActivityThread.access$800(ActivityThread.java:169)                                                                              at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1421)                                                                             at android.os.Handler.dispatchMessage(Handler.java:111)                                                                            at android.os.Looper.loop(Looper.java:194)                                                                           at android.app.ActivityThread.main(ActivityThread.java:5552)                                                                        at java.lang.reflect.Method.invoke(Native Method)                                                                        at java.lang.reflect.Method.invoke(Method.java:372)                                                                      at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:964)                                                                       at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:759)</span><br></pre></td></tr></table></figure>
+<p>可以看到如果不调用super.onCreate方法的话，会在Activity的performLaunchActivity中报错，我们知道这里的performLaunchActivity方法就是我们启动Activity的时候回回调的方法，我们找找方法体实现中throws的Exception。。。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">activity.mCalled &#x3D; false;</span><br><span class="line">                if (r.isPersistable()) &#123;</span><br><span class="line">                    mInstrumentation.callActivityOnCreate(activity, r.state, r.persistentState);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    mInstrumentation.callActivityOnCreate(activity, r.state);</span><br><span class="line">                &#125;</span><br><span class="line">                if (!activity.mCalled) &#123;</span><br><span class="line">                    throw new SuperNotCalledException(</span><br><span class="line">                        &quot;Activity &quot; + r.intent.getComponent().toShortString() +</span><br><span class="line">                        &quot; did not call through to super.onCreate()&quot;);</span><br><span class="line">                &#125;</span><br></pre></td></tr></table></figure>
+<p>在Activity的performLaunchActivity方法中，我们在调用了Activity的onCreate方法之后会执行一个判断逻辑，若Activity的mCalled为false，则会抛出我们刚刚捕获的异常，那么这个mCalled成员变量是在什么时候被赋值的呢？好吧，就是在Activity的onCreate方法赋值的，所以我们在实现自己的Activity的时候只有调用了super.onCreate方法才不会抛出这个异常，反过来说，我们实现自己的Actiivty，那么一定要在onCreate方法中调用super.onCreate方法。</p>
+<p>然后我们在看一下onCreate中的setContentView方法，这里的参数就是一个Layout布局文件，可以发现这里的setContentView方法就是Acitivty中的setContentView，好吧我们来看一下Activity中setContentView的实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public void setContentView(@LayoutRes int layoutResID) &#123;</span><br><span class="line">        getWindow().setContentView(layoutResID);</span><br><span class="line">        initWindowDecorActionBar();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里的getWindow方法就是获取Acitivty的mWindow成员变量，从刚刚我们在Activity.attach方法我们知道这里的mWindow的实例是PhoneWindow，所以这里调用的其实是PhoneWindow的setConentView方法，然后我们看一下PhoneWindow的setContentView是如何实现的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">    public void setContentView(int layoutResID) &#123;</span><br><span class="line">        &#x2F;&#x2F; Note: FEATURE_CONTENT_TRANSITIONS may be set in the process of installing the window</span><br><span class="line">        &#x2F;&#x2F; decor, when theme attributes and the like are crystalized. Do not check the feature</span><br><span class="line">        &#x2F;&#x2F; before this happens.</span><br><span class="line">        if (mContentParent &#x3D;&#x3D; null) &#123;</span><br><span class="line">            installDecor();</span><br><span class="line">        &#125; else if (!hasFeature(FEATURE_CONTENT_TRANSITIONS)) &#123;</span><br><span class="line">            mContentParent.removeAllViews();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (hasFeature(FEATURE_CONTENT_TRANSITIONS)) &#123;</span><br><span class="line">            final Scene newScene &#x3D; Scene.getSceneForLayout(mContentParent, layoutResID,</span><br><span class="line">                    getContext());</span><br><span class="line">            transitionTo(newScene);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            mLayoutInflater.inflate(layoutResID, mContentParent);</span><br><span class="line">        &#125;</span><br><span class="line">        mContentParent.requestApplyInsets();</span><br><span class="line">        final Callback cb &#x3D; getCallback();</span><br><span class="line">        if (cb !&#x3D; null &amp;&amp; !isDestroyed()) &#123;</span><br><span class="line">            cb.onContentChanged();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里的mContentParent对象是一个View对象，由于第一次mContentParent为空，所以执行installerDector方法，这里我们看一下installerDector方法的具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">private void installDecor() &#123;</span><br><span class="line">        if (mDecor &#x3D;&#x3D; null) &#123;</span><br><span class="line">            mDecor &#x3D; generateDecor();</span><br><span class="line">            mDecor.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);</span><br><span class="line">            mDecor.setIsRootNamespace(true);</span><br><span class="line">            if (!mInvalidatePanelMenuPosted &amp;&amp; mInvalidatePanelMenuFeatures !&#x3D; 0) &#123;</span><br><span class="line">                mDecor.postOnAnimation(mInvalidatePanelMenuRunnable);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里的mDector是一个DectorView对象，而DectorView继承与FrameLayout，所以这里的mDector其实就是一个FrameLayout对象，并通过调用generateDector()方法初始化，我们继续看一下generateDector方法的具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">protected DecorView generateDecor() &#123;</span><br><span class="line">        return new DecorView(getContext(), -1);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>好吧，就是通过new的方式创建了一个DectorView对象，然后我们继续看installDector方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">if (mContentParent &#x3D;&#x3D; null) &#123;</span><br><span class="line">            mContentParent &#x3D; generateLayout(mDecor);</span><br></pre></td></tr></table></figure>
+<p>这里初始化了mContentParent对象，这是一个View对象，我们调用了generateLayout方法，好吧，来看一下generateLayout方法的具体实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br></pre></td><td class="code"><pre><span class="line">protected ViewGroup generateLayout(DecorView decor) &#123;</span><br><span class="line">        ...</span><br><span class="line">        &#x2F;&#x2F; Inflate the window decor.</span><br><span class="line"></span><br><span class="line">        int layoutResource;</span><br><span class="line">        int features &#x3D; getLocalFeatures();</span><br><span class="line">        &#x2F;&#x2F; System.out.println(&quot;Features: 0x&quot; + Integer.toHexString(features));</span><br><span class="line">        if ((features &amp; (1 &lt;&lt; FEATURE_SWIPE_TO_DISMISS)) !&#x3D; 0) &#123;</span><br><span class="line">            layoutResource &#x3D; R.layout.screen_swipe_dismiss;</span><br><span class="line">        &#125; else if ((features &amp; ((1 &lt;&lt; FEATURE_LEFT_ICON) | (1 &lt;&lt; FEATURE_RIGHT_ICON))) !&#x3D; 0) &#123;</span><br><span class="line">            if (mIsFloating) &#123;</span><br><span class="line">                TypedValue res &#x3D; new TypedValue();</span><br><span class="line">                getContext().getTheme().resolveAttribute(</span><br><span class="line">                        R.attr.dialogTitleIconsDecorLayout, res, true);</span><br><span class="line">                layoutResource &#x3D; res.resourceId;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                layoutResource &#x3D; R.layout.screen_title_icons;</span><br><span class="line">            &#125;</span><br><span class="line">            &#x2F;&#x2F; XXX Remove this once action bar supports these features.</span><br><span class="line">            removeFeature(FEATURE_ACTION_BAR);</span><br><span class="line">            &#x2F;&#x2F; System.out.println(&quot;Title Icons!&quot;);</span><br><span class="line">        &#125; else if ((features &amp; ((1 &lt;&lt; FEATURE_PROGRESS) | (1 &lt;&lt; FEATURE_INDETERMINATE_PROGRESS))) !&#x3D; 0</span><br><span class="line">                &amp;&amp; (features &amp; (1 &lt;&lt; FEATURE_ACTION_BAR)) &#x3D;&#x3D; 0) &#123;</span><br><span class="line">            &#x2F;&#x2F; Special case for a window with only a progress bar (and title).</span><br><span class="line">            &#x2F;&#x2F; XXX Need to have a no-title version of embedded windows.</span><br><span class="line">            layoutResource &#x3D; R.layout.screen_progress;</span><br><span class="line">            &#x2F;&#x2F; System.out.println(&quot;Progress!&quot;);</span><br><span class="line">        &#125; else if ((features &amp; (1 &lt;&lt; FEATURE_CUSTOM_TITLE)) !&#x3D; 0) &#123;</span><br><span class="line">            &#x2F;&#x2F; Special case for a window with a custom title.</span><br><span class="line">            &#x2F;&#x2F; If the window is floating, we need a dialog layout</span><br><span class="line">            if (mIsFloating) &#123;</span><br><span class="line">                TypedValue res &#x3D; new TypedValue();</span><br><span class="line">                getContext().getTheme().resolveAttribute(</span><br><span class="line">                        R.attr.dialogCustomTitleDecorLayout, res, true);</span><br><span class="line">                layoutResource &#x3D; res.resourceId;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                layoutResource &#x3D; R.layout.screen_custom_title;</span><br><span class="line">            &#125;</span><br><span class="line">            &#x2F;&#x2F; XXX Remove this once action bar supports these features.</span><br><span class="line">            removeFeature(FEATURE_ACTION_BAR);</span><br><span class="line">        &#125; else if ((features &amp; (1 &lt;&lt; FEATURE_NO_TITLE)) &#x3D;&#x3D; 0) &#123;</span><br><span class="line">            &#x2F;&#x2F; If no other features and not embedded, only need a title.</span><br><span class="line">            &#x2F;&#x2F; If the window is floating, we need a dialog layout</span><br><span class="line">            if (mIsFloating) &#123;</span><br><span class="line">                TypedValue res &#x3D; new TypedValue();</span><br><span class="line">                getContext().getTheme().resolveAttribute(</span><br><span class="line">                        R.attr.dialogTitleDecorLayout, res, true);</span><br><span class="line">                layoutResource &#x3D; res.resourceId;</span><br><span class="line">            &#125; else if ((features &amp; (1 &lt;&lt; FEATURE_ACTION_BAR)) !&#x3D; 0) &#123;</span><br><span class="line">                layoutResource &#x3D; a.getResourceId(</span><br><span class="line">                        R.styleable.Window_windowActionBarFullscreenDecorLayout,</span><br><span class="line">                        R.layout.screen_action_bar);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                layoutResource &#x3D; R.layout.screen_title;</span><br><span class="line">            &#125;</span><br><span class="line">            &#x2F;&#x2F; System.out.println(&quot;Title!&quot;);</span><br><span class="line">        &#125; else if ((features &amp; (1 &lt;&lt; FEATURE_ACTION_MODE_OVERLAY)) !&#x3D; 0) &#123;</span><br><span class="line">            layoutResource &#x3D; R.layout.screen_simple_overlay_action_mode;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            &#x2F;&#x2F; Embedded, so no decoration is needed.</span><br><span class="line">            layoutResource &#x3D; R.layout.screen_simple;</span><br><span class="line">            &#x2F;&#x2F; System.out.println(&quot;Simple!&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mDecor.startChanging();</span><br><span class="line"></span><br><span class="line">        View in &#x3D; mLayoutInflater.inflate(layoutResource, null);</span><br><span class="line">        decor.addView(in, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));</span><br><span class="line">        mContentRoot &#x3D; (ViewGroup) in;</span><br><span class="line"></span><br><span class="line">        ViewGroup contentParent &#x3D; (ViewGroup)findViewById(ID_ANDROID_CONTENT);</span><br><span class="line">        if (contentParent &#x3D;&#x3D; null) &#123;</span><br><span class="line">            throw new RuntimeException(&quot;Window couldn&#39;t find content container view&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if ((features &amp; (1 &lt;&lt; FEATURE_INDETERMINATE_PROGRESS)) !&#x3D; 0) &#123;</span><br><span class="line">            ProgressBar progress &#x3D; getCircularProgressBar(false);</span><br><span class="line">            if (progress !&#x3D; null) &#123;</span><br><span class="line">                progress.setIndeterminate(true);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if ((features &amp; (1 &lt;&lt; FEATURE_SWIPE_TO_DISMISS)) !&#x3D; 0) &#123;</span><br><span class="line">            registerSwipeCallbacks();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; Remaining setup -- of background and title -- that only applies</span><br><span class="line">        &#x2F;&#x2F; to top-level windows.</span><br><span class="line">        if (getContainer() &#x3D;&#x3D; null) &#123;</span><br><span class="line">            final Drawable background;</span><br><span class="line">            if (mBackgroundResource !&#x3D; 0) &#123;</span><br><span class="line">                background &#x3D; getContext().getDrawable(mBackgroundResource);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                background &#x3D; mBackgroundDrawable;</span><br><span class="line">            &#125;</span><br><span class="line">            mDecor.setWindowBackground(background);</span><br><span class="line"></span><br><span class="line">            final Drawable frame;</span><br><span class="line">            if (mFrameResource !&#x3D; 0) &#123;</span><br><span class="line">                frame &#x3D; getContext().getDrawable(mFrameResource);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                frame &#x3D; null;</span><br><span class="line">            &#125;</span><br><span class="line">            mDecor.setWindowFrame(frame);</span><br><span class="line"></span><br><span class="line">            mDecor.setElevation(mElevation);</span><br><span class="line">            mDecor.setClipToOutline(mClipToOutline);</span><br><span class="line"></span><br><span class="line">            if (mTitle !&#x3D; null) &#123;</span><br><span class="line">                setTitle(mTitle);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            if (mTitleColor &#x3D;&#x3D; 0) &#123;</span><br><span class="line">                mTitleColor &#x3D; mTextColor;</span><br><span class="line">            &#125;</span><br><span class="line">            setTitleColor(mTitleColor);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mDecor.finishChanging();</span><br><span class="line"></span><br><span class="line">        return contentParent;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以发现这里就是通过调用LayoutInflater.inflate方法来加载布局文件到内存中，关于LayoutInflater.inflater是如何加载布局文件的，并且，通过对代码的分析，我们发现PhoneWindow中的几个成员变量：mDector，mContentRoot，mContentParent的关系<br>mDector –&gt; mContentRoot –&gt; mContentParent（包含）<br>并且我们来看一下典型的布局文件：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&lt;LinearLayout xmlns:android&#x3D;&quot;http:&#x2F;&#x2F;schemas.android.com&#x2F;apk&#x2F;res&#x2F;android&quot;</span><br><span class="line">    android:layout_width&#x3D;&quot;match_parent&quot;</span><br><span class="line">    android:layout_height&#x3D;&quot;match_parent&quot;</span><br><span class="line">    android:fitsSystemWindows&#x3D;&quot;true&quot;</span><br><span class="line">    android:orientation&#x3D;&quot;vertical&quot;&gt;</span><br><span class="line">    &lt;ViewStub android:id&#x3D;&quot;@+id&#x2F;action_mode_bar_stub&quot;</span><br><span class="line">              android:inflatedId&#x3D;&quot;@+id&#x2F;action_mode_bar&quot;</span><br><span class="line">              android:layout&#x3D;&quot;@layout&#x2F;action_mode_bar&quot;</span><br><span class="line">              android:layout_width&#x3D;&quot;match_parent&quot;</span><br><span class="line">              android:layout_height&#x3D;&quot;wrap_content&quot;</span><br><span class="line">              android:theme&#x3D;&quot;?attr&#x2F;actionBarTheme&quot; &#x2F;&gt;</span><br><span class="line">    &lt;FrameLayout</span><br><span class="line">         android:id&#x3D;&quot;@android:id&#x2F;content&quot;</span><br><span class="line">         android:layout_width&#x3D;&quot;match_parent&quot;</span><br><span class="line">         android:layout_height&#x3D;&quot;match_parent&quot;</span><br><span class="line">         android:foregroundInsidePadding&#x3D;&quot;false&quot;</span><br><span class="line">         android:foregroundGravity&#x3D;&quot;fill_horizontal|top&quot;</span><br><span class="line">         android:foreground&#x3D;&quot;?android:attr&#x2F;windowContentOverlay&quot; &#x2F;&gt;</span><br><span class="line">&lt;&#x2F;LinearLayout&gt;</span><br></pre></td></tr></table></figure>
+<p>这里就是整个Activity加载的跟布局文件：screen_simple.xml，其中ViewStub对应着Activity中的titleBar而这里的FrameLayout里面主要用于填充内容。</p>
+<p>然后我们具体看一下LayoutInflater.inflater方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public View inflate(@LayoutRes int resource, @Nullable ViewGroup root) &#123;</span><br><span class="line">        return inflate(resource, root, root !&#x3D; null);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里调用了inflate的重载方法。。。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br></pre></td><td class="code"><pre><span class="line">public View inflate(XmlPullParser parser, @Nullable ViewGroup root, boolean attachToRoot) &#123;</span><br><span class="line">        synchronized (mConstructorArgs) &#123;</span><br><span class="line">            Trace.traceBegin(Trace.TRACE_TAG_VIEW, &quot;inflate&quot;);</span><br><span class="line"></span><br><span class="line">            final Context inflaterContext &#x3D; mContext;</span><br><span class="line">            final AttributeSet attrs &#x3D; Xml.asAttributeSet(parser);</span><br><span class="line">            Context lastContext &#x3D; (Context) mConstructorArgs[0];</span><br><span class="line">            mConstructorArgs[0] &#x3D; inflaterContext;</span><br><span class="line">            View result &#x3D; root;</span><br><span class="line"></span><br><span class="line">            try &#123;</span><br><span class="line">                &#x2F;&#x2F; Look for the root node.</span><br><span class="line">                int type;</span><br><span class="line">                while ((type &#x3D; parser.next()) !&#x3D; XmlPullParser.START_TAG &amp;&amp;</span><br><span class="line">                        type !&#x3D; XmlPullParser.END_DOCUMENT) &#123;</span><br><span class="line">                    &#x2F;&#x2F; Empty</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                if (type !&#x3D; XmlPullParser.START_TAG) &#123;</span><br><span class="line">                    throw new InflateException(parser.getPositionDescription()</span><br><span class="line">                            + &quot;: No start tag found!&quot;);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                final String name &#x3D; parser.getName();</span><br><span class="line">                </span><br><span class="line">                if (DEBUG) &#123;</span><br><span class="line">                    System.out.println(&quot;**************************&quot;);</span><br><span class="line">                    System.out.println(&quot;Creating root view: &quot;</span><br><span class="line">                            + name);</span><br><span class="line">                    System.out.println(&quot;**************************&quot;);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                if (TAG_MERGE.equals(name)) &#123;</span><br><span class="line">                    if (root &#x3D;&#x3D; null || !attachToRoot) &#123;</span><br><span class="line">                        throw new InflateException(&quot;&lt;merge &#x2F;&gt; can be used only with a valid &quot;</span><br><span class="line">                                + &quot;ViewGroup root and attachToRoot&#x3D;true&quot;);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    rInflate(parser, root, inflaterContext, attrs, false);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    &#x2F;&#x2F; Temp is the root view that was found in the xml</span><br><span class="line">                    final View temp &#x3D; createViewFromTag(root, name, inflaterContext, attrs);</span><br><span class="line"></span><br><span class="line">                    ViewGroup.LayoutParams params &#x3D; null;</span><br><span class="line"></span><br><span class="line">                    if (root !&#x3D; null) &#123;</span><br><span class="line">                        if (DEBUG) &#123;</span><br><span class="line">                            System.out.println(&quot;Creating params from root: &quot; +</span><br><span class="line">                                    root);</span><br><span class="line">                        &#125;</span><br><span class="line">                        &#x2F;&#x2F; Create layout params that match root, if supplied</span><br><span class="line">                        params &#x3D; root.generateLayoutParams(attrs);</span><br><span class="line">                        if (!attachToRoot) &#123;</span><br><span class="line">                            &#x2F;&#x2F; Set the layout params for temp if we are not</span><br><span class="line">                            &#x2F;&#x2F; attaching. (If we are, we use addView, below)</span><br><span class="line">                            temp.setLayoutParams(params);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    if (DEBUG) &#123;</span><br><span class="line">                        System.out.println(&quot;-----&gt; start inflating children&quot;);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    &#x2F;&#x2F; Inflate all children under temp against its context.</span><br><span class="line">                    rInflateChildren(parser, temp, attrs, true);</span><br><span class="line"></span><br><span class="line">                    if (DEBUG) &#123;</span><br><span class="line">                        System.out.println(&quot;-----&gt; done inflating children&quot;);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    &#x2F;&#x2F; We are supposed to attach all the views we found (int temp)</span><br><span class="line">                    &#x2F;&#x2F; to root. Do that now.</span><br><span class="line">                    if (root !&#x3D; null &amp;&amp; attachToRoot) &#123;</span><br><span class="line">                        root.addView(temp, params);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    &#x2F;&#x2F; Decide whether to return the root that was passed in or the</span><br><span class="line">                    &#x2F;&#x2F; top view found in xml.</span><br><span class="line">                    if (root &#x3D;&#x3D; null || !attachToRoot) &#123;</span><br><span class="line">                        result &#x3D; temp;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">            &#125; catch (XmlPullParserException e) &#123;</span><br><span class="line">                InflateException ex &#x3D; new InflateException(e.getMessage());</span><br><span class="line">                ex.initCause(e);</span><br><span class="line">                throw ex;</span><br><span class="line">            &#125; catch (Exception e) &#123;</span><br><span class="line">                InflateException ex &#x3D; new InflateException(</span><br><span class="line">                        parser.getPositionDescription()</span><br><span class="line">                                + &quot;: &quot; + e.getMessage());</span><br><span class="line">                ex.initCause(e);</span><br><span class="line">                throw ex;</span><br><span class="line">            &#125; finally &#123;</span><br><span class="line">                &#x2F;&#x2F; Don&#39;t retain static reference on context.</span><br><span class="line">                mConstructorArgs[0] &#x3D; lastContext;</span><br><span class="line">                mConstructorArgs[1] &#x3D; null;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            Trace.traceEnd(Trace.TRACE_TAG_VIEW);</span><br><span class="line"></span><br><span class="line">            return result;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>通过分析源码，不难发现，主要是通过循环解析xml文件并将信息解析到内存View对象，布局文件中定义的一个个组件都被顺序的解析到了内存中并被父子View的形式组织起来，这样通过给定的一个root View就可以将整个布局文件中定义的组件全部解析。分析完解析布局文件，回到我们的setContentVIew方法，在调用了installDector方法之后，又调用了：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mLayoutInflater.inflate(layoutResID, mContentParent);</span><br></pre></td></tr></table></figure>
+<p>这个方法的含义就是将我们传递的客户端的layoutId对应的布局文件作为mContentParent的子View加载到内存中，这样我们的layoutId作为mContentParent的子View，而mContentParent又是mContentRoot的子View，mContentRoot又是mDector的子View，通过LayoutInflater的inflate方法逐步加载到了内存中，而我们的Activity又持有自身的PhoneWindow的引用，这就相当于我们的Activity持有了我们定义的布局文件的引用，因而Activity的布局文件被加载到了内存中。</p>
+<p>总结：</p>
+<ul>
+<li><p>Activity的展示界面的特性是通过Window对象来控制的；</p>
+</li>
+<li><p>每个Activity对象都对应这个一个Window对象，并且Window对象的初始化在启动Activity的时候完成，在执行Activity的onCreate方法之前；</p>
+</li>
+<li><p>每个Window对象内部都存在一个FrameLayout类型的mDector对象，它是Acitivty界面的root view；</p>
+</li>
+<li><p>Activity中的window对象的实例是PhoneWindow对象，PhoneWindow对象中的几个成员变量mDector，mContentRoot，mContentParent都是View组件，它们的关系是：mDector –&gt; mContentRoot –&gt; mContentParent –&gt; 自定义layoutView</p>
+</li>
+<li><p>LayoutInflater.inflate主要用于将布局文件加载到内存View组件中，也可以设定加载到某一个父组件中；</p>
+</li>
+<li><p>典型的Activity的onCreate方法中需要调用super.onCreate方法和setContentView方法，若不调用super.onCreate方法，执行启动该Activity的逻辑会报错，若不执行setContentView的方法，该Activity只会显示一个空页面。</p>
+</li>
+</ul>
+<p>好了，关于Activity的布局加载流程我们暂时介绍这么多，下一篇文章，我们将介绍一下Activity的布局显示流程。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E7%B3%BB%E7%BB%9F%E5%B1%82/" rel="tag"># Android系统层</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/30/16%20%E5%BA%94%E7%94%A8%E8%BF%9B%E7%A8%8BContext%E5%88%9B%E5%BB%BA%E6%B5%81%E7%A8%8B/" rel="prev" title="16 应用进程Context创建流程">
+      <i class="fa fa-chevron-left"></i> 16 应用进程Context创建流程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/30/18%20Activity%E5%B8%83%E5%B1%80%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/" rel="next" title="18 Activity布局绘制流程">
+      18 Activity布局绘制流程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

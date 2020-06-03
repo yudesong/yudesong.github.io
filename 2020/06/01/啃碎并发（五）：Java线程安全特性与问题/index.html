@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="0 前言在单线程中不会出现线程安全问题，而在多线程编程中，有可能会出现同时访问同一个共享、可变资源的情况，这种资源可以是：一个变量、一个对象、一个文件等。特别注意两点：  1.共享： 意味着该资源可以由多个线程同时访问；2.可变： 意味着该资源可以在其生命周期内被修改；  简单的说，如果你的代码在单线程下执行和在多线程下执行永远都能获得一样的结果，那么你的代码就是线程安全的。那么，当进行多线程编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="啃碎并发（五）：Java线程安全特性与问题">
+<meta property="og:url" content="http://yoursite.com/2020/06/01/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%BA%94%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%89%B9%E6%80%A7%E4%B8%8E%E9%97%AE%E9%A2%98/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="0 前言在单线程中不会出现线程安全问题，而在多线程编程中，有可能会出现同时访问同一个共享、可变资源的情况，这种资源可以是：一个变量、一个对象、一个文件等。特别注意两点：  1.共享： 意味着该资源可以由多个线程同时访问；2.可变： 意味着该资源可以在其生命周期内被修改；  简单的说，如果你的代码在单线程下执行和在多线程下执行永远都能获得一样的结果，那么你的代码就是线程安全的。那么，当进行多线程编程">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-06-01T12:09:11.045Z">
+<meta property="article:modified_time" content="2020-06-01T12:30:20.122Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="JAVA并发">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/06/01/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%BA%94%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%89%B9%E6%80%A7%E4%B8%8E%E9%97%AE%E9%A2%98/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>啃碎并发（五）：Java线程安全特性与问题 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/01/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%BA%94%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%89%B9%E6%80%A7%E4%B8%8E%E9%97%AE%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          啃碎并发（五）：Java线程安全特性与问题
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-06-01 20:09:11 / 修改时间：20:30:20" itemprop="dateCreated datePublished" datetime="2020-06-01T20:09:11+08:00">2020-06-01</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="0-前言"><a href="#0-前言" class="headerlink" title="0 前言"></a>0 前言</h4><p>在单线程中不会出现线程安全问题，而在多线程编程中，有可能会出现同时访问同一个<strong>共享、可变资源</strong>的情况，这种资源可以是：<strong>一个变量、一个对象、一个文件等。</strong>特别注意两点：</p>
+<blockquote>
+<p>1.共享： 意味着该资源可以由多个线程同时访问；<br>2.可变： 意味着该资源可以在其生命周期内被修改；</p>
+</blockquote>
+<p>简单的说，<strong>如果你的代码在单线程下执行和在多线程下执行永远都能获得一样的结果，那么你的代码就是线程安全的。</strong>那么，当进行多线程编程时，我们又会面临哪些线程安全的要求呢？又是要如何去解决的呢？</p>
+<h4 id="1-线程安全特性"><a href="#1-线程安全特性" class="headerlink" title="1 线程安全特性"></a>1 线程安全特性</h4><h5 id="1-1-原子性"><a href="#1-1-原子性" class="headerlink" title="1.1 原子性"></a>1.1 原子性</h5><p>跟数据库事务的原子性概念差不多，<strong>即一个操作（有可能包含有多个子操作）要么全部执行（生效），要么全部都不执行（都不生效）。</strong></p>
+<p>关于原子性，一个非常经典的例子就是银行转账问题：</p>
+<blockquote>
+<p>比如：A和B同时向C转账10万元。如果转账操作不具有原子性，A在向C转账时，读取了C的余额为20万，然后加上转账的10万，计算出此时应该有30万，但还未来及将30万写回C的账户，此时B的转账请求过来了，B发现C的余额为20万，然后将其加10万并写回。然后A的转账操作继续——将30万写回C的余额。这种情况下C的最终余额为30万，而非预期的40万。</p>
+</blockquote>
+<h5 id="1-2-可见性"><a href="#1-2-可见性" class="headerlink" title="1.2 可见性"></a>1.2 可见性</h5><p>可见性是指，<strong>当多个线程并发访问共享变量时，一个线程对共享变量的修改，其它线程能够立即看到。</strong>可见性问题是好多人忽略或者理解错误的一点。</p>
+<p>CPU从主内存中读数据的效率相对来说不高，现在主流的计算机中，都有几级缓存。<strong>每个线程读取共享变量时，都会将该变量加载进其对应CPU的高速缓存里，修改该变量后，CPU会立即更新该缓存，但并不一定会立即将其写回主内存（实际上写回主内存的时间不可预期）。</strong>此时其它线程（尤其是不在同一个CPU上执行的线程）访问该变量时，从主内存中读到的就是旧的数据，而非第一个线程更新后的数据。</p>
+<p><strong>这一点是操作系统或者说是硬件层面的机制，</strong>所以很多应用开发人员经常会忽略。</p>
+<h5 id="1-3-有序性"><a href="#1-3-有序性" class="headerlink" title="1.3 有序性"></a>1.3 有序性</h5><p>有序性指的是，<strong>程序执行的顺序按照代码的先后顺序执行。</strong>以下面这段代码为例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">boolean started &#x3D; false; &#x2F;&#x2F; 语句1</span><br><span class="line">long counter &#x3D; 0L; &#x2F;&#x2F; 语句2</span><br><span class="line">counter &#x3D; 1; &#x2F;&#x2F; 语句3</span><br><span class="line">started &#x3D; true; &#x2F;&#x2F; 语句4</span><br></pre></td></tr></table></figure>
+
+<p>从代码顺序上看，上面四条语句应该依次执行，但实际上JVM真正在执行这段代码时，并不保证它们一定完全按照此顺序执行。</p>
+<p><strong>处理器为了提高程序整体的执行效率，可能会对代码进行优化，其中的一项优化方式就是调整代码顺序，按照更高效的顺序执行代码。</strong></p>
+<p>讲到这里，有人要着急了——什么，CPU不按照我的代码顺序执行代码，那怎么保证得到我们想要的效果呢？实际上，大家大可放心，<strong>CPU虽然并不保证完全按照代码顺序执行，但它会保证程序最终的执行结果和代码顺序执行时的结果一致。</strong></p>
+<h4 id="2-线程安全问题"><a href="#2-线程安全问题" class="headerlink" title="2 线程安全问题"></a>2 线程安全问题</h4><h5 id="2-1-竞态条件与临界区"><a href="#2-1-竞态条件与临界区" class="headerlink" title="2.1 竞态条件与临界区"></a>2.1 竞态条件与临界区</h5><p>线程之间共享堆空间，在编程的时候就要格外注意避免竞态条件。危险在于多个线程同时访问相同的资源并进行读写操作。<strong>当其中一个线程需要根据某个变量的状态来相应执行某个操作的之前，该变量很可能已经被其它线程修改。</strong></p>
+<blockquote>
+<p>也就是说，当两个线程竞争同一资源时，如果对资源的访问顺序敏感，就称存在<strong>竞态条件</strong>。导致竟态条件发生的代码称作<strong>临界区</strong>。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * 以下这段代码就存在竞态条件，其中return ++count就是临界区。</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Obj &#123;</span><br><span class="line">    private int count;</span><br><span class="line">    public int incr()&#123;</span><br><span class="line">        return ++count;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="2-2-死锁"><a href="#2-2-死锁" class="headerlink" title="2.2 死锁"></a>2.2 死锁</h5><p>死锁：<strong>指两个或两个以上的进程（或线程）在执行过程中，因争夺资源而造成的一种互相等待的现象，若无外力作用，它们都将无法推进下去。</strong>此时称系统处于死锁状态或系统产生了死锁，这些永远在互相等待的进程称为死锁进程。</p>
+<p><strong>关于死锁发生的条件：</strong></p>
+<blockquote>
+<p><strong>1.互斥条件：</strong>线程对资源的访问是排他性的，如果一个线程对占用了某资源，那么其他线程必须处于等待状态，直到资源被释放。<br><strong>2.请求和保持条件：</strong>线程T1至少已经保持了一个资源R1占用，但又提出对另一个资源R2请求，而此时，资源R2被其他线程T2占用，于是该线程T1也必须等待，但又对自己保持的资源R1不释放。<br><strong>3.不剥夺条件：</strong>线程已获得的资源，在未使用完之前，不能被其他线程剥夺，只能在使用完以后由自己释放。<br><strong>4.环路等待条件：</strong>在死锁发生时，必然存在一个“进程-资源环形链”，即：{p0,p1,p2,…pn}，进程p0（或线程）等待p1占用的资源，p1等待p2占用的资源，pn等待p0占用的资源。<strong>（最直观的理解是，p0等待p1占用的资源，而p1而在等待p0占用的资源，于是两个进程就相互等待）。</strong></p>
+</blockquote>
+<h5 id="2-3-活锁"><a href="#2-3-活锁" class="headerlink" title="2.3 活锁"></a>2.3 活锁</h5><p>活锁：是指线程1可以使用资源，但它很礼貌，让其他线程先使用资源，线程2也可以使用资源，但它很绅士，也让其他线程先使用资源。<strong>这样你让我，我让你，最后两个线程都无法使用资源。</strong></p>
+<p><strong>关于“死锁与活锁”的比喻：</strong></p>
+<blockquote>
+<p><strong>死锁：</strong>迎面开来的汽车A和汽车B过马路，汽车A得到了半条路的资源（满足死锁发生条件1：资源访问是排他性的，我占了路你就不能上来，除非你爬我头上去），汽车B占了汽车A的另外半条路的资源，A想过去必须请求另一半被B占用的道路（死锁发生条件2：必须整条车身的空间才能开过去，我已经占了一半，尼玛另一半的路被B占用了），B若想过去也必须等待A让路，A是辆兰博基尼，B是开奇瑞QQ的屌丝，A素质比较低开窗对B狂骂：快给老子让开，B很生气，你妈逼的，老子就不让（死锁发生条件3：在未使用完资源前，不能被其他线程剥夺），于是两者相互僵持一个都走不了（死锁发生条件4：环路等待条件），而且导致整条道上的后续车辆也走不了。</p>
+<p><strong>活锁：</strong>马路中间有条小桥，只能容纳一辆车经过，桥两头开来两辆车A和B，A比较礼貌，示意B先过，B也比较礼貌，示意A先过，结果两人一直谦让谁也过不去。</p>
+</blockquote>
+<h5 id="2-4-饥饿"><a href="#2-4-饥饿" class="headerlink" title="2.4 饥饿"></a>2.4 饥饿</h5><p>饥饿：是指如果线程T1占用了资源R，线程T2又请求封锁R，于是T2等待。T3也请求资源R，当T1释放了R上的封锁后，系统首先批准了T3的请求，T2仍然等待。然后T4又请求封锁R，当T3释放了R上的封锁之后，系统又批准了T4的请求……，<strong>T2可能永远等待。</strong></p>
+<p>也就是，如果一个线程因为CPU时间全部被其他线程抢走而得不到CPU运行时间，<strong>这种状态被称之为“饥饿”。而该线程被“饥饿致死”正是因为它得不到CPU运行时间的机会。</strong></p>
+<p><strong>关于“饥饿”的比喻：</strong></p>
+<blockquote>
+<p>在“首堵”北京的某一天，天气阴沉，空气中充斥着雾霾和地沟油的味道，某个苦逼的临时工交警正在处理塞车，有两条道A和B上都堵满了车辆，其中A道堵的时间最长，B相对堵的时间较短，这时，前面道路已疏通，交警按照最佳分配原则，示意B道上车辆先过，B道路上过了一辆又一辆，A道上排队时间最长的却没法通过，只能等B道上没有车辆通过的时候再等交警发指令让A道依次通过，这也就是ReentrantLock显示锁里提供的不公平锁机制（当然了，ReentrantLock也提供了公平锁的机制，由用户根据具体的使用场景而决定到底使用哪种锁策略），不公平锁能够提高吞吐量但不可避免的会造成某些线程的饥饿。</p>
+</blockquote>
+<p>在Java中，下面三个常见的原因会导致线程饥饿，如下：</p>
+<p><strong>1.高优先级线程吞噬所有的低优先级线程的CPU时间</strong></p>
+<blockquote>
+<p>你能为每个线程设置独自的线程优先级，优先级越高的线程获得的CPU时间越多，线程优先级值设置在1到10之间，而这些优先级值所表示行为的准确解释则依赖于你的应用运行平台。对大多数应用来说，你最好是不要改变其优先级值。</p>
+</blockquote>
+<p><strong>2.线程被永久堵塞在一个等待进入同步块的状态，因为其他线程总是能在它之前持续地对该同步块进行访问</strong></p>
+<blockquote>
+<p>Java的同步代码区也是一个导致饥饿的因素。Java的同步代码区对哪个线程允许进入的次序没有任何保障。这就意味着理论上存在一个试图进入该同步区的线程处于被永久堵塞的风险，因为其他线程总是能持续地先于它获得访问，这即是“饥饿”问题，而一个线程被“饥饿致死”正是因为它得不到CPU运行时间的机会。</p>
+</blockquote>
+<p><strong>3.线程在等待一个本身（在其上调用wait()）也处于永久等待完成的对象，因为其他线程总是被持续地获得唤醒</strong></p>
+<blockquote>
+<p>如果多个线程处在wait()方法执行上，而对其调用notify()不会保证哪一个线程会获得唤醒，任何线程都有可能处于继续等待的状态。因此存在这样一个风险：一个等待线程从来得不到唤醒，因为其他等待线程总是能被获得唤醒。</p>
+</blockquote>
+<h5 id="2-5-公平"><a href="#2-5-公平" class="headerlink" title="2.5 公平"></a>2.5 公平</h5><p><strong>解决饥饿的方案被称之为“公平性” – 即所有线程均能公平地获得运行机会。</strong>在Java中实现公平性方案，需要：</p>
+<blockquote>
+<p>1.使用锁，而不是同步块；<br>2.使用公平锁；<br>3.注意性能方面；</p>
+</blockquote>
+<p>在Java中实现公平性，虽Java不可能实现100%的公平性，依然可以通过同步结构在线程间实现公平性的提高。</p>
+<p>首先来学习一段简单的同步态代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public class Synchronizer&#123;</span><br><span class="line">    public synchronized void doSynchronized () &#123;</span><br><span class="line">        &#x2F;&#x2F; do a lot of work which takes a long time</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果有多个线程调用doSynchronized()方法，在第一个获得访问的线程未完成前，其他线程将一直处于阻塞状态，而且在这种多线程被阻塞的场景下，接下来将是哪个线程获得访问是没有保障的。</p>
+<p>改为 使用锁方式替代同步块，为了提高等待线程的公平性，我们使用锁方式来替代同步块：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public class Synchronizer&#123;</span><br><span class="line">    Lock lock &#x3D; new Lock();</span><br><span class="line">    public void doSynchronized() throws InterruptedException&#123;</span><br><span class="line">        this.lock.lock();</span><br><span class="line">        &#x2F;&#x2F;critical section, do a lot of work which takes a long time</span><br><span class="line">        this.lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意到doSynchronized()不再声明为synchronized，而是用lock.lock()和lock.unlock()来替代。下面是用Lock类做的一个实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">public class Lock&#123;</span><br><span class="line"></span><br><span class="line">    private boolean isLocked      &#x3D; false;</span><br><span class="line"></span><br><span class="line">    private Thread lockingThread &#x3D; null;</span><br><span class="line"></span><br><span class="line">    public synchronized void lock() throws InterruptedException&#123;</span><br><span class="line">        while(isLocked)&#123;</span><br><span class="line">            wait();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        isLocked &#x3D; true;</span><br><span class="line">        lockingThread &#x3D; Thread.currentThread();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public synchronized void unlock()&#123;</span><br><span class="line"></span><br><span class="line">        if(this.lockingThread !&#x3D; Thread.currentThread())&#123;</span><br><span class="line">            throw new IllegalMonitorStateException(&quot;Calling thread has not locked this lock&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        isLocked &#x3D; false;</span><br><span class="line">        lockingThread &#x3D; null;</span><br><span class="line">        notify();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意到上面对Lock的实现，如果存在多线程并发访问lock()，这些线程将阻塞在对lock()方法的访问上。另外，如果锁已经锁上（校对注：这里指的是isLocked等于true时），这些线程将阻塞在while(isLocked)循环的wait()调用里面。要记住的是，当线程正在等待进入lock() 时，可以调用wait()释放其锁实例对应的同步锁，使得其他多个线程可以进入lock()方法，并调用wait()方法。</p>
+<p>这回看下doSynchronized()，你会注意到在lock()和unlock()之间的注释：在这两个调用之间的代码将运行很长一段时间。进一步设想，这段代码将长时间运行，和进入lock()并调用wait()来比较的话。这意味着大部分时间用在等待进入锁和进入临界区的过程是用在wait()的等待中，而不是被阻塞在试图进入lock()方法中。</p>
+<p>在早些时候提到过，同步块不会对等待进入的多个线程谁能获得访问做任何保障，同样当调用notify()时，wait()也不会做保障一定能唤醒线程。因此这个版本的Lock类和doSynchronized()那个版本就保障公平性而言，没有任何区别。</p>
+<p>但我们能够改变这种情况，如下：</p>
+<blockquote>
+<p>当前的Lock类版本调用自己的wait()方法，如果每个线程在不同的对象上调用wait()，那么只有一个线程会在该对象上调用wait()，Lock类可以决定哪个对象能对其调用notify()，因此能做到有效的选择唤醒哪个线程。</p>
+</blockquote>
+<p>下面将上面Lock类转变为公平锁FairLock。你会注意到新的实现和之前的Lock类中的同步和wait()/notify()稍有不同。重点是，每一个调用lock()的线程都会进入一个队列，当解锁时，只有队列里的第一个线程被允许锁住FairLock实例，所有其它的线程都将处于等待状态，直到他们处于队列头部。如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line">public class FairLock &#123;</span><br><span class="line">    private boolean isLocked &#x3D; false;</span><br><span class="line">    private Thread lockingThread &#x3D; null;</span><br><span class="line">    private List&lt;QueueObject&gt; waitingThreads &#x3D; new ArrayList&lt;QueueObject&gt;();</span><br><span class="line"></span><br><span class="line">    public void lock() throws InterruptedException&#123;</span><br><span class="line">        &#x2F;&#x2F; 当前线程创建“令牌”</span><br><span class="line">        QueueObject queueObject &#x3D; new QueueObject();</span><br><span class="line">        boolean isLockedForThisThread &#x3D; true;</span><br><span class="line">        synchronized(this)&#123;</span><br><span class="line">            &#x2F;&#x2F; 所有线程的queueObject令牌，入队</span><br><span class="line">            waitingThreads.add(queueObject);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        while(isLockedForThisThread)&#123;</span><br><span class="line">            synchronized(this)&#123;</span><br><span class="line">                &#x2F;&#x2F; 1. 判断是否已被锁住：是否已有线程获得锁，正在执行同步代码块</span><br><span class="line">                &#x2F;&#x2F; 2. 判断头部令牌与当前线程令牌是否一致：也就是只锁住头部令牌对应的线程；</span><br><span class="line">                isLockedForThisThread &#x3D; isLocked || waitingThreads.get(0) !&#x3D; queueObject;</span><br><span class="line">                if(!isLockedForThisThread)&#123;</span><br><span class="line">                    isLocked &#x3D; true;</span><br><span class="line">                    &#x2F;&#x2F; 移除头部令牌</span><br><span class="line">                    waitingThreads.remove(queueObject);</span><br><span class="line">                    lockingThread &#x3D; Thread.currentThread();</span><br><span class="line">                    return;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            try&#123;</span><br><span class="line">                &#x2F;&#x2F; 其他线程执行doWait()，进行等待</span><br><span class="line">                queueObject.doWait();</span><br><span class="line">            &#125;catch(InterruptedException e)&#123;</span><br><span class="line">                synchronized(this) &#123; waitingThreads.remove(queueObject); &#125;</span><br><span class="line">                throw e;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public synchronized void unlock()&#123;</span><br><span class="line">        if(this.lockingThread !&#x3D; Thread.currentThread())&#123;</span><br><span class="line">            throw new IllegalMonitorStateException(&quot;Calling thread has not locked this lock&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">        isLocked &#x3D; false;</span><br><span class="line">        lockingThread &#x3D; null;</span><br><span class="line">        if(waitingThreads.size() &gt; 0) &#123;</span><br><span class="line">            &#x2F;&#x2F; 唤醒头部令牌对应的线程，可以执行</span><br><span class="line">            waitingThreads.get(0).doNotify();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class QueueObject &#123;</span><br><span class="line">    private boolean isNotified &#x3D; false;</span><br><span class="line"></span><br><span class="line">    public synchronized void doWait() throws InterruptedException &#123;</span><br><span class="line">        while(!isNotified)&#123;</span><br><span class="line">            this.wait();</span><br><span class="line">        &#125;</span><br><span class="line">        this.isNotified &#x3D; false;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public synchronized void doNotify() &#123;</span><br><span class="line">        this.isNotified &#x3D; true;</span><br><span class="line">        this.notify();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public boolean equals(Object o) &#123;</span><br><span class="line">        return this &#x3D;&#x3D; o;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先注意到lock()方法不在声明为synchronized，取而代之的是对必需同步的代码，在synchronized中进行嵌套。</p>
+<blockquote>
+<p>FairLock新创建了一个QueueObject的实例，并对每个调用lock()的线程进行入队操作。调用unlock()的线程将从队列头部获取QueueObject，并对其调用doNotify()，以唤醒在该对象上等待的线程。通过这种方式，在同一时间仅有一个等待线程获得唤醒，而不是所有的等待线程。这也是实现FairLock公平性的核心所在。</p>
+</blockquote>
+<p>还需注意到，QueueObject实际是一个semaphore。doWait()和doNotify()方法在QueueObject中保存着信号。这样做以避免一个线程在调用queueObject.doWait()之前被另一个线程调用unlock()并随之调用queueObject.doNotify()的线程重入，从而导致信号丢失。queueObject.doWait()调用放置在synchronized(this)块之外，以避免被monitor嵌套锁死，所以另外的线程可以解锁，只要当没有线程在lock方法的synchronized(this)块中执行即可。</p>
+<p>最后，注意到queueObject.doWait()在try – catch块中是怎样调用的。在InterruptedException抛出的情况下，线程得以离开lock()，并需让它从队列中移除。</p>
+<h4 id="3-如何确保线程安全特性"><a href="#3-如何确保线程安全特性" class="headerlink" title="3 如何确保线程安全特性"></a>3 如何确保线程安全特性</h4><h5 id="3-1-如何确保原子性"><a href="#3-1-如何确保原子性" class="headerlink" title="3.1 如何确保原子性"></a>3.1 如何确保原子性</h5><h5 id="3-1-1-锁和同步"><a href="#3-1-1-锁和同步" class="headerlink" title="3.1.1 锁和同步"></a>3.1.1 锁和同步</h5><p>常用的保证Java操作原子性的工具是 锁和同步方法（或者同步代码块）。使用锁，可以保证同一时间只有一个线程能拿到锁，也就保证了同一时间只有一个线程能执行申请锁和释放锁之间的代码。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public void testLock () &#123;</span><br><span class="line">    lock.lock();</span><br><span class="line">    try&#123;</span><br><span class="line">        int j &#x3D; i;</span><br><span class="line">        i &#x3D; j + 1;</span><br><span class="line">    &#125; finally &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>与锁类似的是同步方法或者同步代码块。使用非静态同步方法时，锁住的是当前实例；使用静态同步方法时，锁住的是该类的Class对象；使用静态代码块时，锁住的是synchronized关键字后面括号内的对象。下面是同步代码块示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public void testLock () &#123;</span><br><span class="line">    synchronized (anyObject)&#123;</span><br><span class="line">        int j &#x3D; i;</span><br><span class="line">        i &#x3D; j + 1;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>无论使用锁还是synchronized，本质都是一样，通过锁或同步来实现资源的排它性，从而实际目标代码段同一时间只会被一个线程执行，进而保证了目标代码段的原子性。这是一种以牺牲性能为代价的方法。</p>
+<h5 id="3-1-2-CAS（compare-and-swap）"><a href="#3-1-2-CAS（compare-and-swap）" class="headerlink" title="3.1.2 CAS（compare and swap）"></a>3.1.2 CAS（compare and swap）</h5><p>基础类型变量自增（i++）是一种常被新手误以为是原子操作而实际不是的操作。Java中提供了对应的原子操作类来实现该操作，并保证原子性，其本质是利用了CPU级别的CAS指令。由于是CPU级别的指令，其开销比需要操作系统参与的锁的开销小。AtomicInteger使用方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">AtomicInteger atomicInteger &#x3D; new AtomicInteger();</span><br><span class="line">for(int b &#x3D; 0; b &lt; numThreads; b++) &#123;</span><br><span class="line">    new Thread(() -&gt; &#123;</span><br><span class="line">        for(int a &#x3D; 0; a &lt; iteration; a++) &#123;</span><br><span class="line">            atomicInteger.incrementAndGet();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;).start();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-2-如何确保可见性"><a href="#3-2-如何确保可见性" class="headerlink" title="3.2 如何确保可见性"></a>3.2 如何确保可见性</h5><p>Java提供了volatile关键字来保证可见性。当使用volatile修饰某个变量时，它会保证对该变量的修改会立即被更新到内存中，并且将其它线程缓存中对该变量的缓存设置成无效，因此其它线程需要读取该值时必须从主内存中读取，从而得到最新的值。</p>
+<p>volatile适用场景：volatile适用于不需要保证原子性，但却需要保证可见性的场景。一种典型的使用场景是用它修饰用于停止线程的状态标记。如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">boolean isRunning &#x3D; false;</span><br><span class="line">public void start () &#123;</span><br><span class="line">    new Thread( () -&gt; &#123;</span><br><span class="line">        while(isRunning) &#123;</span><br><span class="line">            someOperation();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;).start();</span><br><span class="line">&#125;</span><br><span class="line">public void stop () &#123;</span><br><span class="line">    isRunning &#x3D; false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这种实现方式下，即使其它线程通过调用stop()方法将isRunning设置为false，循环也不一定会立即结束。可以通过volatile关键字，保证while循环及时得到isRunning最新的状态从而及时停止循环，结束线程。</p>
+<h5 id="3-3-如何确保有序性"><a href="#3-3-如何确保有序性" class="headerlink" title="3.3 如何确保有序性"></a>3.3 如何确保有序性</h5><p>上文讲过编译器和处理器对指令进行重新排序时，会保证重新排序后的执行结果和代码顺序执行的结果一致，所以重新排序过程并不会影响单线程程序的执行，却可能影响多线程程序并发执行的正确性。</p>
+<blockquote>
+<p>Java中可通过volatile在一定程序上保证顺序性，另外还可以通过synchronized和锁来保证顺序性。</p>
+</blockquote>
+<p>synchronized和锁保证顺序性的原理和保证原子性一样，都是通过保证同一时间只会有一个线程执行目标代码段来实现的。</p>
+<p>除了从应用层面保证目标代码段执行的顺序性外，JVM还通过被称为happens-before原则隐式地保证顺序性。两个操作的执行顺序只要可以通过happens-before推导出来，则JVM会保证其顺序性，反之JVM对其顺序性不作任何保证，可对其进行任意必要的重新排序以获取高效率。</p>
+<p>happens-before原则（先行发生原则），如下：</p>
+<blockquote>
+<p><strong>1.传递规则：</strong>如果操作1在操作2前面，而操作2在操作3前面，则操作1肯定会在操作3前发生。该规则说明了happens-before原则具有传递性。<br><strong>2.锁定规则：</strong>一个unlock操作肯定会在后面对同一个锁的lock操作前发生。这个很好理解，锁只有被释放了才会被再次获取。<br><strong>3.volatile变量规则：</strong>对一个被volatile修饰的写操作先发生于后面对该变量的读操作。<br><strong>4.程序次序规则：</strong>一个线程内，按照代码顺序执行。<br><strong>5.线程启动规则：</strong>Thread对象的start()方法先发生于此线程的其它动作。<br><strong>6.线程终结原则：</strong>线程的终止检测后发生于线程中其它的所有操作。<br><strong>7.线程中断规则： *<em>对线程interrupt()方法的调用先发生于对该中断异常的获取。<br>*</em>8.对象终结规则：</strong>一个对象构造先于它的finalize发生。</p>
+</blockquote>
+<h5 id="4-关于线程安全的几个为什么"><a href="#4-关于线程安全的几个为什么" class="headerlink" title="4 关于线程安全的几个为什么"></a>4 关于线程安全的几个为什么</h5><p><strong>1.平时项目中使用锁和synchronized比较多，而很少使用volatile，难道就没有保证可见性？</strong></p>
+<blockquote>
+<p>锁和synchronized即可以保证原子性，也可以保证可见性。都是通过保证同一时间只有一个线程执行目标代码段来实现的。</p>
+</blockquote>
+<p><strong>2.锁和synchronized为何能保证可见性？</strong></p>
+<blockquote>
+<p>根据JDK 7的Java doc中对concurrent包的说明，一个线程的写结果保证对另外线程的读操作可见，只要该写操作可以由happen-before原则推断出在读操作之前发生。</p>
+</blockquote>
+<p><strong>3.既然锁和synchronized即可保证原子性也可保证可见性，为何还需要volatile？</strong></p>
+<blockquote>
+<p>synchronized和锁需要通过操作系统来仲裁谁获得锁，开销比较高，而volatile开销小很多。因此在只需要保证可见性的条件下，使用volatile的性能要比使用锁和synchronized高得多。</p>
+</blockquote>
+<p><strong>4.既然锁和synchronized可以保证原子性，为什么还需要AtomicInteger这种的类来保证原子操作？</strong></p>
+<blockquote>
+<p>锁和synchronized需要通过操作系统来仲裁谁获得锁，开销比较高，而AtomicInteger是通过CPU级的CAS操作来保证原子性，开销比较小。所以使用AtomicInteger的目的还是为了提高性能。</p>
+</blockquote>
+<p><strong>5.还有没有别的办法保证线程安全？</strong></p>
+<blockquote>
+<p>有。尽可能避免引起非线程安全的条件——共享变量。如果能从设计上避免共享变量的使用，即可避免非线程安全的发生，也就无须通过锁或者synchronized以及volatile解决原子性、可见性和顺序性的问题。</p>
+</blockquote>
+<p><strong>6.synchronized即可修饰非静态方式，也可修饰静态方法，还可修饰代码块，有何区别？</strong></p>
+<blockquote>
+<p>synchronized修饰非静态同步方法时，锁住的是当前实例；synchronized修饰静态同步方法时，锁住的是该类的Class对象；synchronized修饰静态代码块时，锁住的是synchronized关键字后面括号内的对象。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/JAVA%E5%B9%B6%E5%8F%91/" rel="tag"># JAVA并发</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/01/Android%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6/" rel="prev" title="Android基础 -- 四大组件">
+      <i class="fa fa-chevron-left"></i> Android基础 -- 四大组件
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/01/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E5%85%AD%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8B%E5%90%8C%E6%AD%A5%E4%B8%8E%E5%AE%9E%E7%8E%B0/" rel="next" title="啃碎并发（六）：Java线程同步与实现">
+      啃碎并发（六）：Java线程同步与实现 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#0-前言"><span class="nav-number">1.</span> <span class="nav-text">0 前言</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-线程安全特性"><span class="nav-number">2.</span> <span class="nav-text">1 线程安全特性</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-原子性"><span class="nav-number">2.1.</span> <span class="nav-text">1.1 原子性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-可见性"><span class="nav-number">2.2.</span> <span class="nav-text">1.2 可见性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-有序性"><span class="nav-number">2.3.</span> <span class="nav-text">1.3 有序性</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-线程安全问题"><span class="nav-number">3.</span> <span class="nav-text">2 线程安全问题</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-竞态条件与临界区"><span class="nav-number">3.1.</span> <span class="nav-text">2.1 竞态条件与临界区</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-死锁"><span class="nav-number">3.2.</span> <span class="nav-text">2.2 死锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-3-活锁"><span class="nav-number">3.3.</span> <span class="nav-text">2.3 活锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-4-饥饿"><span class="nav-number">3.4.</span> <span class="nav-text">2.4 饥饿</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-5-公平"><span class="nav-number">3.5.</span> <span class="nav-text">2.5 公平</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-如何确保线程安全特性"><span class="nav-number">4.</span> <span class="nav-text">3 如何确保线程安全特性</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-如何确保原子性"><span class="nav-number">4.1.</span> <span class="nav-text">3.1 如何确保原子性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-1-锁和同步"><span class="nav-number">4.2.</span> <span class="nav-text">3.1.1 锁和同步</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-2-CAS（compare-and-swap）"><span class="nav-number">4.3.</span> <span class="nav-text">3.1.2 CAS（compare and swap）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-如何确保可见性"><span class="nav-number">4.4.</span> <span class="nav-text">3.2 如何确保可见性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-如何确保有序性"><span class="nav-number">4.5.</span> <span class="nav-text">3.3 如何确保有序性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-关于线程安全的几个为什么"><span class="nav-number">4.6.</span> <span class="nav-text">4 关于线程安全的几个为什么</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
