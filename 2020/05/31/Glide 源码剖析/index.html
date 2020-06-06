@@ -27,11 +27,13 @@
 <meta property="og:site_name" content="Hexo">
 <meta property="og:description" content="Glide 源码剖析Glide是Google出品的一款性能优异的图片加载框架。 依赖库导入 123456789repositories &amp;#123;  mavenCentral()  google()&amp;#125;dependencies &amp;#123;  implementation &#39;com.github.bumptech.glide:glide:4.11.0&#39;  annotati">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdn.net/20170515074139121?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvRXRoYW5Dbw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
 <meta property="article:published_time" content="2020-05-31T03:17:43.174Z">
-<meta property="article:modified_time" content="2020-06-03T03:19:50.520Z">
+<meta property="article:modified_time" content="2020-06-03T09:52:19.397Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="Android开源框架源码分析">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdn.net/20170515074139121?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvRXRoYW5Dbw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
 
 <link rel="canonical" href="http://yoursite.com/2020/05/31/Glide%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">
 
@@ -464,6 +466,10 @@ public Target&lt;GlideDrawable&gt; into(ImageView view) {
     return super.into(view);
 }
 
+/**
+ * into ImageView 之后，才会去从缓存LruCache&lt;Key, Resource&lt;?&gt;&gt;、弱引用Map&lt;Key, WeakReference&lt;EngineResource&lt;?&gt;&gt;&gt;、磁盘缓存diskCacheService、
+ */
+
 public Target&lt;TranscodeType&gt; into(ImageView view) {
     Util.assertMainThread();
     if (view == null) {
@@ -792,6 +798,9 @@ public void run() {
     }
 }
 
+/**
+ * 优先从磁盘缓存中寻找
+ */
 private Resource&lt;?&gt; decode() throws Exception {
     if (isDecodingFromCache()) {
         return decodeFromCache();
@@ -800,10 +809,87 @@ private Resource&lt;?&gt; decode() throws Exception {
     }
 }
 
+// 进行网路请求
 private Resource&lt;?&gt; decodeFromSource() throws Exception {
     return decodeJob.decodeFromSource();
 }</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">**DecodeJob.java**</span><br></pre></td></tr></table></figure>
+<p>class DecodeJob&lt;A, T, Z&gt; {</p>
+<pre><code>public Resource&lt;Z&gt; decodeFromSource() throws Exception {
+    // 网络请求
+    Resource&lt;T&gt; decoded = decodeSource();
+    // 对返回结果进行Encode编码
+    return transformEncodeAndTranscode(decoded);
+}
+
+private Resource&lt;T&gt; decodeSource() throws Exception {
+    Resource&lt;T&gt; decoded = null;
+    try {
+        // 最终会走到HttpUrlFetcher.loadData返回InputStream
+        final A data = fetcher.loadData(priority);
+        decoded = decodeFromSourceData(data);
+    } finally {
+        fetcher.cleanup();
+    }
+    return decoded;
+}
+
+// 此处最终会走到StreamBitmapDecoder的decode方法
+// 计算sampleSize、
+// Bitmap result = BitmapFactory.decodeStream(is, null, options);
+private Resource&lt;T&gt; decodeFromSourceData(A data) throws IOException {
+    final Resource&lt;T&gt; decoded;
+    decoded = loadProvider.getSourceDecoder().decode(data, width, height);
+    return decoded;
+}</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">**HttpUrlFetcher**</span><br></pre></td></tr></table></figure>
+<p>public class HttpUrlFetcher implements DataFetcher<InputStream> {</p>
+<pre><code>private HttpURLConnection urlConnection;
+private InputStream stream;
+
+@Override
+public InputStream loadData(Priority priority) throws Exception {
+    return loadDataWithRedirects(glideUrl.toURL(), 0 /*redirects*/, null /*lastUrl*/, glideUrl.getHeaders());
+}
+
+private InputStream loadDataWithRedirects(URL url, int redirects, URL lastUrl, Map&lt;String, String&gt; headers)
+        throws IOException {
+    ...
+    urlConnection = connectionFactory.build(url);
+    for (Map.Entry&lt;String, String&gt; headerEntry : headers.entrySet()) {
+      urlConnection.addRequestProperty(headerEntry.getKey(), headerEntry.getValue());
+    }
+    urlConnection.setConnectTimeout(2500);
+    urlConnection.setReadTimeout(2500);
+    urlConnection.setUseCaches(false);
+    urlConnection.setDoInput(true);
+
+    // Connect explicitly to avoid errors in decoders if connection fails.
+    urlConnection.connect();
+    if (isCancelled) {
+        return null;
+    }
+    final int statusCode = urlConnection.getResponseCode();
+    if (statusCode / 100 == 2) { // 200 OK
+        return getStreamForSuccessfulRequest(urlConnection);
+    } else if (statusCode / 100 == 3) { // 3XX 重定向
+        String redirectUrlString = urlConnection.getHeaderField(&quot;Location&quot;);
+        if (TextUtils.isEmpty(redirectUrlString)) {
+            throw new IOException(&quot;Received empty or null redirect url&quot;);
+        }
+        URL redirectUrl = new URL(url, redirectUrlString);
+        return loadDataWithRedirects(redirectUrl, redirects + 1, url, headers);
+    }
+    ...
+}
+
+private InputStream getStreamForSuccessfulRequest(HttpURLConnection urlConnection) throws IOException {
+    ...
+    stream = urlConnection.getInputStream();
+    return stream;
+}    </code></pre><p>}</p>
 <p>```</p>
+<p><img src="https://img-blog.csdn.net/20170515074139121?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvRXRoYW5Dbw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="Glide 执行过程"></p>
 <h4 id="了解更多"><a href="#了解更多" class="headerlink" title="了解更多"></a>了解更多</h4><p><a href="https://blog.csdn.net/u011733020/article/details/52446902" target="_blank" rel="noopener">1. Glide（图片异步加载缓存库）发起request获取resource</a></p>
 <p><a href="https://juejin.im/post/5e2109e25188254c257c40c6#heading-42" target="_blank" rel="noopener">2. Android主流三方库源码分析（三、深入理解Glide源码）</a></p>
 
@@ -903,7 +989,7 @@ private Resource&lt;?&gt; decodeFromSource() throws Exception {
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-count">90</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -916,7 +1002,7 @@ private Resource&lt;?&gt; decodeFromSource() throws Exception {
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">18</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

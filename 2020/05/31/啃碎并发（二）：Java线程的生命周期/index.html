@@ -20,17 +20,17 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="啃碎并发（二）：Java线程的生命周期 0 前言当线程被创建并启动以后，它既不是一启动就进入了执行状态，也不是一直处于执行状态。在线程的生命周期中，它要经过 新建（New）、就绪（Runnable）、运行（Running）、阻塞（Blocked）和死亡（Dead）5种状态。尤其是当线程启动以后，它不可能一直”霸占”着CPU独自运行，所以CPU需要在多条线程之间切换，于是 线程状态也会多次在运行、阻">
+  <meta name="description" content="0 前言当线程被创建并启动以后，它既不是一启动就进入了执行状态，也不是一直处于执行状态。在线程的生命周期中，它要经过 新建（New）、就绪（Runnable）、运行（Running）、阻塞（Blocked）和死亡（Dead）5种状态。尤其是当线程启动以后，它不可能一直”霸占”着CPU独自运行，所以CPU需要在多条线程之间切换，于是 线程状态也会多次在运行、阻塞之间切换。  1 新建（New）状态当">
 <meta property="og:type" content="article">
 <meta property="og:title" content="啃碎并发（二）：Java线程的生命周期">
 <meta property="og:url" content="http://yoursite.com/2020/05/31/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%BA%8C%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="啃碎并发（二）：Java线程的生命周期 0 前言当线程被创建并启动以后，它既不是一启动就进入了执行状态，也不是一直处于执行状态。在线程的生命周期中，它要经过 新建（New）、就绪（Runnable）、运行（Running）、阻塞（Blocked）和死亡（Dead）5种状态。尤其是当线程启动以后，它不可能一直”霸占”着CPU独自运行，所以CPU需要在多条线程之间切换，于是 线程状态也会多次在运行、阻">
+<meta property="og:description" content="0 前言当线程被创建并启动以后，它既不是一启动就进入了执行状态，也不是一直处于执行状态。在线程的生命周期中，它要经过 新建（New）、就绪（Runnable）、运行（Running）、阻塞（Blocked）和死亡（Dead）5种状态。尤其是当线程启动以后，它不可能一直”霸占”着CPU独自运行，所以CPU需要在多条线程之间切换，于是 线程状态也会多次在运行、阻塞之间切换。  1 新建（New）状态当">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://upload-images.jianshu.io/upload_images/2062729-bf153c2ed5c95f66.png">
 <meta property="og:image" content="https://upload-images.jianshu.io/upload_images/2062729-3220c4bc58f5448b.png">
 <meta property="article:published_time" content="2020-05-31T14:37:55.502Z">
-<meta property="article:modified_time" content="2020-05-31T15:16:03.009Z">
+<meta property="article:modified_time" content="2020-06-03T06:37:50.973Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="JAVA并发">
 <meta name="twitter:card" content="summary">
@@ -191,9 +191,8 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2020-05-31 22:37:55 / 修改时间：23:16:03" itemprop="dateCreated datePublished" datetime="2020-05-31T22:37:55+08:00">2020-05-31</time>
+              <time title="创建时间：2020-05-31 22:37:55" itemprop="dateCreated datePublished" datetime="2020-05-31T22:37:55+08:00">2020-05-31</time>
             </span>
 
           
@@ -207,8 +206,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>啃碎并发（二）：Java线程的生命周期</p>
-<h4 id="0-前言"><a href="#0-前言" class="headerlink" title="0 前言"></a>0 前言</h4><p>当线程被创建并启动以后，它既不是一启动就进入了执行状态，也不是一直处于执行状态。在线程的生命周期中，它要经过 新建（New）、就绪（Runnable）、运行（Running）、阻塞（Blocked）和死亡（Dead）5种状态。尤其是当线程启动以后，它不可能一直”霸占”着CPU独自运行，所以CPU需要在多条线程之间切换，于是 线程状态也会多次在运行、阻塞之间切换。</p>
+        <h4 id="0-前言"><a href="#0-前言" class="headerlink" title="0 前言"></a>0 前言</h4><p>当线程被创建并启动以后，它既不是一启动就进入了执行状态，也不是一直处于执行状态。在线程的生命周期中，它要经过 新建（New）、就绪（Runnable）、运行（Running）、阻塞（Blocked）和死亡（Dead）5种状态。尤其是当线程启动以后，它不可能一直”霸占”着CPU独自运行，所以CPU需要在多条线程之间切换，于是 线程状态也会多次在运行、阻塞之间切换。</p>
 <p><img src="https://upload-images.jianshu.io/upload_images/2062729-bf153c2ed5c95f66.png" alt=""></p>
 <h6 id="1-新建（New）状态"><a href="#1-新建（New）状态" class="headerlink" title="1 新建（New）状态"></a>1 新建（New）状态</h6><p>当程序使用new关键字创建了一个线程之后，该线程就处于<strong>新建状态</strong>，此时的线程情况如下：</p>
 <blockquote>
@@ -413,12 +411,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/05/31/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%B8%89%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8B%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2/" rel="prev" title="啃碎并发（三）：Java线程上下文切换">
-      <i class="fa fa-chevron-left"></i> 啃碎并发（三）：Java线程上下文切换
+    <a href="/2020/05/31/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8B%E6%80%BB%E8%BF%B0%E4%B8%8E%E6%A6%82%E5%BF%B5/" rel="prev" title="啃碎并发（一）：Java线程总述与概念">
+      <i class="fa fa-chevron-left"></i> 啃碎并发（一）：Java线程总述与概念
     </a></div>
       <div class="post-nav-item">
-    <a href="/2020/06/01/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E5%9B%9B%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8BDump%E5%88%86%E6%9E%90/" rel="next" title="啃碎并发（四）：Java线程Dump分析">
-      啃碎并发（四）：Java线程Dump分析 <i class="fa fa-chevron-right"></i>
+    <a href="/2020/05/31/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%88%E4%B8%89%EF%BC%89%EF%BC%9AJava%E7%BA%BF%E7%A8%8B%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2/" rel="next" title="啃碎并发（三）：Java线程上下文切换">
+      啃碎并发（三）：Java线程上下文切换 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -492,7 +490,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-count">90</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -505,7 +503,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">18</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
