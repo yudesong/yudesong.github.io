@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="1. 二维数组中的查找 在一个二维数组中（每个一维数组的长度相同），每一行都按照从左到右递增的顺序排序，每一列都按照从上到下递增的顺序排序。请完成一个函数，输入这样的一个二维数组和一个整数，判断数组中是否含有该整数。 思路： 首先获取二维数组的行数以及列数, 从第一行的最后一列开始比较，如果array[i][j] &gt; target, 那就在数组的前面一列里面寻找，否则在下面一行寻找。 123">
+<meta property="og:type" content="article">
+<meta property="og:title" content="剑指Offer -- 刷题笔记">
+<meta property="og:url" content="http://yoursite.com/2020/06/06/%E5%89%91%E6%8C%87Offer%20--%20%E5%88%B7%E9%A2%98%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="1. 二维数组中的查找 在一个二维数组中（每个一维数组的长度相同），每一行都按照从左到右递增的顺序排序，每一列都按照从上到下递增的顺序排序。请完成一个函数，输入这样的一个二维数组和一个整数，判断数组中是否含有该整数。 思路： 首先获取二维数组的行数以及列数, 从第一行的最后一列开始比较，如果array[i][j] &gt; target, 那就在数组的前面一列里面寻找，否则在下面一行寻找。 123">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-06-06T09:05:08.662Z">
+<meta property="article:modified_time" content="2020-06-06T16:22:19.222Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="算法">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/06/06/%E5%89%91%E6%8C%87Offer%20--%20%E5%88%B7%E9%A2%98%E7%AC%94%E8%AE%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>剑指Offer -- 刷题笔记 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/06/%E5%89%91%E6%8C%87Offer%20--%20%E5%88%B7%E9%A2%98%E7%AC%94%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          剑指Offer -- 刷题笔记
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-06 17:05:08" itemprop="dateCreated datePublished" datetime="2020-06-06T17:05:08+08:00">2020-06-06</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><strong>1. 二维数组中的查找</strong></p>
+<p>在一个二维数组中（每个一维数组的长度相同），每一行都按照从左到右递增的顺序排序，每一列都按照从上到下递增的顺序排序。请完成一个函数，输入这样的一个二维数组和一个整数，判断数组中是否含有该整数。</p>
+<p>思路： 首先获取二维数组的行数以及列数, 从第一行的最后一列开始比较，如果array[i][j] &gt; target, 那就在数组的前面一列里面寻找，否则在下面一行寻找。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">public class Solution &#123;</span><br><span class="line">    public boolean Find(int target, int [][] array) &#123;</span><br><span class="line">    	&#x2F;&#x2F; 获取数组行数</span><br><span class="line">        int row &#x3D; array.length;</span><br><span class="line">        &#x2F;&#x2F; 获取数组列数</span><br><span class="line">        int col &#x3D; array[0].length;</span><br><span class="line">        int i &#x3D; 0;</span><br><span class="line">        int j &#x3D; col - 1;</span><br><span class="line">        while (i &lt; row &amp;&amp; j &gt;&#x3D; 0) &#123;</span><br><span class="line">            if (target &#x3D;&#x3D; array[i][j]) return true;</span><br><span class="line">            if (target &gt; array[i][j]) &#123;</span><br><span class="line">                i++;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                if (target &lt; array[i][j]) j--;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>2. 替换空格</strong></p>
+<p>请实现一个函数，将一个字符串中的每个空格替换成“%20”。例如，当字符串为We Are Happy.则经过替换之后的字符串为We%20Are%20Happy。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public String replaceSpace(StringBuffer str) &#123;</span><br><span class="line">	String string &#x3D; str.toString();</span><br><span class="line">	string &#x3D; string.replaceAll(&quot; &quot;, &quot;%20&quot;);</span><br><span class="line">    return string;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>3. 从尾到头打印链表</strong></p>
+<p>输入一个链表，按链表从尾到头的顺序返回一个ArrayList。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 递归</span><br><span class="line">public ArrayList&lt;Integer&gt; arrayList &#x3D; new ArrayList&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">public ArrayList&lt;Integer&gt; printListFromTailToHead(ListNode listNode) &#123;</span><br><span class="line">    if (listNode !&#x3D; null) &#123;</span><br><span class="line">        printListFromTailToHead(listNode.next);</span><br><span class="line">        arrayList.add(listNode.val);</span><br><span class="line">    &#125;</span><br><span class="line">    return arrayList;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 非递归</span><br><span class="line">public ArrayList&lt;Integer&gt; printListFromTailToHead(ListNode listNode) &#123;</span><br><span class="line">    ArrayList&lt;Integer&gt; arrayList &#x3D; new ArrayList&lt;&gt;();</span><br><span class="line">    while (listNode !&#x3D; null) &#123;</span><br><span class="line">        arrayList.add(0, listNode.val);</span><br><span class="line">        listNode &#x3D; listNode.next;</span><br><span class="line">    &#125;</span><br><span class="line">    return arrayList;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>4. 反转链表(重点)</strong></p>
+<p>输入一个链表，反转链表后，输出新链表的表头。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 非递归</span><br><span class="line">public ListNode ReverseList(ListNode head) &#123;</span><br><span class="line">    ListNode pre &#x3D; null;</span><br><span class="line">    ListNode cur &#x3D; head;</span><br><span class="line">    while (cur !&#x3D; null) &#123;</span><br><span class="line">        ListNode next &#x3D; cur.next;</span><br><span class="line">        cur.next &#x3D; pre;</span><br><span class="line">        pre &#x3D; cur;</span><br><span class="line">        cur &#x3D; next;</span><br><span class="line">    &#125;</span><br><span class="line">    return pre;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 递归</span><br><span class="line">public ListNode ReverseList(ListNode head) &#123;</span><br><span class="line">    if (head &#x3D;&#x3D; null || head.next &#x3D;&#x3D; null) return head;</span><br><span class="line">    ListNode node &#x3D; ReverseList(head.next);</span><br><span class="line">    head.next.next &#x3D; head;</span><br><span class="line">    head.next &#x3D; null;</span><br><span class="line">    return node;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>5. 合并两个排序的链表</strong></p>
+<p>输入两个单调递增的链表，输出两个链表合成后的链表，当然我们需要合成后的链表满足单调不减规则。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">public ListNode Merge(ListNode list1,ListNode list2) &#123;</span><br><span class="line">    ListNode head &#x3D; new ListNode(0);</span><br><span class="line">    ListNode root &#x3D; head;</span><br><span class="line">    while (list1 !&#x3D; null &amp;&amp; list2 !&#x3D; null) &#123;</span><br><span class="line">        if (list1.val &lt; list2.val) &#123;</span><br><span class="line">            head.next &#x3D; list1;</span><br><span class="line">            list1 &#x3D; list1.next;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            head.next &#x3D; list2;</span><br><span class="line">            list2 &#x3D; list2.next;</span><br><span class="line">        &#125;</span><br><span class="line">        head &#x3D; head.next;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (list1 !&#x3D; null) head.next &#x3D; list1;</span><br><span class="line">    if (list2 !&#x3D; null) head.next &#x3D; list2;</span><br><span class="line">    return root.next;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 递归</span><br><span class="line">public ListNode Merge(ListNode list1,ListNode list2) &#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>6. 二叉树的深度</strong></p>
+<p>输入一棵二叉树，求该树的深度。从根结点到叶结点依次经过的结点（含根、叶结点）形成树的一条路径，最长路径的长度为树的深度。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public int TreeDepth(TreeNode root) &#123;</span><br><span class="line">    if (root &#x3D;&#x3D; null) return 0;</span><br><span class="line">    int left &#x3D; TreeDepth(root.left);</span><br><span class="line">    int right &#x3D; TreeDepth(root.right);</span><br><span class="line">    return left &gt; right ? left + 1 : right + 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p><strong>7. 平衡二叉树</strong></p>
+<p>输入一棵二叉树，判断该二叉树是否是平衡二叉树。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public boolean IsBalanced_Solution(TreeNode root) &#123;</span><br><span class="line">    if (root &#x3D;&#x3D; null) return true;</span><br><span class="line">    int left &#x3D; getTreeDepth(root.left);</span><br><span class="line">    int right &#x3D; getTreeDepth(root.right);</span><br><span class="line">    if ((left - right) &#x3D;&#x3D; -1 || (left - right) &#x3D;&#x3D; 1 || (left - right) &#x3D;&#x3D; 0) &#123;</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br><span class="line">    </span><br><span class="line">private int getTreeDepth(TreeNode root) &#123;</span><br><span class="line">    if (root &#x3D;&#x3D; null) return 0;</span><br><span class="line">    return 1 + Math.max(getTreeDepth(root.left), getTreeDepth(root.right));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>8. 对称的二叉树</strong></p>
+<p>请实现一个函数，用来判断一颗二叉树是不是对称的。注意，如果一个二叉树同此二叉树的镜像是同样的，定义其为对称的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">      8</span><br><span class="line">  6       6</span><br><span class="line">5   7  7    5</span><br><span class="line"></span><br><span class="line">boolean isSymmetrical(TreeNode pRoot) &#123;</span><br><span class="line">    if (pRoot &#x3D;&#x3D; null) return true;</span><br><span class="line">    return compare(pRoot.left, pRoot.right);</span><br><span class="line">&#125;</span><br><span class="line">    </span><br><span class="line">boolean compare(TreeNode left, TreeNode right) &#123;</span><br><span class="line">    if (left &#x3D;&#x3D; null) return right &#x3D;&#x3D; null;</span><br><span class="line">    if (right &#x3D;&#x3D; null) return false;</span><br><span class="line">    if (left.val &#x3D;&#x3D; right.val) &#123;</span><br><span class="line">        return compare(left.left, right.right) &amp;&amp; compare(left.right, right.left);</span><br><span class="line">    &#125;</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>9. 斐波那契数列</strong></p>
+<p>大家都知道斐波那契数列，现在要求输入一个整数n，请你输出斐波那契数列的第n项（从0开始，第0项为0，第1项是1）。<br>n&lt;=39</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public int Fibonacci(int n) &#123;</span><br><span class="line">    if (n &#x3D;&#x3D; 0) return 0;</span><br><span class="line">    if (n &#x3D;&#x3D; 1) return 1;</span><br><span class="line">    return Fibonacci(n - 1) + Fibonacci(n - 2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>10. 跳台阶</strong></p>
+<p>一只青蛙一次可以跳上1级台阶，也可以跳上2级。求该青蛙跳上一个n级的台阶总共有多少种跳法（先后次序不同算不同的结果）。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">f(n) &#x3D; f(n-1) + f(n-2);</span><br><span class="line">public int JumpFloor(int target) &#123;</span><br><span class="line">    if (target &#x3D;&#x3D; 0) return 0;</span><br><span class="line">    if (target &#x3D;&#x3D; 1) return 1;</span><br><span class="line">    if (target &#x3D;&#x3D; 2) return 2;</span><br><span class="line">    return JumpFloor(target - 1) + JumpFloor(target - 2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>11. 变态跳台阶</strong></p>
+<p>一只青蛙一次可以跳上1级台阶，也可以跳上2级……它也可以跳上n级。求该青蛙跳上一个n级的台阶总共有多少种跳法。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">f(n)   &#x3D; f(n-1) + f(n-2) + f(n-3) + ... + f(2) + f(1)</span><br><span class="line">f(n-1) &#x3D; f(n-2) + f(n-3) + ... + f(2) + f(1);</span><br><span class="line"></span><br><span class="line">2式相减： f(n) &#x3D; 2 * f(n-1)</span><br><span class="line"></span><br><span class="line">public int JumpFloorII(int target) &#123;</span><br><span class="line">  	if (target &#x3D;&#x3D; 0) return 0;</span><br><span class="line">   	if (target &#x3D;&#x3D; 1) return 1;</span><br><span class="line">   	return 2 * JumpFloorII(target - 1);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>12. 矩形覆盖</strong></p>
+<p>我们可以用2<em>1的小矩形横着或者竖着去覆盖更大的矩形。请问用n个2</em>1的小矩形无重叠地覆盖一个2*n的大矩形，总共有多少种方法？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public int RectCover(int target) &#123;</span><br><span class="line">    if (target &#x3D;&#x3D; 0) return 0;</span><br><span class="line">    if (target &#x3D;&#x3D; 1) return 1;</span><br><span class="line">    if (target &#x3D;&#x3D; 2) return 2;</span><br><span class="line">    return RectCover(target - 1) + RectCover(target - 2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>13. 二进制中1的个数</strong></p>
+<p>输入一个整数，输出该数二进制表示中1的个数。其中负数用补码表示。</p>
+<p>如果一个整数不为0，那么这个整数至少有一位是1。如果我们把这个整数减1，那么原来处在整数最右边的1就会变为0，原来在1后面的所有的0都会变成1(如果最右边的1后面还有0的话)。其余所有位将不会受到影响。</p>
+<p>举个例子：一个二进制数1100，从右边数起第三位是处于最右边的一个1。减去1后，第三位变成0，它后面的两位0变成了1，而前面的1保持不变，因此得到的结果是1011.我们发现减1的结果是把最右边的一个1开始的所有位都取反了。这个时候如果我们再把原来的整数和减去1之后的结果做与运算，从原来整数最右边一个1那一位开始所有位都会变成0。如1100&amp;1011=1000.也就是说，把一个整数减去1，再和原整数做与运算，会把该整数最右边一个1变成0.那么一个整数的二进制有多少个1，就可以进行多少次这样的操作。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public int NumberOf1(int n) &#123;</span><br><span class="line">    int ans &#x3D; 0;</span><br><span class="line">    while (n !&#x3D; 0) &#123;</span><br><span class="line">        ans ++;</span><br><span class="line">        n &#x3D; n &amp; (n-1);</span><br><span class="line">    &#125;</span><br><span class="line">    return ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>14. 链表中倒数第k个结点</strong></p>
+<p>输入一个链表，输出该链表中倒数第k个结点。 (快慢指针)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public ListNode FindKthToTail(ListNode head,int k) &#123;</span><br><span class="line">    ListNode p &#x3D; null;</span><br><span class="line">    ListNode q &#x3D; head;</span><br><span class="line">    while (q !&#x3D; null &amp;&amp; k &gt; 0) &#123;</span><br><span class="line">        q &#x3D; q.next;</span><br><span class="line">        k--;</span><br><span class="line">    &#125;</span><br><span class="line">    if (k &gt; 0) return p;</span><br><span class="line">    p &#x3D; head;</span><br><span class="line">    while (q !&#x3D; null) &#123;</span><br><span class="line">        q &#x3D; q.next;</span><br><span class="line">        p &#x3D; p.next;</span><br><span class="line">    &#125;</span><br><span class="line">    return p;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>15. 调整数组顺序使奇数位于偶数前面</strong></p>
+<p>输入一个整数数组，实现一个函数来调整该数组中数字的顺序，使得所有的奇数位于数组的前半部分，所有的偶数位于数组的后半部分，并保证奇数和奇数，偶数和偶数之间的相对位置不变。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public void reOrderArray(int [] array) &#123;</span><br><span class="line">    int size &#x3D; 0;</span><br><span class="line">    for (int i &#x3D; 0; i &lt; array.length; i++) &#123;</span><br><span class="line">        if (array[i] % 2 &#x3D;&#x3D; 1) &#123;</span><br><span class="line">            int j &#x3D; i;</span><br><span class="line">            int temp &#x3D; array[i];</span><br><span class="line">            while (j &gt; size) &#123;</span><br><span class="line">                array[j] &#x3D; array[j - 1];</span><br><span class="line">                j--;</span><br><span class="line">            &#125;</span><br><span class="line">            array[size++] &#x3D; temp;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>16. 数值的整数次方</strong></p>
+<p>给定一个double类型的浮点数base和int类型的整数exponent。求base的exponent次方。<br>保证base和exponent不同时为0</p>
+<p><strong>注意exponent为负数</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">public double Power(double base, int exponent) &#123;</span><br><span class="line">    if (exponent &#x3D;&#x3D; 0) return 1;</span><br><span class="line">    </span><br><span class="line">    double ans &#x3D; base;</span><br><span class="line">    </span><br><span class="line">    if (exponent &lt; 0) &#123;</span><br><span class="line">        ans &#x3D; 1 &#x2F; base;</span><br><span class="line">        base &#x3D; 1 &#x2F; base;</span><br><span class="line">        exponent &#x3D; -exponent;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    for (int i &#x3D; 2; i &lt;&#x3D; exponent; i++) &#123;</span><br><span class="line">        ans &#x3D; ans * base;</span><br><span class="line">    &#125;</span><br><span class="line">    return ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>17. 二叉树的镜像(重点)</strong></p>
+<p>操作给定的二叉树，将其变换为源二叉树的镜像。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 递归</span><br><span class="line">public void Mirror(TreeNode root) &#123;</span><br><span class="line">    if (root &#x3D;&#x3D; null) return;</span><br><span class="line">    TreeNode temp &#x3D; root.right;</span><br><span class="line">    root.right &#x3D; root.left;</span><br><span class="line">    root.left &#x3D; temp;</span><br><span class="line">    Mirror(root.left);</span><br><span class="line">    Mirror(root.right);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 非递归</span><br><span class="line">public void Mirror(TreeNode root) &#123;</span><br><span class="line">    if(root &#x3D;&#x3D; null) return;</span><br><span class="line">    Queue&lt;TreeNode&gt; nodes &#x3D; new LinkedList&lt;&gt;();</span><br><span class="line">    TreeNode curr, temp;</span><br><span class="line">    nodes.offer(root);</span><br><span class="line">    while (!nodes.isEmpty()) &#123;</span><br><span class="line">        int len &#x3D; nodes.size();</span><br><span class="line">        for (int i &#x3D; 0; i &lt; len; i++)&#123;</span><br><span class="line">            curr &#x3D; nodes.poll();</span><br><span class="line">            temp &#x3D; curr.left;</span><br><span class="line">            curr.left &#x3D; curr.right;</span><br><span class="line">            curr.right &#x3D; temp;</span><br><span class="line">            if (curr.left !&#x3D; null) nodes.offer(curr.left);</span><br><span class="line">            if (curr.right !&#x3D; null) nodes.offer(curr.right);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"># 算法</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/05/JVM%E5%B8%B8%E8%A7%81%E5%8F%82%E6%95%B0/" rel="prev" title="JVM常见参数">
+      <i class="fa fa-chevron-left"></i> JVM常见参数
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">90</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
