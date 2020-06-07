@@ -28,7 +28,7 @@
 <meta property="og:description" content="0. 青蛙跳台阶问题描述：一只青蛙一次可以跳上1级台阶，也可以跳上2级。求该青蛙跳上一个n级的台阶总共有多少种跳法 1234567891011private static int fun(int n) &amp;#123;    if (n &#x3D;&#x3D; 0) return 0;    if (n &#x3D;&#x3D; 1) return 1;    if (n &#x3D;&#x3D;">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-06-02T11:19:17.490Z">
-<meta property="article:modified_time" content="2020-06-05T16:09:01.116Z">
+<meta property="article:modified_time" content="2020-06-07T06:17:22.793Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="算法">
 <meta name="twitter:card" content="summary">
@@ -222,6 +222,8 @@
 
 <p><strong>2. 动态规划</strong></p>
 <p>创建一个二维数组，boolean[][] dp, 其中dp[i][j]表示字符串第i到j是否为回文。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">string longestPalindrome(string s)</span><br><span class="line">&#123;</span><br><span class="line">    if (s.empty()) return &quot;&quot;;</span><br><span class="line">    int len &#x3D; s.size();</span><br><span class="line">    if (len &#x3D;&#x3D; 1)return s;</span><br><span class="line">    int longest &#x3D; 1;</span><br><span class="line">    int start&#x3D;0;</span><br><span class="line">    vector&lt;vector&lt;int&gt; &gt; dp(len,vector&lt;int&gt;(len));</span><br><span class="line">    for (int i &#x3D; 0; i &lt; len; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        dp[i][i] &#x3D; 1;</span><br><span class="line">        if(i&lt;len-1)</span><br><span class="line">        &#123;</span><br><span class="line">            if (s[i] &#x3D;&#x3D; s[i + 1])</span><br><span class="line">            &#123;</span><br><span class="line">                dp[i][i + 1] &#x3D; 1;</span><br><span class="line">                start&#x3D;i;</span><br><span class="line">                longest&#x3D;2;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    for (int l &#x3D; 3; l &lt;&#x3D; len; l++)&#x2F;&#x2F;子串长度</span><br><span class="line">    &#123;</span><br><span class="line">        for (int i &#x3D; 0; i+l-1 &lt; len; i++)&#x2F;&#x2F;枚举子串的起始点</span><br><span class="line">        &#123;</span><br><span class="line">            int j&#x3D;l+i-1;&#x2F;&#x2F;终点</span><br><span class="line">            if (s[i] &#x3D;&#x3D; s[j] &amp;&amp; dp[i+1][j-1]&#x3D;&#x3D;1)</span><br><span class="line">            &#123;</span><br><span class="line">                dp[i][j] &#x3D; 1;</span><br><span class="line">                start&#x3D;i;</span><br><span class="line">                longest &#x3D; l;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return s.substr(start,longest);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h4 id="6-无重复字符最长子串长度"><a href="#6-无重复字符最长子串长度" class="headerlink" title="6. 无重复字符最长子串长度"></a>6. 无重复字符最长子串长度</h4><p>dp[i]表示字符串以i结尾的中最长无重复字符的长度。 状态转移方程可以表述为：</p>
 <ol>
 <li>dp[i] = dp[i-1] + 1 (dp[i] 在1…i-1里面不重复）</li>
@@ -327,7 +329,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">90</span>
+          <span class="site-state-item-count">93</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

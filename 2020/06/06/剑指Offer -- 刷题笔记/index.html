@@ -28,7 +28,7 @@
 <meta property="og:description" content="1. 二维数组中的查找 在一个二维数组中（每个一维数组的长度相同），每一行都按照从左到右递增的顺序排序，每一列都按照从上到下递增的顺序排序。请完成一个函数，输入这样的一个二维数组和一个整数，判断数组中是否含有该整数。 思路： 首先获取二维数组的行数以及列数, 从第一行的最后一列开始比较，如果array[i][j] &gt; target, 那就在数组的前面一列里面寻找，否则在下面一行寻找。 123">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-06-06T09:05:08.662Z">
-<meta property="article:modified_time" content="2020-06-06T16:22:19.222Z">
+<meta property="article:modified_time" content="2020-06-07T05:53:38.287Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="算法">
 <meta name="twitter:card" content="summary">
@@ -210,7 +210,7 @@
 
 <p><strong>2. 替换空格</strong></p>
 <p>请实现一个函数，将一个字符串中的每个空格替换成“%20”。例如，当字符串为We Are Happy.则经过替换之后的字符串为We%20Are%20Happy。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public String replaceSpace(StringBuffer str) &#123;</span><br><span class="line">	String string &#x3D; str.toString();</span><br><span class="line">	string &#x3D; string.replaceAll(&quot; &quot;, &quot;%20&quot;);</span><br><span class="line">    return string;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public String replaceSpace(StringBuffer str) &#123;</span><br><span class="line">	String string &#x3D; str.toString();</span><br><span class="line">	string &#x3D; string.replaceAll(&quot; &quot;, &quot;%20&quot;);</span><br><span class="line">	return string;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p><strong>3. 从尾到头打印链表</strong></p>
 <p>输入一个链表，按链表从尾到头的顺序返回一个ArrayList。</p>
@@ -276,6 +276,7 @@
 <p>操作给定的二叉树，将其变换为源二叉树的镜像。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 递归</span><br><span class="line">public void Mirror(TreeNode root) &#123;</span><br><span class="line">    if (root &#x3D;&#x3D; null) return;</span><br><span class="line">    TreeNode temp &#x3D; root.right;</span><br><span class="line">    root.right &#x3D; root.left;</span><br><span class="line">    root.left &#x3D; temp;</span><br><span class="line">    Mirror(root.left);</span><br><span class="line">    Mirror(root.right);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 非递归</span><br><span class="line">public void Mirror(TreeNode root) &#123;</span><br><span class="line">    if(root &#x3D;&#x3D; null) return;</span><br><span class="line">    Queue&lt;TreeNode&gt; nodes &#x3D; new LinkedList&lt;&gt;();</span><br><span class="line">    TreeNode curr, temp;</span><br><span class="line">    nodes.offer(root);</span><br><span class="line">    while (!nodes.isEmpty()) &#123;</span><br><span class="line">        int len &#x3D; nodes.size();</span><br><span class="line">        for (int i &#x3D; 0; i &lt; len; i++)&#123;</span><br><span class="line">            curr &#x3D; nodes.poll();</span><br><span class="line">            temp &#x3D; curr.left;</span><br><span class="line">            curr.left &#x3D; curr.right;</span><br><span class="line">            curr.right &#x3D; temp;</span><br><span class="line">            if (curr.left !&#x3D; null) nodes.offer(curr.left);</span><br><span class="line">            if (curr.right !&#x3D; null) nodes.offer(curr.right);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
+<p>*<em>18. *</em></p>
 
     </div>
 
@@ -297,7 +298,10 @@
     <a href="/2020/06/05/JVM%E5%B8%B8%E8%A7%81%E5%8F%82%E6%95%B0/" rel="prev" title="JVM常见参数">
       <i class="fa fa-chevron-left"></i> JVM常见参数
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/07/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90%E4%B8%8E%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96(%E5%9B%BE%E7%81%B5%E5%AD%A6%E9%99%A2)/" rel="next" title="JVM虚拟机底层原理分析与性能优化【图灵学院】">
+      JVM虚拟机底层原理分析与性能优化【图灵学院】 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -369,7 +373,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">90</span>
+          <span class="site-state-item-count">93</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

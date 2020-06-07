@@ -160,6 +160,278 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/31/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%20--%20%E4%B8%B2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/05/31/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%20--%20%E4%B8%B2/" class="post-title-link" itemprop="url">数据结构 -- 串</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-05-31 19:36:38 / 修改时间：21:07:48" itemprop="dateCreated datePublished" datetime="2020-05-31T19:36:38+08:00">2020-05-31</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h4 id="Java-String"><a href="#Java-String" class="headerlink" title="Java String"></a>Java String</h4><blockquote>
+<p>在java中变量和引用变量是存在栈中（stack），而对象（new产生的）都是存放在堆中（heap）：</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">String str &#x3D; new String(&quot;abc&quot;) ;</span><br><span class="line">System.out.println(str&#x3D;&#x3D;&quot;abc&quot;);</span><br></pre></td></tr></table></figure>
+<p>=左边的是存放在栈中（stack），=右边是存放在堆中（heap）。<br>输出为false!</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public class String_Demo01 &#123;</span><br><span class="line">    public static void main(String[] args) &#123;        </span><br><span class="line">        String str1 &#x3D; new String() ;</span><br><span class="line">        String str2 &#x3D; null ;</span><br><span class="line">        String str3 &#x3D; &quot;&quot; ;</span><br><span class="line">        System.out.println(str1&#x3D;&#x3D;str2);                &#x2F;&#x2F;内存地址的比较，返回false</span><br><span class="line">        System.out.println(str1.equals(str2));         &#x2F;&#x2F;值的比较，返回false</span><br><span class="line">        System.out.println(str2&#x3D;&#x3D;str3);                &#x2F;&#x2F;内存地址的比较，返回false</span><br><span class="line">        System.out.println(str3.equals(str2));         &#x2F;&#x2F;值的比较，返回false</span><br><span class="line">        System.out.println(str1&#x3D;&#x3D;str3);                &#x2F;&#x2F;内存地址的比较，返回false</span><br><span class="line">        System.out.println(str1.equals(str3));         &#x2F;&#x2F;值的比较，返回true</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="常用算法"><a href="#常用算法" class="headerlink" title="常用算法"></a>常用算法</h4><h5 id="1-朴素的模式匹配算法（BF-Brute-Force-算法）"><a href="#1-朴素的模式匹配算法（BF-Brute-Force-算法）" class="headerlink" title="1. 朴素的模式匹配算法（BF(Brute Force)算法）"></a>1. 朴素的模式匹配算法（BF(Brute Force)算法）</h5><p>朴素模式匹配算法的基本思想是穷举法，即就是将目标串S的第一个字符与模式串P的第一个字符进行匹配，若相等，则继续比较S的第二个字符和P的第二个字符；若不相等，则比较S的第二个字符和P的第一个字符，依次比较下去，直到得出最后的匹配结果（如图1所示）。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">public static int bf(String T, String P) &#123;</span><br><span class="line">    int i &#x3D; 0; &#x2F;&#x2F;目标串的下标</span><br><span class="line">    int j &#x3D; 0; &#x2F;&#x2F;模式串的下标</span><br><span class="line">    int tLen &#x3D; T.length();</span><br><span class="line">    int pLen &#x3D; P.length();</span><br><span class="line">    if (tLen &lt; pLen) return -1;&#x2F;&#x2F;长度不够直接返回</span><br><span class="line">    while(i &lt; tLen &amp; j &lt; pLen) &#123;&#x2F;&#x2F;逐个匹配</span><br><span class="line">        if(T.charAt(i) &#x3D;&#x3D; P.charAt(j)) &#123;</span><br><span class="line">            i++;</span><br><span class="line">            j++;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            i &#x3D; i-j+1;</span><br><span class="line">            j &#x3D; 0;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if(j &#x3D;&#x3D; pLen) &#123;</span><br><span class="line">        return i-j+1;</span><br><span class="line">    &#125;</span><br><span class="line">    return -1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="2-KMP模式匹配算法"><a href="#2-KMP模式匹配算法" class="headerlink" title="2. KMP模式匹配算法"></a>2. KMP模式匹配算法</h5><p>首先是next数组的计算，下图是next数组计算公式<br><img src="https://upload-images.jianshu.io/upload_images/12455188-11a97f211ace9892.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/573/format/webp" alt=""></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">public static int[] getNext(String ps) &#123;</span><br><span class="line">    char[] p &#x3D; ps.toCharArray();</span><br><span class="line">    int[] next &#x3D; new int[p.length];</span><br><span class="line">    next[0] &#x3D; -1;</span><br><span class="line">    int j &#x3D; 0;</span><br><span class="line">    int k &#x3D; -1;</span><br><span class="line">    while (j &lt; p.length - 1) &#123;</span><br><span class="line">       if (k &#x3D;&#x3D; -1 || p[j] &#x3D;&#x3D; p[k]) &#123;</span><br><span class="line">           if (p[++j] &#x3D;&#x3D; p[++k]) &#123; &#x2F;&#x2F; 当两个字符相等时要跳过</span><br><span class="line">              next[j] &#x3D; next[k];</span><br><span class="line">           &#125; else &#123;</span><br><span class="line">              next[j] &#x3D; k;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125; else &#123;</span><br><span class="line">           k &#x3D; next[k];</span><br><span class="line">       &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return next;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public static int KMP(String ts, String ps) &#123;</span><br><span class="line">    char[] t &#x3D; ts.toCharArray();</span><br><span class="line">    char[] p &#x3D; ps.toCharArray();</span><br><span class="line">    int i &#x3D; 0; &#x2F;&#x2F; 主串的位置</span><br><span class="line">    int j &#x3D; 0; &#x2F;&#x2F; 模式串的位置</span><br><span class="line">    int[] next &#x3D; getNext(ps);</span><br><span class="line">    while (i &lt; t.length &amp;&amp; j &lt; p.length) &#123;</span><br><span class="line">       if (j &#x3D;&#x3D; -1 || t[i] &#x3D;&#x3D; p[j]) &#123; &#x2F;&#x2F; 当j为-1时，要移动的是i，当然j也要归0</span><br><span class="line">           i++;</span><br><span class="line">           j++;</span><br><span class="line">       &#125; else &#123;</span><br><span class="line">           &#x2F;&#x2F; i不需要回溯了</span><br><span class="line">           &#x2F;&#x2F; i &#x3D; i - j + 1;</span><br><span class="line">           j &#x3D; next[j]; &#x2F;&#x2F; j回到指定位置</span><br><span class="line">       &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (j &#x3D;&#x3D; p.length) &#123;</span><br><span class="line">       return i - j;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">       return -1;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/31/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%20--%20%E7%BA%A2%E9%BB%91%E6%A0%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/05/31/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%20--%20%E7%BA%A2%E9%BB%91%E6%A0%91/" class="post-title-link" itemprop="url">数据结构 -- 红黑树</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-05-31 19:36:37 / 修改时间：19:56:56" itemprop="dateCreated datePublished" datetime="2020-05-31T19:36:37+08:00">2020-05-31</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h4 id="R-B-Tree简介"><a href="#R-B-Tree简介" class="headerlink" title="R-B Tree简介"></a>R-B Tree简介</h4><p>R-B Tree，全称是Red-Black Tree，又称为“红黑树”，它一种特殊的二叉查找树。红黑树的每个节点上都有存储位表示节点的颜色，可以是红(Red)或黑(Black)。红黑树的应用比较广泛，主要是用它来存储有序的数据，它的时间复杂度是O(lgn)，效率非常之高。</p>
+<p>红黑树的特性:</p>
+<ul>
+<li>（1）每个节点或者是黑色，或者是红色。</li>
+<li>（2）根节点是黑色。</li>
+<li>（3）每个叶子节点（NIL）是黑色。 [注意：这里叶子节点，是指为空(NIL或NULL)的叶子节点！]</li>
+<li>（4）如果一个节点是红色的，则它的子节点必须是黑色的。</li>
+<li>（5）从一个节点到该节点的子孙节点的所有路径上包含相同数目的黑节点。</li>
+</ul>
+<p>注意：<br>(01) 特性(3)中的叶子节点，是只为空(NIL或null)的节点。<br>(02) 特性(5)，确保没有一条路径会比其他路径长出俩倍。因而，红黑树是相对是接近平衡的二叉树。</p>
+<p><img src="https://images0.cnblogs.com/i/497634/201403/251730074203156.jpg" alt=""></p>
+<h4 id="红黑树查找"><a href="#红黑树查找" class="headerlink" title="红黑树查找"></a>红黑树查找</h4><p>因为红黑树是一颗二叉平衡树，并且查找不会破坏树的平衡，所以查找跟二叉平衡树的查找无异：</p>
+<ul>
+<li>从根结点开始查找，把根结点设置为当前结点；</li>
+<li>若当前结点为空，返回null；</li>
+<li>若当前结点不为空，用当前结点的key跟查找key作比较；</li>
+<li>若当前结点key等于查找key，那么该key就是查找目标，返回当前结点；</li>
+<li>若当前结点key大于查找key，把当前结点的左子结点设置为当前结点，重复步骤2；</li>
+<li>若当前结点key小于查找key，把当前结点的右子结点设置为当前结点，重复步骤2；</li>
+</ul>
+<p><img src="https://upload-images.jianshu.io/upload_images/2392382-07b47eb3722981e6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1200/format/webp" alt=""></p>
+<h4 id="红黑树的基本操作-一-左旋和右旋"><a href="#红黑树的基本操作-一-左旋和右旋" class="headerlink" title="红黑树的基本操作(一) 左旋和右旋"></a>红黑树的基本操作(一) 左旋和右旋</h4><h5 id="1-左旋"><a href="#1-左旋" class="headerlink" title="1. 左旋"></a>1. 左旋</h5><p><img src="https://images0.cnblogs.com/i/497634/201403/251733282013849.jpg" alt="左旋"></p>
+<h5 id="2-右旋"><a href="#2-右旋" class="headerlink" title="2. 右旋"></a>2. 右旋</h5><p><img src="https://images0.cnblogs.com/i/497634/201403/251735527958942.jpg" alt="左旋"></p>
+<h4 id="红黑树的基本操作-二-添加"><a href="#红黑树的基本操作-二-添加" class="headerlink" title="红黑树的基本操作(二) 添加"></a>红黑树的基本操作(二) 添加</h4><table>
+<thead>
+<tr>
+<th></th>
+<th>现象说明</th>
+<th align="center">处理策略</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Case 1</td>
+<td>当前节点的父节点是红色，且当前节点的祖父节点的另一个子节点（叔叔节点）也是红色。</td>
+<td align="center">(01) 将“父节点”设为黑色。  <br>(02) 将“叔叔节点”设为黑色。<br>(03) 将“祖父节点”设为“红色”。<br>(04) 将“祖父节点”设为“当前节点”(红色节点)；即，之后继续对“当前节点”进行操作。</td>
+</tr>
+<tr>
+<td>Case 2</td>
+<td>当前节点的父节点是红色，叔叔节点是黑色，且当前节点是其父节点的右孩子</td>
+<td align="center">(01) 将“父节点”作为“新的当前节点”。<br>(02) 以“新的当前节点”为支点进行左旋。</td>
+</tr>
+<tr>
+<td>Case 3</td>
+<td>当前节点的父节点是红色，叔叔节点是黑色，且当前节点是其父节点的左孩子</td>
+<td align="center">(01) 将“父节点”设为“黑色”。<br>(02) 将“祖父节点”设为“红色”。<br>(03) 以“祖父节点”为支点进行右旋。</td>
+</tr>
+</tbody></table>
+<h5 id="Case-1-叔叔是红色"><a href="#Case-1-叔叔是红色" class="headerlink" title="(Case 1) 叔叔是红色"></a>(Case 1) 叔叔是红色</h5><p><img src="https://images0.cnblogs.com/i/497634/201403/251759273578917.jpg" alt="(Case 1)叔叔是红色"></p>
+<h5 id="Case-2-叔叔是黑色，且当前节点是右孩子"><a href="#Case-2-叔叔是黑色，且当前节点是右孩子" class="headerlink" title="(Case 2)叔叔是黑色，且当前节点是右孩子"></a>(Case 2)叔叔是黑色，且当前节点是右孩子</h5><p><img src="https://images0.cnblogs.com/i/497634/201403/251801031546918.jpg" alt=""></p>
+<h5 id="Case-3-叔叔是黑色，且当前节点是左孩子"><a href="#Case-3-叔叔是黑色，且当前节点是左孩子" class="headerlink" title="(Case 3)叔叔是黑色，且当前节点是左孩子"></a>(Case 3)叔叔是黑色，且当前节点是左孩子</h5><p><img src="https://images0.cnblogs.com/i/497634/201404/170945094945387.jpg" alt=""></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/31/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%20--%20%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/05/31/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%20--%20%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/" class="post-title-link" itemprop="url">数据结构 -- 排序算法</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-31 19:01:45" itemprop="dateCreated datePublished" datetime="2020-05-31T19:01:45+08:00">2020-05-31</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h4 id="0-简介"><a href="#0-简介" class="headerlink" title="0. 简介"></a>0. 简介</h4><img src="/2020/05/31/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%20--%20%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/2062729-6906429ed882a5b0.png" class="" title="[线程池的主要工作流程]">
+
+<h4 id="1-冒泡排序"><a href="#1-冒泡排序" class="headerlink" title="1. 冒泡排序"></a>1. 冒泡排序</h4><p>冒泡排序算法的基本流程是：每一轮从头开始两两比较，将较大的项放在较小项的右边，这样每轮下来保证该轮最大的数在最右边。 （稳定排序算法）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public static void bubbleSort(int[] num) &#123;</span><br><span class="line">    for (int i &#x3D; 1; i &lt; num.length - 1; i++)</span><br><span class="line">        for (int j &#x3D; 0; j &lt; num.length - i; j++) &#123;</span><br><span class="line">            if (num[j] &gt; num[j+1]) &#123;</span><br><span class="line">                swap(num, j, j+1);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-选择排序"><a href="#2-选择排序" class="headerlink" title="2. 选择排序"></a>2. 选择排序</h4><p>选择排序是将一轮比较完后，把最小的放到最前的位置（或者把最大的放到最后） （不稳定排序算法）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public static void selectSort(int[] num) &#123;</span><br><span class="line">    for (int i &#x3D; 0; i &lt; num.length; i++) &#123;</span><br><span class="line">        int max &#x3D; 0;</span><br><span class="line">        for (int j &#x3D; 0; j &lt; num.length - i; j++) &#123;</span><br><span class="line">                if (num[max] &lt; num[j]) max &#x3D; j;</span><br><span class="line">        &#125;</span><br><span class="line">        swap(num, max, num.length - i - 1);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-插入排序"><a href="#3-插入排序" class="headerlink" title="3. 插入排序"></a>3. 插入排序</h4><p>插入排序的实现步骤为：从第一个元素开始，该元素可以认为已经被排序 -&gt; 取出下一个元素，在已经排序的元素序列中从后向前扫描 -&gt; 如果该元素小于前一个元素，则将两者调换，再与前一个元素比较–&gt; 重复第三步，直到找到已排序的元素小于或者等于新元素的位置 -&gt; 将新元素插入到该位置中 -&gt; 重复第二步</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public static void insertSort(int[] num) &#123;</span><br><span class="line">    for (int i &#x3D; 1; i &lt; num.length; i++) &#123;</span><br><span class="line">        int j &#x3D; i;</span><br><span class="line">        int temp &#x3D; num[i];</span><br><span class="line">        while(num[j - 1] &gt; temp &amp;&amp; j &gt; 0) j--;</span><br><span class="line">        for (int m &#x3D; i; m &gt; j; m--) &#123;</span><br><span class="line">            num[m] &#x3D; num[m-1];</span><br><span class="line">        &#125;</span><br><span class="line">        num[j] &#x3D; temp;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-希尔排序"><a href="#4-希尔排序" class="headerlink" title="4. 希尔排序"></a>4. 希尔排序</h4><p>希尔排序的中心思想是将数据进行分组，然后对每一组数据进行插入排序，在每一组数据都有序后，再对所有的分组利用插入排序进行最后一次排序。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public static void shellSort(int[] num) &#123;</span><br><span class="line">    int h &#x3D; num.length &#x2F; 2;</span><br><span class="line">    while (h &gt;&#x3D; 1) &#123;</span><br><span class="line">        for (int i &#x3D; h; i &lt; num.length; i++) &#123;</span><br><span class="line">            int temp &#x3D; num[i];</span><br><span class="line">            int j &#x3D; i;</span><br><span class="line">            while ((j - h) &gt; 0 &amp;&amp; num[j - h] &gt; temp) &#123;</span><br><span class="line">                num[j] &#x3D; num[j-h];</span><br><span class="line">                j &#x3D; j - h;</span><br><span class="line">            &#125;</span><br><span class="line">            num[j] &#x3D; temp;</span><br><span class="line">        &#125;</span><br><span class="line">        h &#x3D; h &#x2F; 2;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="5-快速排序-（重点）"><a href="#5-快速排序-（重点）" class="headerlink" title="5. 快速排序  （重点）"></a>5. 快速排序  （重点）</h4><p>快速排序本质上通过一个数组划分为两个子数组，然后递归地调用自身为每一个子数组进行快速排序来实现的，即算法分为三步：</p>
+<ul>
+<li>1 把数组或者子数组划分为左边（较小的关键字）的一组和右边（较大的关键字）的一组；</li>
+<li>2 调用自身对左边的一组进行排序；</li>
+<li>3 调用自身对右边的一组进行排序。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">private static void quickSort(int[] num, int left, int right) &#123;</span><br><span class="line">    if (left &lt; right) &#123;</span><br><span class="line">        int position &#x3D; paration(num, left, right);</span><br><span class="line">        System.out.println(&quot;position:&quot; + position);</span><br><span class="line">        quickSort(num, left, position - 1);</span><br><span class="line">        quickSort(num, position + 1, right);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private static int paration(int[] num, int left, int right) &#123;</span><br><span class="line">    int temp &#x3D; num[left];</span><br><span class="line">    while (left &lt; right) &#123;</span><br><span class="line">        while (num[right] &gt;&#x3D; temp &amp;&amp; right &gt; left) right--;</span><br><span class="line">        num[left] &#x3D; num[right];</span><br><span class="line">        while (num[left] &lt;&#x3D; temp &amp;&amp; left &lt; right) left++;</span><br><span class="line">        num[right] &#x3D; num[left];</span><br><span class="line">    &#125;</span><br><span class="line">    num[left] &#x3D; temp;</span><br><span class="line">    return left;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>时间复杂度<a href="https://www.cnblogs.com/l199616j/p/10597245.html" target="_blank" rel="noopener">八大排序算法——快速排序</a></p>
+<h4 id="6-堆排序"><a href="#6-堆排序" class="headerlink" title="6. 堆排序"></a>6. 堆排序</h4><p>堆是具有以下性质的完全二叉树：每个结点的值都大于或等于其左右孩子结点的值，称为大顶堆；或者每个结点的值都小于或等于其左右孩子结点的值，称为小顶堆。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">private static void heapSort(int[] num) &#123;</span><br><span class="line">    int length &#x3D; num.length;</span><br><span class="line">    for (int i &#x3D; num.length &#x2F; 2; i &gt;&#x3D; 0; i--) &#123;</span><br><span class="line">        buildHeap(num, i, length);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    for (int i &#x3D; num.length - 1; i &gt; 0; i--) &#123;</span><br><span class="line">        swap(num, 0, i);</span><br><span class="line">        length--;</span><br><span class="line">        buildHeap(num, 0, length);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private static void buildHeap(int[] num, int i, int length) &#123;</span><br><span class="line">    int left &#x3D; 2 * i + 1;</span><br><span class="line">    int right &#x3D; 2 * i + 2;</span><br><span class="line">    int target &#x3D; i;</span><br><span class="line">    if (left &lt; length &amp;&amp; num[left] &gt; num[i]) target &#x3D; left;</span><br><span class="line">    if (right &lt; length &amp;&amp; num[right] &gt; num[target]) target &#x3D; right;</span><br><span class="line">    if (target !&#x3D; i) &#123;</span><br><span class="line">        swap(num, i, target);</span><br><span class="line">        buildHeap(num, target, length);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private static void swap(int[] num, int i, int j) &#123;</span><br><span class="line">    int temp &#x3D; num[i];</span><br><span class="line">    num[i] &#x3D; num[j];</span><br><span class="line">    num[j] &#x3D; temp;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="7-归并排序"><a href="#7-归并排序" class="headerlink" title="7. 归并排序"></a>7. 归并排序</h4><p>归并排序的思想是把一个数组分成两半，排序每一半。然后用 merge 方法将数组的两半归并成一个有序的数组。被分的每一半使用递归，再次划分排序，直到得到的子数组只含有一个数据项为止。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">private static void mergeSort(int[] num, int low, int high) &#123;</span><br><span class="line">    if (low &lt; high) &#123;</span><br><span class="line">        int mid &#x3D; (low + high) &#x2F; 2;</span><br><span class="line">        mergeSort(num, low, mid);</span><br><span class="line">        mergeSort(num, mid + 1, high);</span><br><span class="line">        merge(num, low, mid, high);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private static void merge(int[] num, int low, int mid, int high) &#123;</span><br><span class="line">    int[] temp &#x3D; new int[num.length];</span><br><span class="line">    int t &#x3D; 0;</span><br><span class="line">    int i &#x3D; low;</span><br><span class="line">    int j &#x3D; mid;</span><br><span class="line">    while (i &lt; mid &amp;&amp; j &lt;&#x3D; high) &#123;</span><br><span class="line">        if (num[i] &lt; num[j]) &#123;</span><br><span class="line">            temp[t++] &#x3D; num[i++];</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            temp[t++] &#x3D; num[j++];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    while (i &lt; mid) &#123;</span><br><span class="line">        temp[t++] &#x3D; num[i++];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    while (j &lt;&#x3D; high) &#123;</span><br><span class="line">        temp[t++] &#x3D; num[j++];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    int m &#x3D; 0;</span><br><span class="line">    for (t &#x3D; low; t &lt; high; t++) &#123;</span><br><span class="line">        num[t] &#x3D; temp[m++];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="8-二叉排序树"><a href="#8-二叉排序树" class="headerlink" title="8. 二叉排序树"></a>8. 二叉排序树</h4><p>二叉排序树（Binary Sort Tree），又称二叉查找树（Binary Search Tree），也称二叉搜索树。二叉排序树或者是一棵空树，或者是具有下列性质的二叉树：</p>
+<ul>
+<li>（1）若左子树不空，则左子树上所有结点的值均小于或等于它的根结点的值；</li>
+<li>（2）若右子树不空，则右子树上所有结点的值均大于或等于它的根结点的值；</li>
+<li>（3）左、右子树也分别为二叉排序树；<br>二叉排序树删除：<br>二叉排序树的删除分为三种情况讨论：</li>
+<li>①当删除结点仅有左子树时，只需将此结点的左孩子替换它自己，就相当于删除了该结点。</li>
+<li>②当删除结点仅有右子树时，只需将此结点的右孩子替换它自己即可。</li>
+<li>③当删除结点左右子树都不为空时，可以在左子树中找到小于但最接近该值的结点替换它，即找到中序遍历中的前驱；也可以在右子树中找到大于但最接近该值的结点替换，即中序遍历中的后驱。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line">public class BiNode &#123;</span><br><span class="line">    private int value;</span><br><span class="line">    private BiNode left &#x3D; null;</span><br><span class="line">    private BiNode right &#x3D; null;</span><br><span class="line">    BiNode(int t) &#123;</span><br><span class="line">        value &#x3D; t;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 中序遍历</span><br><span class="line">public void InOrderTraverse(BiNode node) &#123;</span><br><span class="line">    if (node &#x3D;&#x3D; null) return;</span><br><span class="line">    InOrderTraverse(node.left);</span><br><span class="line">    System.out.println(node.value);</span><br><span class="line">    InOrderTraverse(node.right);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 二叉排序树查找</span><br><span class="line">public BiNode searchBST(BiNode node, int key) &#123;</span><br><span class="line">    if (node &#x3D;&#x3D; null) return null;</span><br><span class="line">    if (node.value &#x3D;&#x3D; key) return node;</span><br><span class="line">    if (key &lt; node.value) &#123;</span><br><span class="line">        searchBST(node.left, key);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        searchBST(node.right, key);</span><br><span class="line">    &#125;</span><br><span class="line">    return null;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 二叉排序树查找</span><br><span class="line">public BiNode searchBST(BiNode node, int key) &#123;</span><br><span class="line">    if (node &#x3D;&#x3D; null) return null;</span><br><span class="line">    BiNode root &#x3D; node;</span><br><span class="line">    while (root !&#x3D; null) &#123;</span><br><span class="line">        if (root.value &#x3D;&#x3D; key) &#123;</span><br><span class="line">            return root;</span><br><span class="line">        &#125;</span><br><span class="line">        if (key &lt; root.value) root &#x3D; root.left;</span><br><span class="line">        if (key &gt; root.value) root &#x3D; root.right;</span><br><span class="line">    &#125;</span><br><span class="line">    return null;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 二叉排序树插入</span><br><span class="line">public void insertBST(BiNode root, int key) &#123;</span><br><span class="line">    if (root &#x3D;&#x3D; null) &#123;</span><br><span class="line">        root &#x3D; new BiNode(key);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (key &lt; root.value) &#123;</span><br><span class="line">        if (root.left &#x3D;&#x3D; null) &#123;</span><br><span class="line">            root.left &#x3D; new BiNode(key);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            insertBST(root.left, key);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        if (root.right &#x3D;&#x3D; null) &#123;</span><br><span class="line">            root.right &#x3D; new BiNode(key);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            insertBST(root.right, key);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/31/SharePreference%20%E6%B7%B1%E5%85%A5%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2245,947 +2517,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/31/Volley%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yudesong">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/05/31/Volley%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" class="post-title-link" itemprop="url">Volley源码解析</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-05-31 11:26:01 / 修改时间：11:35:52" itemprop="dateCreated datePublished" datetime="2020-05-31T11:26:01+08:00">2020-05-31</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h5 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h5><p>本文基于Volley 1.1.1版本的源码。</p>
-<p>Volley是Google官方出的一套小而巧的异步请求库，该框架封装的扩展性很强，支持HttpClient、HttpUrlConnection，甚至支持OkHttp。Volley不适用于下载大量内容的操作或流式传输操作，因为在解析过程中，Volley会将所有响应存储在内存中，因此Volley不适合上传和下载大文件。</p>
-<p>添加依赖：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">implementation &#39;com.android.volley:volley:1.1.1&#39;</span><br></pre></td></tr></table></figure>
-<p>使用：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">RequestQueue queue &#x3D; Volley.newRequestQueue(context);</span><br><span class="line">String url &#x3D;&quot;http:&#x2F;&#x2F;www.google.com&quot;;</span><br><span class="line"></span><br><span class="line">StringRequest stringRequest &#x3D; new StringRequest(Request.Method.GET, url,</span><br><span class="line">            new Response.Listener&lt;String&gt;() &#123;</span><br><span class="line">    </span><br><span class="line">    public void onResponse(String response) &#123;</span><br><span class="line">        &#x2F;&#x2F; in UI Thread</span><br><span class="line">    &#125;</span><br><span class="line">&#125;, new Response.ErrorListener() &#123;</span><br><span class="line">    </span><br><span class="line">    public void onErrorResponse(VolleyError error) &#123;</span><br><span class="line">        &#x2F;&#x2F; in UI Thread</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line">stringRequest.setTag(TAG);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; Add the request to the RequestQueue.</span><br><span class="line">queue.add(stringRequest);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; onStop</span><br><span class="line">queue.cancelAll(TAG);</span><br></pre></td></tr></table></figure>
-
-<h5 id="创建请求队列"><a href="#创建请求队列" class="headerlink" title="创建请求队列"></a>创建请求队列</h5><p>Volley类中有多个重载的newRequestQueue静态方法：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">public class Volley &#123;</span><br><span class="line">    private static final String DEFAULT_CACHE_DIR &#x3D; &quot;volley&quot;;</span><br><span class="line"></span><br><span class="line">    public static RequestQueue newRequestQueue(Context context) &#123;</span><br><span class="line">        return newRequestQueue(context, (BaseHttpStack) null);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestQueue newRequestQueue(Context context, BaseHttpStack stack) &#123;</span><br><span class="line">        BasicNetwork network;</span><br><span class="line">        if (stack &#x3D;&#x3D; null) &#123;</span><br><span class="line">            if (Build.VERSION.SDK_INT &gt;&#x3D; 9) &#123;</span><br><span class="line">                network &#x3D; new BasicNetwork(new HurlStack());</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                &#x2F;&#x2F; ...</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            network &#x3D; new BasicNetwork(stack);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        return newRequestQueue(context, network);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static RequestQueue newRequestQueue(Context context, Network network) &#123;</span><br><span class="line">        final Context appContext &#x3D; context.getApplicationContext();</span><br><span class="line">        DiskBasedCache.FileSupplier cacheSupplier &#x3D;</span><br><span class="line">                new DiskBasedCache.FileSupplier() &#123;</span><br><span class="line">                    private File cacheDir &#x3D; null;</span><br><span class="line"></span><br><span class="line">                    </span><br><span class="line">                    public File get() &#123;</span><br><span class="line">                        if (cacheDir &#x3D;&#x3D; null) &#123;</span><br><span class="line">                            cacheDir &#x3D; new File(appContext.getCacheDir(), DEFAULT_CACHE_DIR);</span><br><span class="line">                        &#125;</span><br><span class="line">                        return cacheDir;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;;</span><br><span class="line">        RequestQueue queue &#x3D; new RequestQueue(new DiskBasedCache(cacheSupplier), network);</span><br><span class="line">        queue.start();</span><br><span class="line">        return queue;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>RequestQueue类构造方法如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">public class RequestQueue &#123;</span><br><span class="line">    private static final int DEFAULT_NETWORK_THREAD_POOL_SIZE &#x3D; 4;</span><br><span class="line">    private final Cache mCache;</span><br><span class="line">    private final Network mNetwork;</span><br><span class="line">    private final ResponseDelivery mDelivery;</span><br><span class="line">    private final NetworkDispatcher[] mDispatchers;</span><br><span class="line">    private CacheDispatcher mCacheDispatcher;</span><br><span class="line"></span><br><span class="line">    public RequestQueue(</span><br><span class="line">            Cache cache, Network network, int threadPoolSize, ResponseDelivery delivery) &#123;</span><br><span class="line">        mCache &#x3D; cache;</span><br><span class="line">        mNetwork &#x3D; network;</span><br><span class="line">        mDispatchers &#x3D; new NetworkDispatcher[threadPoolSize];</span><br><span class="line">        mDelivery &#x3D; delivery;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public RequestQueue(Cache cache, Network network, int threadPoolSize) &#123;</span><br><span class="line">        this(cache, network, threadPoolSize, new ExecutorDelivery(new Handler(Looper.getMainLooper())));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public RequestQueue(Cache cache, Network network) &#123;</span><br><span class="line">        this(cache, network, DEFAULT_NETWORK_THREAD_POOL_SIZE);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>RequestQueue#start()方法如下，可以看出就是启动了一个Cache Dispatcher和指定数目的Network Dispatcher：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;** Starts the dispatchers in this queue. *&#x2F;</span><br><span class="line">public void start() &#123;</span><br><span class="line">    &#x2F;&#x2F; Make sure any currently running dispatchers are stopped.</span><br><span class="line">    stop();</span><br><span class="line">    &#x2F;&#x2F; Create the cache dispatcher and start it.</span><br><span class="line">    mCacheDispatcher &#x3D; new CacheDispatcher(mCacheQueue, mNetworkQueue, mCache, mDelivery);</span><br><span class="line">    mCacheDispatcher.start();</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; Create network dispatchers (and corresponding threads) up to the pool size.</span><br><span class="line">    for (int i &#x3D; 0; i &lt; mDispatchers.length; i++) &#123;</span><br><span class="line">        NetworkDispatcher networkDispatcher &#x3D; new NetworkDispatcher(mNetworkQueue, mNetwork, mCache, mDelivery);</span><br><span class="line">        mDispatchers[i] &#x3D; networkDispatcher;</span><br><span class="line">        networkDispatcher.start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;** Stops the cache and network dispatchers. *&#x2F;</span><br><span class="line">public void stop() &#123;</span><br><span class="line">    if (mCacheDispatcher !&#x3D; null) &#123;</span><br><span class="line">        mCacheDispatcher.quit();</span><br><span class="line">    &#125;</span><br><span class="line">    for (final NetworkDispatcher mDispatcher : mDispatchers) &#123;</span><br><span class="line">        if (mDispatcher !&#x3D; null) &#123;</span><br><span class="line">            mDispatcher.quit();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h5 id="RequestQueue事件"><a href="#RequestQueue事件" class="headerlink" title="RequestQueue事件"></a>RequestQueue事件</h5><p>在RequestQueue类中定义了一些事件：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">public  RequestEvent &#123;</span><br><span class="line">    &#x2F;** The request was added to the queue. *&#x2F;</span><br><span class="line">    public static final int REQUEST_QUEUED &#x3D; 0;</span><br><span class="line">    &#x2F;** Cache lookup started for the request. *&#x2F;</span><br><span class="line">    public static final int REQUEST_CACHE_LOOKUP_STARTED &#x3D; 1;</span><br><span class="line">    &#x2F;** Cache lookup finished for the request and cached response is delivered or request is queued for network dispatching. *&#x2F;</span><br><span class="line">    public static final int REQUEST_CACHE_LOOKUP_FINISHED &#x3D; 2;</span><br><span class="line">    &#x2F;** Network dispatch started for the request. *&#x2F;</span><br><span class="line">    public static final int REQUEST_NETWORK_DISPATCH_STARTED &#x3D; 3;</span><br><span class="line">    &#x2F;** The network dispatch finished for the request and response (if any) is delivered. *&#x2F;</span><br><span class="line">    public static final int REQUEST_NETWORK_DISPATCH_FINISHED &#x3D; 4;</span><br><span class="line">    &#x2F;** All the work associated with the request is finished and request is removed from all the queues. *&#x2F;</span><br><span class="line">    public static final int REQUEST_FINISHED &#x3D; 5;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public interface RequestEventListener &#123;</span><br><span class="line">    void onRequestEvent(Request&lt;?&gt; request, @RequestEvent int event);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private final List&lt;RequestEventListener&gt; mEventListeners &#x3D; new ArrayList&lt;&gt;();</span><br><span class="line">可以通过下面几个方法操作这些事件：</span><br><span class="line"></span><br><span class="line">void sendRequestEvent(Request&lt;?&gt; request, @RequestEvent int event) &#123;</span><br><span class="line">    synchronized (mEventListeners) &#123;</span><br><span class="line">        for (RequestEventListener listener : mEventListeners) &#123;</span><br><span class="line">            listener.onRequestEvent(request, event);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public void addRequestEventListener(RequestEventListener listener) &#123;</span><br><span class="line">    synchronized (mEventListeners) &#123;</span><br><span class="line">        mEventListeners.add(listener);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public void removeRequestEventListener(RequestEventListener listener) &#123;</span><br><span class="line">    synchronized (mEventListeners) &#123;</span><br><span class="line">        mEventListeners.remove(listener);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h5 id="发送请求"><a href="#发送请求" class="headerlink" title="发送请求"></a>发送请求</h5><p>RequestQueue#add()方法如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">private final AtomicInteger mSequenceGenerator &#x3D; new AtomicInteger();</span><br><span class="line">private final Set&lt;Request&lt;?&gt;&gt; mCurrentRequests &#x3D; new HashSet&lt;&gt;();</span><br><span class="line">private final PriorityBlockingQueue&lt;Request&lt;?&gt;&gt; mCacheQueue &#x3D; new PriorityBlockingQueue&lt;&gt;();</span><br><span class="line">private final PriorityBlockingQueue&lt;Request&lt;?&gt;&gt; mNetworkQueue &#x3D; new PriorityBlockingQueue&lt;&gt;();</span><br><span class="line"></span><br><span class="line">public &lt;T&gt; Request&lt;T&gt; add(Request&lt;T&gt; request) &#123;</span><br><span class="line">    &#x2F;&#x2F; Tag the request as belonging to this queue and add it to the set of current requests.</span><br><span class="line">    request.setRequestQueue(this);</span><br><span class="line">    synchronized (mCurrentRequests) &#123;</span><br><span class="line">        mCurrentRequests.add(request);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; Process requests in the order they are added.</span><br><span class="line">    request.setSequence(getSequenceNumber());</span><br><span class="line">    request.addMarker(&quot;add-to-queue&quot;);</span><br><span class="line">    sendRequestEvent(request, RequestEvent.REQUEST_QUEUED);</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 如果请求不需要缓存的话，直接交给网络请求队列去执行，默认是需要缓存的</span><br><span class="line">    if (!request.shouldCache()) &#123;</span><br><span class="line">        mNetworkQueue.add(request);</span><br><span class="line">        return request;</span><br><span class="line">    &#125;</span><br><span class="line">    mCacheQueue.add(request);</span><br><span class="line">    return request;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>在这个方法中把请求交给了缓存队列或者网络队列去处理。</p>
-<h5 id="CacheDispatcher"><a href="#CacheDispatcher" class="headerlink" title="CacheDispatcher"></a>CacheDispatcher</h5><p>CacheDispatcher继承自Thread，在RequestQueue#start()方法中已经将其启动了，因此直接看run方法：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br></pre></td><td class="code"><pre><span class="line">public class CacheDispatcher extends Thread &#123;</span><br><span class="line">    private final BlockingQueue&lt;Request&lt;?&gt;&gt; mCacheQueue;</span><br><span class="line">    private final BlockingQueue&lt;Request&lt;?&gt;&gt; mNetworkQueue;</span><br><span class="line">    private final Cache mCache;</span><br><span class="line">    private final ResponseDelivery mDelivery;</span><br><span class="line">    private volatile boolean mQuit &#x3D; false;</span><br><span class="line"></span><br><span class="line">    &#x2F;** Manage list of waiting requests and de-duplicate requests with same cache key. *&#x2F;</span><br><span class="line">    private final WaitingRequestManager mWaitingRequestManager;</span><br><span class="line"></span><br><span class="line">    public CacheDispatcher(</span><br><span class="line">            BlockingQueue&lt;Request&lt;?&gt;&gt; cacheQueue,</span><br><span class="line">            BlockingQueue&lt;Request&lt;?&gt;&gt; networkQueue,</span><br><span class="line">            Cache cache,</span><br><span class="line">            ResponseDelivery delivery) &#123;</span><br><span class="line">        mCacheQueue &#x3D; cacheQueue;</span><br><span class="line">        mNetworkQueue &#x3D; networkQueue;</span><br><span class="line">        mCache &#x3D; cache;</span><br><span class="line">        mDelivery &#x3D; delivery;</span><br><span class="line">        mWaitingRequestManager &#x3D; new WaitingRequestManager(this);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void quit() &#123;</span><br><span class="line">        mQuit &#x3D; true;</span><br><span class="line">        interrupt();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public void run() &#123;</span><br><span class="line">        if (DEBUG) VolleyLog.v(&quot;start new dispatcher&quot;);</span><br><span class="line">        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; Make a blocking call to initialize the cache.</span><br><span class="line">        mCache.initialize();</span><br><span class="line"></span><br><span class="line">        while (true) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                processRequest();</span><br><span class="line">            &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                &#x2F;&#x2F; We may have been interrupted because it was time to quit.</span><br><span class="line">                if (mQuit) &#123;</span><br><span class="line">                    Thread.currentThread().interrupt();</span><br><span class="line">                    return;</span><br><span class="line">                &#125;</span><br><span class="line">                VolleyLog.e(&quot;Ignoring spurious interrupt of CacheDispatcher thread; &quot; + &quot;use quit() to terminate it&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private void processRequest() throws InterruptedException &#123;</span><br><span class="line">        &#x2F;&#x2F; 阻塞式队列</span><br><span class="line">        final Request&lt;?&gt; request &#x3D; mCacheQueue.take();</span><br><span class="line">        processRequest(request);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    void processRequest(final Request&lt;?&gt; request) throws InterruptedException &#123;</span><br><span class="line">        request.addMarker(&quot;cache-queue-take&quot;);</span><br><span class="line">        request.sendEvent(RequestQueue.RequestEvent.REQUEST_CACHE_LOOKUP_STARTED);</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            &#x2F;&#x2F; If the request has been canceled, don&#39;t bother dispatching it.</span><br><span class="line">            if (request.isCanceled()) &#123;</span><br><span class="line">                request.finish(&quot;cache-discard-canceled&quot;);</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Attempt to retrieve this item from cache.</span><br><span class="line">            Cache.Entry entry &#x3D; mCache.get(request.getCacheKey());</span><br><span class="line">            if (entry &#x3D;&#x3D; null) &#123;</span><br><span class="line">                request.addMarker(&quot;cache-miss&quot;);</span><br><span class="line">                &#x2F;&#x2F; Cache miss; send off to the network dispatcher.</span><br><span class="line">                if (!mWaitingRequestManager.maybeAddToWaitingRequests(request)) &#123;</span><br><span class="line">                    mNetworkQueue.put(request);</span><br><span class="line">                &#125;</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; If it is completely expired, just send it to the network.</span><br><span class="line">            if (entry.isExpired()) &#123;</span><br><span class="line">                request.addMarker(&quot;cache-hit-expired&quot;);</span><br><span class="line">                request.setCacheEntry(entry);</span><br><span class="line">                if (!mWaitingRequestManager.maybeAddToWaitingRequests(request)) &#123;</span><br><span class="line">                    mNetworkQueue.put(request);</span><br><span class="line">                &#125;</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; We have a cache hit; parse its data for delivery back to the request.</span><br><span class="line">            request.addMarker(&quot;cache-hit&quot;);</span><br><span class="line">            Response&lt;?&gt; response &#x3D; request.parseNetworkResponse(new NetworkResponse(entry.data, entry.responseHeaders));</span><br><span class="line">            request.addMarker(&quot;cache-hit-parsed&quot;);</span><br><span class="line"></span><br><span class="line">            if (!response.isSuccess()) &#123;</span><br><span class="line">                request.addMarker(&quot;cache-parsing-failed&quot;);</span><br><span class="line">                mCache.invalidate(request.getCacheKey(), true);</span><br><span class="line">                request.setCacheEntry(null);</span><br><span class="line">                if (!mWaitingRequestManager.maybeAddToWaitingRequests(request)) &#123;</span><br><span class="line">                    mNetworkQueue.put(request);</span><br><span class="line">                &#125;</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line">            if (!entry.refreshNeeded()) &#123;</span><br><span class="line">                &#x2F;&#x2F; 缓存不需要刷新，直接交给ResponseDelivery去处理</span><br><span class="line">                mDelivery.postResponse(request, response);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                &#x2F;&#x2F; 软过期的缓存命中，可以分发缓存的response，但是我们还需要将请求发送到网络以进行刷新。</span><br><span class="line">                request.addMarker(&quot;cache-hit-refresh-needed&quot;);</span><br><span class="line">                request.setCacheEntry(entry);</span><br><span class="line">                &#x2F;&#x2F; Mark the response as intermediate.</span><br><span class="line">                response.intermediate &#x3D; true;</span><br><span class="line"></span><br><span class="line">                if (!mWaitingRequestManager.maybeAddToWaitingRequests(request)) &#123;</span><br><span class="line">                    &#x2F;&#x2F; 将intermediate响应发回给用户，然后将请求转发到网络。</span><br><span class="line">                    mDelivery.postResponse(</span><br><span class="line">                            request,</span><br><span class="line">                            response,</span><br><span class="line">                            new Runnable() &#123;</span><br><span class="line">                                </span><br><span class="line">                                public void run() &#123;</span><br><span class="line">                                    try &#123;</span><br><span class="line">                                        &#x2F;&#x2F; 如果缓存需要刷新，这个地方还需要再重新请求网络</span><br><span class="line">                                        mNetworkQueue.put(request);</span><br><span class="line">                                    &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                                        &#x2F;&#x2F; Restore the interrupted status</span><br><span class="line">                                        Thread.currentThread().interrupt();</span><br><span class="line">                                    &#125;</span><br><span class="line">                                &#125;</span><br><span class="line">                            &#125;);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    &#x2F;&#x2F; 该请求已添加到等待请求的列表中，以便在第一个请求返回时从第一个请求接收网络响应。</span><br><span class="line">                    mDelivery.postResponse(request, response);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            request.sendEvent(RequestQueue.RequestEvent.REQUEST_CACHE_LOOKUP_FINISHED);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>如果有缓存，就取出来去处理，没有或者过期等，就加入到网络请求队列中去请求，需要网络请求的有几个地方：</p>
-<ul>
-<li>请求不需要缓存</li>
-<li>请求在缓存中没有找到</li>
-<li>请求的缓存过期</li>
-<li>请求的缓存需要刷新</li>
-</ul>
-<h5 id="NetworkDispatcher"><a href="#NetworkDispatcher" class="headerlink" title="NetworkDispatcher"></a>NetworkDispatcher</h5><p>NetworkDispatcher<br>NetworkDispatcher也继承自Thread，它们在RequestQueue#start()方法中已经被启动了，因此直接看run方法：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line">public class NetworkDispatcher extends Thread &#123;</span><br><span class="line">    private final BlockingQueue&lt;Request&lt;?&gt;&gt; mQueue;</span><br><span class="line">    private final Network mNetwork;</span><br><span class="line">    private final Cache mCache;</span><br><span class="line">    private final ResponseDelivery mDelivery;</span><br><span class="line">    private volatile boolean mQuit &#x3D; false;</span><br><span class="line"></span><br><span class="line">    public NetworkDispatcher(</span><br><span class="line">            BlockingQueue&lt;Request&lt;?&gt;&gt; queue,</span><br><span class="line">            Network network,</span><br><span class="line">            Cache cache,</span><br><span class="line">            ResponseDelivery delivery) &#123;</span><br><span class="line">        mQueue &#x3D; queue;</span><br><span class="line">        mNetwork &#x3D; network;</span><br><span class="line">        mCache &#x3D; cache;</span><br><span class="line">        mDelivery &#x3D; delivery;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void quit() &#123;</span><br><span class="line">        mQuit &#x3D; true;</span><br><span class="line">        interrupt();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public void run() &#123;</span><br><span class="line">        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);</span><br><span class="line">        while (true) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                processRequest();</span><br><span class="line">            &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                &#x2F;&#x2F; We may have been interrupted because it was time to quit.</span><br><span class="line">                if (mQuit) &#123;</span><br><span class="line">                    Thread.currentThread().interrupt();</span><br><span class="line">                    return;</span><br><span class="line">                &#125;</span><br><span class="line">                VolleyLog.e(&quot;Ignoring spurious interrupt of NetworkDispatcher thread; &quot; + &quot;use quit() to terminate it&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private void processRequest() throws InterruptedException &#123;</span><br><span class="line">        Request&lt;?&gt; request &#x3D; mQueue.take();</span><br><span class="line">        processRequest(request);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    void processRequest(Request&lt;?&gt; request) &#123;</span><br><span class="line">        long startTimeMs &#x3D; SystemClock.elapsedRealtime();</span><br><span class="line">        request.sendEvent(RequestQueue.RequestEvent.REQUEST_NETWORK_DISPATCH_STARTED);</span><br><span class="line">        try &#123;</span><br><span class="line">            request.addMarker(&quot;network-queue-take&quot;);</span><br><span class="line"></span><br><span class="line">            if (request.isCanceled()) &#123;</span><br><span class="line">                request.finish(&quot;network-discard-cancelled&quot;);</span><br><span class="line">                request.notifyListenerResponseNotUsable();</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            addTrafficStatsTag(request);</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; 执行网络请求</span><br><span class="line">            NetworkResponse networkResponse &#x3D; mNetwork.performRequest(request);</span><br><span class="line">            request.addMarker(&quot;network-http-complete&quot;);</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; If the server returned 304 AND we delivered a response already,</span><br><span class="line">            &#x2F;&#x2F; we&#39;re done -- don&#39;t deliver a second identical response.</span><br><span class="line">            if (networkResponse.notModified &amp;&amp; request.hasHadResponseDelivered()) &#123;</span><br><span class="line">                request.finish(&quot;not-modified&quot;);</span><br><span class="line">                request.notifyListenerResponseNotUsable();</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Parse the response here on the worker thread.</span><br><span class="line">            Response&lt;?&gt; response &#x3D; request.parseNetworkResponse(networkResponse);</span><br><span class="line">            request.addMarker(&quot;network-parse-complete&quot;);</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Write to cache if applicable.</span><br><span class="line">            &#x2F;&#x2F; TODO: Only update cache metadata instead of entire record for 304s.</span><br><span class="line">            if (request.shouldCache() &amp;&amp; response.cacheEntry !&#x3D; null) &#123;</span><br><span class="line">                mCache.put(request.getCacheKey(), response.cacheEntry);</span><br><span class="line">                request.addMarker(&quot;network-cache-written&quot;);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Post the response back.</span><br><span class="line">            request.markDelivered();</span><br><span class="line">            mDelivery.postResponse(request, response);</span><br><span class="line">            request.notifyListenerResponseReceived(response);</span><br><span class="line">        &#125; catch (VolleyError volleyError) &#123;</span><br><span class="line">            volleyError.setNetworkTimeMs(SystemClock.elapsedRealtime() - startTimeMs);</span><br><span class="line">            parseAndDeliverNetworkError(request, volleyError);</span><br><span class="line">            request.notifyListenerResponseNotUsable();</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            VolleyLog.e(e, &quot;Unhandled exception %s&quot;, e.toString());</span><br><span class="line">            VolleyError volleyError &#x3D; new VolleyError(e);</span><br><span class="line">            volleyError.setNetworkTimeMs(SystemClock.elapsedRealtime() - startTimeMs);</span><br><span class="line">            mDelivery.postError(request, volleyError);</span><br><span class="line">            request.notifyListenerResponseNotUsable();</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            request.sendEvent(RequestQueue.RequestEvent.REQUEST_NETWORK_DISPATCH_FINISHED);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看到，在NetworkDispatcher中，最主要的就是调用了mNetwork.performRequest(request)执行网络请求，而在Network是个接口，具体实现类是BasicNetwork。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line">BasicNetwork</span><br><span class="line">public NetworkResponse performRequest(Request&lt;?&gt; request) throws VolleyError &#123;</span><br><span class="line">    long requestStart &#x3D; SystemClock.elapsedRealtime();</span><br><span class="line">    while (true) &#123;</span><br><span class="line">        &#x2F;&#x2F; ...</span><br><span class="line">        try &#123;</span><br><span class="line">            &#x2F;&#x2F; ...</span><br><span class="line">            httpResponse &#x3D; mBaseHttpStack.executeRequest(request, additionalRequestHeaders);</span><br><span class="line">            &#x2F;&#x2F; return NetworkResponse</span><br><span class="line">        &#125; catch (SocketTimeoutException e) &#123;</span><br><span class="line">            attemptRetryOnException(&quot;socket&quot;, request, new TimeoutError());</span><br><span class="line">        &#125; catch (MalformedURLException e) &#123;</span><br><span class="line">            throw new RuntimeException(&quot;Bad URL &quot; + request.getUrl(), e);</span><br><span class="line">        &#125; catch (IOException e) &#123;</span><br><span class="line">            int statusCode;</span><br><span class="line">            if (httpResponse !&#x3D; null) &#123;</span><br><span class="line">                statusCode &#x3D; httpResponse.getStatusCode();</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                throw new NoConnectionError(e);</span><br><span class="line">            &#125;</span><br><span class="line">            VolleyLog.e(&quot;Unexpected response code %d for %s&quot;, statusCode, request.getUrl());</span><br><span class="line">            NetworkResponse networkResponse;</span><br><span class="line">            if (responseContents !&#x3D; null) &#123;</span><br><span class="line">                networkResponse &#x3D;</span><br><span class="line">                        new NetworkResponse(</span><br><span class="line">                                statusCode,</span><br><span class="line">                                responseContents,</span><br><span class="line">                                &#x2F;* notModified&#x3D; *&#x2F; false,</span><br><span class="line">                                SystemClock.elapsedRealtime() - requestStart,</span><br><span class="line">                                responseHeaders);</span><br><span class="line">                if (statusCode &#x3D;&#x3D; HttpURLConnection.HTTP_UNAUTHORIZED</span><br><span class="line">                        || statusCode &#x3D;&#x3D; HttpURLConnection.HTTP_FORBIDDEN) &#123;</span><br><span class="line">                    attemptRetryOnException(</span><br><span class="line">                            &quot;auth&quot;, request, new AuthFailureError(networkResponse));</span><br><span class="line">                &#125; else if (statusCode &gt;&#x3D; 400 &amp;&amp; statusCode &lt;&#x3D; 499) &#123;</span><br><span class="line">                    &#x2F;&#x2F; Don&#39;t retry other client errors.</span><br><span class="line">                    throw new ClientError(networkResponse);</span><br><span class="line">                &#125; else if (statusCode &gt;&#x3D; 500 &amp;&amp; statusCode &lt;&#x3D; 599) &#123;</span><br><span class="line">                    if (request.shouldRetryServerErrors()) &#123;</span><br><span class="line">                        attemptRetryOnException(</span><br><span class="line">                                &quot;server&quot;, request, new ServerError(networkResponse));</span><br><span class="line">                    &#125; else &#123;</span><br><span class="line">                        throw new ServerError(networkResponse);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    &#x2F;&#x2F; 3xx? No reason to retry.</span><br><span class="line">                    throw new ServerError(networkResponse);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                attemptRetryOnException(&quot;network&quot;, request, new NetworkError());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 请求重试</span><br><span class="line">private static void attemptRetryOnException(</span><br><span class="line">        String logPrefix, Request&lt;?&gt; request, VolleyError exception) throws VolleyError &#123;</span><br><span class="line">    RetryPolicy retryPolicy &#x3D; request.getRetryPolicy();</span><br><span class="line">    int oldTimeout &#x3D; request.getTimeoutMs();</span><br><span class="line"></span><br><span class="line">    try &#123;</span><br><span class="line">        retryPolicy.retry(exception);</span><br><span class="line">    &#125; catch (VolleyError e) &#123;</span><br><span class="line">        request.addMarker(String.format(&quot;%s-timeout-giveup [timeout&#x3D;%s]&quot;, logPrefix, oldTimeout));</span><br><span class="line">        throw e;</span><br><span class="line">    &#125;</span><br><span class="line">    request.addMarker(String.format(&quot;%s-retry [timeout&#x3D;%s]&quot;, logPrefix, oldTimeout));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class DefaultRetryPolicy implements RetryPolicy &#123;</span><br><span class="line">    </span><br><span class="line">    public void retry(VolleyError error) throws VolleyError &#123;</span><br><span class="line">        mCurrentRetryCount++;</span><br><span class="line">        mCurrentTimeoutMs +&#x3D; (int) (mCurrentTimeoutMs * mBackoffMultiplier);</span><br><span class="line">        if (!hasAttemptRemaining()) &#123;</span><br><span class="line">            throw error;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;** Returns true if this policy has attempts remaining, false otherwise. *&#x2F;</span><br><span class="line">    protected boolean hasAttemptRemaining() &#123;</span><br><span class="line">        return mCurrentRetryCount &lt;&#x3D; mMaxNumRetries;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>在BasicNetwork#performRequest()中调用了httpResponse = mBaseHttpStack.executeRequest(request, additionalRequestHeaders);，这里的mBaseHttpStack就是前面创建RequestQueue时新建的HurlStack和HttpClientStack(@Deprecated，上面RequestQueue的构造函数中还有个新建了HttpClientStack对象的方法，不过已经废弃了，不做解析)。因此在 HttpStack的executeRequest()中就是具体的网络请求。</p>
-<p>HurlStack</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class HurlStack extends BaseHttpStack &#123;</span><br><span class="line">    </span><br><span class="line">    public HttpResponse executeRequest(Request&lt;?&gt; request, Map&lt;String, String&gt; additionalHeaders)</span><br><span class="line">            throws IOException, AuthFailureError &#123;</span><br><span class="line">        &#x2F;&#x2F; 这个类是使用HttpURLConnection来实现真的的网络请求，可以自定义</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h5 id="ResponseDelivery"><a href="#ResponseDelivery" class="headerlink" title="ResponseDelivery"></a>ResponseDelivery</h5><p>ResponseDelivery是一个接口：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line">public interface ResponseDelivery &#123;</span><br><span class="line">    &#x2F;** Parses a response from the network or cache and delivers it. *&#x2F;</span><br><span class="line">    void postResponse(Request&lt;?&gt; request, Response&lt;?&gt; response);</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Parses a response from the network or cache and delivers it. The provided Runnable will be</span><br><span class="line">     * executed after delivery.</span><br><span class="line">     *&#x2F;</span><br><span class="line">    void postResponse(Request&lt;?&gt; request, Response&lt;?&gt; response, Runnable runnable);</span><br><span class="line"></span><br><span class="line">    &#x2F;** Posts an error for the given request. *&#x2F;</span><br><span class="line">    void postError(Request&lt;?&gt; request, VolleyError error);</span><br><span class="line">&#125;</span><br><span class="line">具体实现类是ExecutorDelivery，它保证了客户端调用的回调运行在UI线程：</span><br><span class="line"></span><br><span class="line">public class ExecutorDelivery implements ResponseDelivery &#123;</span><br><span class="line">    private final Executor mResponsePoster;</span><br><span class="line">    &#x2F;&#x2F; 在上面的分析中可以看到这里的handle &#x3D; new Handler(Looper.getMainLooper())</span><br><span class="line">    public ExecutorDelivery(final Handler handler) &#123;</span><br><span class="line">        mResponsePoster &#x3D; new Executor() &#123;</span><br><span class="line">                </span><br><span class="line">                public void execute(Runnable command) &#123;</span><br><span class="line">                    handler.post(command);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public ExecutorDelivery(Executor executor) &#123;</span><br><span class="line">        mResponsePoster &#x3D; executor;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public void postResponse(Request&lt;?&gt; request, Response&lt;?&gt; response) &#123;</span><br><span class="line">        postResponse(request, response, null);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public void postResponse(Request&lt;?&gt; request, Response&lt;?&gt; response, Runnable runnable) &#123;</span><br><span class="line">        request.markDelivered();</span><br><span class="line">        request.addMarker(&quot;post-response&quot;);</span><br><span class="line">        mResponsePoster.execute(new ResponseDeliveryRunnable(request, response, runnable));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public void postError(Request&lt;?&gt; request, VolleyError error) &#123;</span><br><span class="line">        request.addMarker(&quot;post-error&quot;);</span><br><span class="line">        Response&lt;?&gt; response &#x3D; Response.error(error);</span><br><span class="line">        mResponsePoster.execute(new ResponseDeliveryRunnable(request, response, null));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static class ResponseDeliveryRunnable implements Runnable &#123;</span><br><span class="line">        private final Request mRequest;</span><br><span class="line">        private final Response mResponse;</span><br><span class="line">        private final Runnable mRunnable;</span><br><span class="line"></span><br><span class="line">        public ResponseDeliveryRunnable(Request request, Response response, Runnable runnable) &#123;</span><br><span class="line">            mRequest &#x3D; request;</span><br><span class="line">            mResponse &#x3D; response;</span><br><span class="line">            mRunnable &#x3D; runnable;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        (&quot;unchecked&quot;)</span><br><span class="line">        </span><br><span class="line">        public void run() &#123;</span><br><span class="line">            if (mRequest.isCanceled()) &#123;</span><br><span class="line">                mRequest.finish(&quot;canceled-at-delivery&quot;);</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; 这里会调用在创建Request时传入的回调</span><br><span class="line">            if (mResponse.isSuccess()) &#123;</span><br><span class="line">                mRequest.deliverResponse(mResponse.result);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                mRequest.deliverError(mResponse.error);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            if (mResponse.intermediate) &#123;</span><br><span class="line">                mRequest.addMarker(&quot;intermediate-response&quot;);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                mRequest.finish(&quot;done&quot;);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; 如果有需要执行的任务，如前面缓存需要刷新等，就会在这个地方进行调用</span><br><span class="line">            if (mRunnable !&#x3D; null) &#123;</span><br><span class="line">                mRunnable.run();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>Volley中主要的类有这些：</p>
-<ul>
-<li>Volley: 提供了构建RequestQueue的统一方法，我们也可以不通过Volley类而是自己构建RequestQueue；</li>
-<li>RequestQueue: 负责分发请求到不同的请求队列中；</li>
-<li>CacheDispatcher: 处理缓存请求；</li>
-<li>NetworkDispatcher: 处理网络请求；</li>
-<li>ResponseDelivery: 获取请求后进行处理，具体实现类为ExecutorDelivery；</li>
-<li>Cache: 缓存接口，具体实现类有DiskBasedCache；</li>
-<li>Network: 网络接口，具体实现类有BasicNetwork；</li>
-<li>HttpStack: 真正执行请求，具体实现类有HttpClientStack(已废弃)，BaseHttpStack(子类有HurlStack，AdaptedHttpStack等)；</li>
-<li>Request: 封装请求信息并处理回调，具体实现类有StringRequest，JsonRequest，ImageRequest等；</li>
-<li>NetworkResponse：请求网络时的返回的response；</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/31/Kotlin%20%E5%AE%9E%E6%88%98/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yudesong">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/05/31/Kotlin%20%E5%AE%9E%E6%88%98/" class="post-title-link" itemprop="url">Kotlin 实战</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-05-31 11:19:43 / 修改时间：11:21:15" itemprop="dateCreated datePublished" datetime="2020-05-31T11:19:43+08:00">2020-05-31</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h4 id="Kotlin-引入-Android-项目"><a href="#Kotlin-引入-Android-项目" class="headerlink" title="Kotlin 引入 Android 项目"></a>Kotlin 引入 Android 项目</h4><p>Kotlin是基于JVM新的编程语言，由 JetBrains 开发，可以编译成java字节码，也可以编译成JavaScript。而JetBrains，作为目前广受欢迎的Java IDE IntelliJ 的提供商，也在 Apache 许可下已经开源其Kotlin 编程语言。</p>
-<h5 id="一、导入依赖库"><a href="#一、导入依赖库" class="headerlink" title="一、导入依赖库"></a>一、导入依赖库</h5><ul>
-<li><p>在工程根目录bulid.grade文件添加</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">buildscript &#123;</span><br><span class="line">    ext.kotlin_version &#x3D; &#39;1.3.21&#39;</span><br><span class="line">    </span><br><span class="line">    dependencies &#123;</span><br><span class="line">        classpath &quot;org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>app或者module工程， bulid.grade文件添加一下内容</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">apply plugin: &#39;kotlin-android&#39;</span><br><span class="line">apply plugin: &#39;kotlin-android-extensions&#39;</span><br><span class="line"></span><br><span class="line">dependencies &#123;</span><br><span class="line">  implementation &quot;org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version&quot;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-</li>
-</ul>
-<h5 id="二、代码示例"><a href="#二、代码示例" class="headerlink" title="二、代码示例"></a>二、代码示例</h5><ul>
-<li>Activity 中使用</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">class MainActivity : AppCompatActivity() &#123;</span><br><span class="line">    </span><br><span class="line">    private var mRecyclerView: RecyclerView? &#x3D; null</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 定义静态方法</span><br><span class="line">    companion object &#123;</span><br><span class="line">        const val KEY_FROM: String &#x3D; &quot;key_from&quot;</span><br><span class="line">        const val KEY_SHOW_OPEN_VIEW &#x3D; &quot;key_show_open_view&quot;</span><br><span class="line">        </span><br><span class="line">        fun startActivity(context: Context, from: String, showOpen: Boolean) &#123;</span><br><span class="line">            var intent &#x3D; Intent(context, MainActivity::class.java)</span><br><span class="line">            intent.putExtra(KEY_FROM, from)</span><br><span class="line">            intent.putExtra(KEY_SHOW_OPEN_VIEW, showOpen)</span><br><span class="line">            if (context !is Activity) &#123;</span><br><span class="line">               intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)</span><br><span class="line">            &#125;</span><br><span class="line">            context.startActivity(intent)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    override fun onCreate(savedInstanceState: Bundle?) &#123;</span><br><span class="line">        super.onCreate(savedInstanceState)</span><br><span class="line">        setContentView(R.layout.activity_main)</span><br><span class="line">        handlerIntent()</span><br><span class="line">        initView()</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    private fun handlerIntent() &#123;</span><br><span class="line">        if (intent !&#x3D; null) &#123;</span><br><span class="line">            mFrom &#x3D; intent.getStringExtra(KEY_FROM)</span><br><span class="line">            mShowOpenView &#x3D; intent.getBooleanExtra(KEY_SHOW_OPEN_VIEW, false)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    private fun initView() &#123;</span><br><span class="line">        mRecyclerView &#x3D; findViewById(R.id.recycler_view)</span><br><span class="line">        ....</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h5 id="三、常用设计模式-Kotlin代码示例"><a href="#三、常用设计模式-Kotlin代码示例" class="headerlink" title="三、常用设计模式 Kotlin代码示例"></a>三、常用设计模式 Kotlin代码示例</h5><h6 id="3-1-单例模式"><a href="#3-1-单例模式" class="headerlink" title="3.1 单例模式"></a>3.1 单例模式</h6><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">VideoRewardHelper</span> <span class="keyword">private</span> <span class="keyword">constructor</span></span>() &#123;</span><br><span class="line">    <span class="keyword">companion</span> <span class="keyword">object</span> &#123;</span><br><span class="line">        <span class="keyword">val</span> mInstance = SingletonHolder.mInstance</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">object</span> SingletonHolder &#123;</span><br><span class="line">        <span class="keyword">val</span> mInstance = VideoRewardHelper()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h5 id="3-2-基于RxJava实现观察者模式"><a href="#3-2-基于RxJava实现观察者模式" class="headerlink" title="3.2 基于RxJava实现观察者模式"></a>3.2 基于RxJava实现观察者模式</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">import io.reactivex.Observable;</span><br><span class="line">import io.reactivex.subjects.PublishSubject;</span><br><span class="line">import io.reactivex.subjects.Subject;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 基于RxJava的事总线</span><br><span class="line"> * &lt;p&gt;</span><br><span class="line"> * 单例模式 &amp; 门面模式</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class RxBus&lt;T&gt; &#123;</span><br><span class="line"></span><br><span class="line">    private volatile Subject&lt;T&gt; mSubject;</span><br><span class="line"></span><br><span class="line">    private RxBus() &#123;</span><br><span class="line">        mSubject &#x3D; PublishSubject.create();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static class Singleton &#123;</span><br><span class="line">        public static RxBus mInstance &#x3D; new RxBus();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RxBus getInstance() &#123;</span><br><span class="line">        return Singleton.mInstance;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public synchronized void sendPost(T t) &#123;</span><br><span class="line">        mSubject.onNext(t);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public synchronized void sendComplete() &#123;</span><br><span class="line">        mSubject.onComplete();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Observable&lt;T&gt; getObservable() &#123;</span><br><span class="line">        return mSubject;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h6 id="1-注册"><a href="#1-注册" class="headerlink" title="1. 注册"></a>1. 注册</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">private Disposable disposable;</span><br><span class="line"></span><br><span class="line">private Observer&lt;StatusInfo&gt; mObserver &#x3D; new Observer&lt;StatusInfo&gt;() &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void onSubscribe(Disposable d) &#123;</span><br><span class="line">        disposable &#x3D; d;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void onNext(StatusInfo info) &#123;</span><br><span class="line">        ...    </span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    @Override</span><br><span class="line">    public void onError(Throwable e) &#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void onComplete() &#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125;    </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">RxBus.getInstance().getObservable().subscribeOn(AndroidSchedulers.mainThread()).subscribe(mObserver);</span><br></pre></td></tr></table></figure>
-
-<h6 id="2-解注册"><a href="#2-解注册" class="headerlink" title="2. 解注册"></a>2. 解注册</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">if (disposable !&#x3D; null &amp;&amp; !disposable.isDisposed()) &#123;</span><br><span class="line">    XLLog.d(&quot;Rxjava&quot;, &quot;dispose: &quot;);</span><br><span class="line">    disposable.dispose();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h5 id="3-3-普通观察者模式"><a href="#3-3-普通观察者模式" class="headerlink" title="3.3 普通观察者模式"></a>3.3 普通观察者模式</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">interface CountDownObserver &#123;</span><br><span class="line">    fun onTimer(resource: PostResource)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class CountDownObservable : Observable&lt;CountDownObserver&gt;() &#123;</span><br><span class="line">    fun onTimer(resource: PostResource) &#123;</span><br><span class="line">        if (mObservers.isNotEmpty()) &#123;</span><br><span class="line">            val observers &#x3D; ArrayList&lt;CountDownObserver&gt;(mObservers)</span><br><span class="line">            for (observer in observers) &#123;</span><br><span class="line">                observer.onTimer(resource)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class CountDownManager &#123;</span><br><span class="line">    private var mCountDownObservable: CountDownObservable &#x3D; CountDownObservable()</span><br><span class="line"></span><br><span class="line">    companion object &#123;</span><br><span class="line">        var TAG: String &#x3D; &quot;CountDownManager&quot;</span><br><span class="line">        val mInstance &#x3D; SingletonHolder.mInstance</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private object SingletonHolder &#123;</span><br><span class="line">        val mInstance &#x3D; CountDownManager()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun registerCountDownObserver(observer: CountDownObserver) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            mCountDownObservable.registerObserver(observer)</span><br><span class="line">        &#125; catch (e: Throwable) &#123;</span><br><span class="line">            e.printStackTrace()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun unregisterCountDownObserver(observer: CountDownObserver) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            mCountDownObservable.unregisterObserver(observer)</span><br><span class="line">        &#125; catch (e: Throwable) &#123;</span><br><span class="line">            e.printStackTrace()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun notifyOnTimer(resource: PostResource) &#123;</span><br><span class="line">        mCountDownObservable.onTimer(resource)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/31/Glide%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yudesong">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/05/31/Glide%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="post-title-link" itemprop="url">Glide 源码剖析</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-05-31 11:17:43" itemprop="dateCreated datePublished" datetime="2020-05-31T11:17:43+08:00">2020-05-31</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h4 id="Glide-源码剖析"><a href="#Glide-源码剖析" class="headerlink" title="Glide 源码剖析"></a>Glide 源码剖析</h4><p><a href="https://github.com/bumptech/glide" target="_blank" rel="noopener">Glide</a>是Google出品的一款性能优异的图片加载框架。</p>
-<p>依赖库导入</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">repositories &#123;</span><br><span class="line">  mavenCentral()</span><br><span class="line">  google()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencies &#123;</span><br><span class="line">  implementation &#39;com.github.bumptech.glide:glide:4.11.0&#39;</span><br><span class="line">  annotationProcessor &#39;com.github.bumptech.glide:compiler:4.11.0&#39;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>使用</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Glide.with(myFragment)</span><br><span class="line">    .load(url)</span><br><span class="line">    .centerCrop()</span><br><span class="line">    .placeholder(R.drawable.loading_spinner)</span><br><span class="line">    .into(myImageView);</span><br></pre></td></tr></table></figure>
-
-<h5 id="对比图片加载框架"><a href="#对比图片加载框架" class="headerlink" title="对比图片加载框架"></a>对比图片加载框架</h5><p>下面我们将会带着以下一些问题深入的剖析源码，去寻找答案。</p>
-<ul>
-<li>Glide的with方法是如何绑定Activity/Fragment生命周期的？</li>
-<li>Glide的网络请求是怎样发出的？</li>
-<li>Glide请求完成之后，图片是如何展示的？</li>
-<li>Glide的缓存策略是什么样的？</li>
-<li>Glide的OOM解决办法？</li>
-<li>Glide自定义BitmapTransformation</li>
-</ul>
-<h6 id="1-with-Context-方法，返回RequestManager"><a href="#1-with-Context-方法，返回RequestManager" class="headerlink" title="1. with(Context)方法，返回RequestManager"></a>1. with(Context)方法，返回RequestManager</h6><p>Glide.java</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">public class Glide &#123;</span><br><span class="line"></span><br><span class="line">  public static RequestManager with(Context context) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(context);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(Activity activity) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(activity);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(FragmentActivity activity) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(activity);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(android.app.Fragment fragment) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(fragment);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(Fragment fragment) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(fragment);</span><br><span class="line">    &#125;    </span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line">&#96;&#96;&#96;    </span><br><span class="line">**with()**方法重载了5个方法</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">RequestManagerRetriever.java</span><br></pre></td></tr></table></figure>
-<p>public class RequestManagerRetriever implements Handler.Callback {<br>    private static final RequestManagerRetriever INSTANCE = new RequestManagerRetriever();</p>
-<pre><code>public static RequestManagerRetriever get() {
-    return INSTANCE;
-}
-
-public RequestManager get(Context context) {
-    if (context == null) {
-        throw new IllegalArgumentException(&quot;You cannot start a load on a null Context&quot;);
-    } else if (Util.isOnMainThread() &amp;&amp; !(context instanceof Application)) {
-        if (context instanceof FragmentActivity) {
-            return get((FragmentActivity) context);
-        } else if (context instanceof Activity) {
-            return get((Activity) context);
-        } else if (context instanceof ContextWrapper) {
-            return get(((ContextWrapper) context).getBaseContext());
-        }
-    }
-
-    return getApplicationManager(context);
-}
-
-// 生命周期和Application相关连
-private RequestManager getApplicationManager(Context context) {
-    if (applicationManager == null) {
-        synchronized (this) {
-            if (applicationManager == null) {
-                applicationManager = new RequestManager(context.getApplicationContext(),
-                        new ApplicationLifecycle(), new EmptyRequestManagerTreeNode());
-            }
-        }
-    }
-    return applicationManager;
-}
-
-// activity.getSupportFragmentManager(),会创建SupportRequestManagerFragment
-public RequestManager get(FragmentActivity activity) {
-    if (Util.isOnBackgroundThread()) {
-        return get(activity.getApplicationContext());
-    } else {
-        assertNotDestroyed(activity);
-        FragmentManager fm = activity.getSupportFragmentManager();
-        return supportFragmentGet(activity, fm);
-    }
-}
-
-RequestManager supportFragmentGet(Context context, FragmentManager fm) {
-    SupportRequestManagerFragment current = getSupportRequestManagerFragment(fm);
-    // 内部新建ActivityFragmentLifecycle对象
-    RequestManager requestManager = current.getRequestManager();
-    if (requestManager == null) {
-        // 将SupportRequestManagerFragment的LifeCycle注入到RequestManager
-        requestManager = new RequestManager(context, current.getLifecycle(), current.getRequestManagerTreeNode());
-     // 将current.getLifecycle()与 requestManager进行了绑定
-        current.setRequestManager(requestManager);
-    }
-    return requestManager;
-}
-
-SupportRequestManagerFragment getSupportRequestManagerFragment(final FragmentManager fm) {
-    SupportRequestManagerFragment current = (SupportRequestManagerFragment) fm.findFragmentByTag(FRAGMENT_TAG);
-    if (current == null) {
-        current = pendingSupportRequestManagerFragments.get(fm);
-        if (current == null) {
-            current = new SupportRequestManagerFragment();
-            pendingSupportRequestManagerFragments.put(fm, current);
-            fm.beginTransaction().add(current, FRAGMENT_TAG).commitAllowingStateLoss();
-            handler.obtainMessage(ID_REMOVE_SUPPORT_FRAGMENT_MANAGER, fm).sendToTarget();
-        }
-    }
-    return current;
-}
-
-// activity.getFragmentManager会创建RequestManagerFragment
-@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-public RequestManager get(Activity activity) {
-    if (Util.isOnBackgroundThread() || Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.HONEYCOMB) {
-        return get(activity.getApplicationContext());
-    } else {
-        assertNotDestroyed(activity);
-        android.app.FragmentManager fm = activity.getFragmentManager();
-        return fragmentGet(activity, fm);
-    }
-}
-
-@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-RequestManager fragmentGet(Context context, android.app.FragmentManager fm) {
-    RequestManagerFragment current = getRequestManagerFragment(fm);
-    RequestManager requestManager = current.getRequestManager();
-    if (requestManager == null) {
-        requestManager = new RequestManager(context, current.getLifecycle(), current.getRequestManagerTreeNode());
-        current.setRequestManager(requestManager);
-    }
-    return requestManager;
-}
-
-@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-RequestManagerFragment getRequestManagerFragment(final android.app.FragmentManager fm) {
-    RequestManagerFragment current = (RequestManagerFragment) fm.findFragmentByTag(FRAGMENT_TAG);
-    if (current == null) {
-        current = pendingRequestManagerFragments.get(fm);
-        if (current == null) {
-            current = new RequestManagerFragment();
-            pendingRequestManagerFragments.put(fm, current);
-            fm.beginTransaction().add(current, FRAGMENT_TAG).commitAllowingStateLoss();
-            handler.obtainMessage(ID_REMOVE_FRAGMENT_MANAGER, fm).sendToTarget();
-        }
-    }
-    return current;
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">判断如果是Application则创建RequestManager绑定Application，否则创建SupportRequestManagerFragment、RequestManagerFragment并将RequestManager与之绑定</span><br><span class="line"></span><br><span class="line">SupportRequestManagerFragment.java</span><br></pre></td></tr></table></figure>
-<p>public class SupportRequestManagerFragment extends Fragment {<br>    private RequestManager requestManager;<br>    private final ActivityFragmentLifecycle lifecycle;</p>
-<p>  @Override<br>    public void onStart() {<br>        super.onStart();<br>        lifecycle.onStart();<br>    }</p>
-<pre><code>@Override
-public void onStop() {
-    super.onStop();
-    lifecycle.onStop();
-}
-
-@Override
-public void onDestroy() {
-    super.onDestroy();
-    lifecycle.onDestroy();
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">这样SupportRequestManagerFragment就和ActivityFragmentLifecycle进行了绑定管理者Fragment的生命周期</span><br><span class="line">在RequestManager的构造函数中会调用lifecycle.addListener(RequestManager.this);进行绑定。至此整个生命周期的传递过程就形成了。</span><br><span class="line">SupportRequestManagerFragment -&gt; ActivityFragmentLifecycle -&gt; RequestManager -&gt; requestTracker</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">###### 2. load()方法,返回DrawableTypeRequest</span><br><span class="line"></span><br><span class="line">RequestManager.java</span><br></pre></td></tr></table></figure>
-<p>public class RequestManager implements LifecycleListener {<br>  private final Lifecycle lifecycle;<br>  private final RequestTracker requestTracker;</p>
-<pre><code>RequestManager(Context context, final Lifecycle lifecycle, ...) {
-    ...
-    if (Util.isOnBackgroundThread()) {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                lifecycle.addListener(RequestManager.this);
-            }
-        });
-    } else {
-        lifecycle.addListener(this);
-    }
-    ...
-}
-
-public DrawableTypeRequest&lt;String&gt; load(String string) {
-    return (DrawableTypeRequest&lt;String&gt;) fromString().load(string);
-}
-
-public DrawableTypeRequest&lt;String&gt; fromString() {
-    return loadGeneric(String.class);
-}
-
-private &lt;T&gt; DrawableTypeRequest&lt;T&gt; loadGeneric(Class&lt;T&gt; modelClass) {
-    ModelLoader&lt;T, InputStream&gt; streamModelLoader = Glide.buildStreamModelLoader(modelClass, context);
-    ModelLoader&lt;T, ParcelFileDescriptor&gt; fileDescriptorModelLoader =
-            Glide.buildFileDescriptorModelLoader(modelClass, context);
-    if (modelClass != null &amp;&amp; streamModelLoader == null &amp;&amp; fileDescriptorModelLoader == null) {
-        throw new IllegalArgumentException(&quot;Unknown type &quot; + modelClass + &quot;. You must provide a Model of a type for&quot;
-                + &quot; which there is a registered ModelLoader, if you are using a custom model, you must first call&quot;
-                + &quot; Glide#register with a ModelLoaderFactory for your custom model class&quot;);
-    }
-
-    return optionsApplier.apply(
-            new DrawableTypeRequest&lt;T&gt;(modelClass, streamModelLoader, fileDescriptorModelLoader, context,
-                    glide, requestTracker, lifecycle, optionsApplier));
-}
-
-@Override
-public DrawableRequestBuilder&lt;ModelType&gt; load(ModelType model) {
-    super.load(model);
-    return this;
-}
-
-@Override
-public void onStart() {
-    resumeRequests();
-}
-
-@Override
-public void onStop() {
-    pauseRequests();
-}
-
-@Override
-public void onDestroy() {
-    requestTracker.clearRequests();
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">DrawableTypeRequest.java</span><br></pre></td></tr></table></figure>
-<p>public class DrawableTypeRequest<ModelType> extends DrawableRequestBuilder<ModelType> implements DownloadOptions {<br>    private final ModelLoader&lt;ModelType, InputStream&gt; streamModelLoader;<br>    private final ModelLoader&lt;ModelType, ParcelFileDescriptor&gt; fileDescriptorModelLoader;<br>    private final RequestManager.OptionsApplier optionsApplier;</p>
-<pre><code>private static &lt;A, Z, R&gt; FixedLoadProvider&lt;A, ImageVideoWrapper, Z, R&gt; buildProvider(Glide glide,
-        ModelLoader&lt;A, InputStream&gt; streamModelLoader,
-        ModelLoader&lt;A, ParcelFileDescriptor&gt; fileDescriptorModelLoader, Class&lt;Z&gt; resourceClass,
-        Class&lt;R&gt; transcodedClass,
-        ResourceTranscoder&lt;Z, R&gt; transcoder) {
-    if (streamModelLoader == null &amp;&amp; fileDescriptorModelLoader == null) {
-        return null;
-    }
-
-    if (transcoder == null) {
-        transcoder = glide.buildTranscoder(resourceClass, transcodedClass);
-    }
-    DataLoadProvider&lt;ImageVideoWrapper, Z&gt; dataLoadProvider = glide.buildDataProvider(ImageVideoWrapper.class,
-            resourceClass);
-    ImageVideoModelLoader&lt;A&gt; modelLoader = new ImageVideoModelLoader&lt;A&gt;(streamModelLoader,
-            fileDescriptorModelLoader);
-    return new FixedLoadProvider&lt;A, ImageVideoWrapper, Z, R&gt;(modelLoader, transcoder, dataLoadProvider);
-}
-
-DrawableTypeRequest(Class&lt;ModelType&gt; modelClass, ModelLoader&lt;ModelType, InputStream&gt; streamModelLoader,
-        ModelLoader&lt;ModelType, ParcelFileDescriptor&gt; fileDescriptorModelLoader, Context context, Glide glide,
-        RequestTracker requestTracker, Lifecycle lifecycle, RequestManager.OptionsApplier optionsApplier) {
-    super(context, modelClass,
-            buildProvider(glide, streamModelLoader, fileDescriptorModelLoader, GifBitmapWrapper.class,
-                    GlideDrawable.class, null),
-            glide, requestTracker, lifecycle);
-    this.streamModelLoader = streamModelLoader;
-    this.fileDescriptorModelLoader = fileDescriptorModelLoader;
-    this.optionsApplier = optionsApplier;
-}
-
-public BitmapTypeRequest&lt;ModelType&gt; asBitmap() {
-    return optionsApplier.apply(new BitmapTypeRequest&lt;ModelType&gt;(this, streamModelLoader,
-            fileDescriptorModelLoader, optionsApplier));
-}
-
-public GifTypeRequest&lt;ModelType&gt; asGif() {
-    return optionsApplier.apply(new GifTypeRequest&lt;ModelType&gt;(this, streamModelLoader, optionsApplier));
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">DrawableRequestBuilder.java</span><br></pre></td></tr></table></figure>
-<p>public class DrawableRequestBuilder<ModelType><br>        extends GenericRequestBuilder&lt;ModelType, ImageVideoWrapper, GifBitmapWrapper, GlideDrawable&gt;<br>        implements BitmapOptions, DrawableOptions {</p>
-<pre><code>@Override
-public DrawableRequestBuilder&lt;ModelType&gt; load(ModelType model) {
-    super.load(model); //调用其父类GenericRequestBuilder的load函数赋值model变量
-    return this;
-}
-
-@Override
-public Target&lt;GlideDrawable&gt; into(ImageView view) {
-    return super.into(view);
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">into()方法,返回Target对象</span><br><span class="line"></span><br><span class="line">GenericRequestBuilder.java</span><br></pre></td></tr></table></figure>
-<p>public class GenericRequestBuilder&lt;ModelType, DataType, ResourceType, TranscodeType&gt; implements Cloneable {<br>    protected final Glide glide;<br>    protected final Class<TranscodeType> transcodeClass;<br>    protected final RequestTracker requestTracker;<br>    protected final Lifecycle lifecycle;<br>    private GenericRequestBuilder&lt;?, ?, ?, TranscodeType&gt; thumbnailRequestBuilder;</p>
-<pre><code>@Override
-public Target&lt;GlideDrawable&gt; into(ImageView view) {
-    return super.into(view);
-}
-
-/**
- * into ImageView 之后，才会去从缓存LruCache&lt;Key, Resource&lt;?&gt;&gt;、弱引用Map&lt;Key, WeakReference&lt;EngineResource&lt;?&gt;&gt;&gt;、磁盘缓存diskCacheService、
- */
-
-public Target&lt;TranscodeType&gt; into(ImageView view) {
-    Util.assertMainThread();
-    if (view == null) {
-        throw new IllegalArgumentException(&quot;You must pass in a non null View&quot;);
-    }
-
-    if (!isTransformationSet &amp;&amp; view.getScaleType() != null) {
-        switch (view.getScaleType()) {
-            case CENTER_CROP:
-                applyCenterCrop();
-                break;
-            case FIT_CENTER:
-            case FIT_START:
-            case FIT_END:
-                applyFitCenter();
-                break;
-            //$CASES-OMITTED$
-            default:
-                // Do nothing.
-        }
-    }
-
-    return into(glide.buildImageViewTarget(view, transcodeClass));
-}    
-
-public &lt;Y extends Target&lt;TranscodeType&gt;&gt; Y into(Y target) {
-    Util.assertMainThread();
-    if (target == null) {
-        throw new IllegalArgumentException(&quot;You must pass in a non null Target&quot;);
-    }
-    if (!isModelSet) {
-        throw new IllegalArgumentException(&quot;You must first set a model (try #load())&quot;);
-    }
-
-    Request previous = target.getRequest();
-
-    if (previous != null) {
-        previous.clear();
-        requestTracker.removeRequest(previous);
-        previous.recycle();
-    }
-
-    Request request = buildRequest(target);
-    target.setRequest(request);
-    lifecycle.addListener(target);
-    requestTracker.runRequest(request);
-
-    return target;
-}
-
-// 根据是缩略图划分，返回ThumbnailRequestCoordinator、GenericRequest
-private Request buildRequest(Target&lt;TranscodeType&gt; target) {
-    if (priority == null) {
-        priority = Priority.NORMAL;
-    }
-    return buildRequestRecursive(target, null);
-}
-
-private Request buildRequestRecursive(Target&lt;TranscodeType&gt; target, ThumbnailRequestCoordinator parentCoordinator) {
-    if (thumbnailRequestBuilder != null) {
-        if (isThumbnailBuilt) {
-            throw new IllegalStateException(&quot;You cannot use a request as both the main request and a thumbnail, &quot;
-                    + &quot;consider using clone() on the request(s) passed to thumbnail()&quot;);
-        }
-        // Recursive case: contains a potentially recursive thumbnail request builder.
-        if (thumbnailRequestBuilder.animationFactory.equals(NoAnimation.getFactory())) {
-            thumbnailRequestBuilder.animationFactory = animationFactory;
-        }
-
-        if (thumbnailRequestBuilder.priority == null) {
-            thumbnailRequestBuilder.priority = getThumbnailPriority();
-        }
-
-        if (Util.isValidDimensions(overrideWidth, overrideHeight)
-                &amp;&amp; !Util.isValidDimensions(thumbnailRequestBuilder.overrideWidth,
-                        thumbnailRequestBuilder.overrideHeight)) {
-          thumbnailRequestBuilder.override(overrideWidth, overrideHeight);
-        }
-
-        ThumbnailRequestCoordinator coordinator = new ThumbnailRequestCoordinator(parentCoordinator);
-        Request fullRequest = obtainRequest(target, sizeMultiplier, priority, coordinator);
-        // Guard against infinite recursion.
-        isThumbnailBuilt = true;
-        // Recursively generate thumbnail requests.
-        Request thumbRequest = thumbnailRequestBuilder.buildRequestRecursive(target, coordinator);
-        isThumbnailBuilt = false;
-        coordinator.setRequests(fullRequest, thumbRequest);
-        return coordinator;
-    } else if (thumbSizeMultiplier != null) {
-        // Base case: thumbnail multiplier generates a thumbnail request, but cannot recurse.
-        ThumbnailRequestCoordinator coordinator = new ThumbnailRequestCoordinator(parentCoordinator);
-        Request fullRequest = obtainRequest(target, sizeMultiplier, priority, coordinator);
-        Request thumbnailRequest = obtainRequest(target, thumbSizeMultiplier, getThumbnailPriority(), coordinator);
-        coordinator.setRequests(fullRequest, thumbnailRequest);
-        return coordinator;
-    } else {
-        // Base case: no thumbnail.
-        return obtainRequest(target, sizeMultiplier, priority, parentCoordinator);
-    }
-}
-
-private Request obtainRequest(Target&lt;TranscodeType&gt; target, float sizeMultiplier, Priority priority,
-        RequestCoordinator requestCoordinator) {
-    return GenericRequest.obtain(
-            loadProvider,
-            model,
-            signature,
-            context,
-            priority,
-            target,
-            sizeMultiplier,
-            placeholderDrawable,
-            placeholderId,
-            errorPlaceholder,
-            errorId,
-            fallbackDrawable,
-            fallbackResource,
-            requestListener,
-            requestCoordinator,
-            glide.getEngine(),
-            transformation,
-            transcodeClass,
-            isCacheable,
-            animationFactory,
-            overrideWidth,
-            overrideHeight,
-            diskCacheStrategy);
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">网络请求</span><br><span class="line"></span><br><span class="line">RequestTracker.java (Request集合, 负责Request的执行，暂停，取消等等关于图片请求的操作)</span><br></pre></td></tr></table></figure>
-<p>public class RequestTracker {<br>    private final Set<Request> requests = Collections.newSetFromMap(new WeakHashMap&lt;Request, Boolean&gt;());<br>    private final List<Request> pendingRequests = new ArrayList<Request>();<br>    private boolean isPaused;</p>
-<pre><code>public void runRequest(Request request) {
-    requests.add(request);
-    if (!isPaused) {
-        request.begin();
-    } else {
-        pendingRequests.add(request);
-    }
-}
-
-public void pauseRequests() {
-    isPaused = true;
-    for (Request request : Util.getSnapshot(requests)) {
-        if (request.isRunning()) {
-            request.pause();
-            pendingRequests.add(request);
-        }
-    }
-}
-
-public void resumeRequests() {
-    isPaused = false;
-    for (Request request : Util.getSnapshot(requests)) {
-        if (!request.isComplete() &amp;&amp; !request.isCancelled() &amp;&amp; !request.isRunning()) {
-            request.begin();
-        }
-    }
-    pendingRequests.clear();
-}
-
-public void restartRequests() {
-    for (Request request : Util.getSnapshot(requests)) {
-        if (!request.isComplete() &amp;&amp; !request.isCancelled()) {
-            // Ensure the request will be restarted in onResume.
-            request.pause();
-            if (!isPaused) {
-                request.begin();
-            } else {
-                pendingRequests.add(request);
-            }
-        }
-    }
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GenericRequest.java</span><br></pre></td></tr></table></figure>
-<p>public final class GenericRequest&lt;A, T, Z, R&gt; implements Request, SizeReadyCallback,<br>        ResourceCallback {</p>
-<pre><code>@Override
-public void begin() {
-    startTime = LogTime.getLogTime();
-    if (model == null) {
-        onException(null);
-        return;
-    }
-
-    status = Status.WAITING_FOR_SIZE;
-    if (Util.isValidDimensions(overrideWidth, overrideHeight)) {
-        onSizeReady(overrideWidth, overrideHeight);
-    } else {
-        target.getSize(this);
-    }
-
-    if (!isComplete() &amp;&amp; !isFailed() &amp;&amp; canNotifyStatusChanged()) {
-        // 设置Placeholder图片
-        target.onLoadStarted(getPlaceholderDrawable());
-        // 最终调用view.setImageDrawable(Drawable drawable)
-    }
-    if (Log.isLoggable(TAG, Log.VERBOSE)) {
-        logV(&quot;finished run method in &quot; + LogTime.getElapsedMillis(startTime));
-    }
-}    
-
-@Override
-public void onSizeReady(int width, int height) {
-    if (Log.isLoggable(TAG, Log.VERBOSE)) {
-        logV(&quot;Got onSizeReady in &quot; + LogTime.getElapsedMillis(startTime));
-    }
-    if (status != Status.WAITING_FOR_SIZE) {
-        return;
-    }
-    status = Status.RUNNING;
-
-    width = Math.round(sizeMultiplier * width);
-    height = Math.round(sizeMultiplier * height);
-
-    ModelLoader&lt;A, T&gt; modelLoader = loadProvider.getModelLoader();
-    final DataFetcher&lt;T&gt; dataFetcher = modelLoader.getResourceFetcher(model, width, height);
-
-    if (dataFetcher == null) {
-        onException(new Exception(&quot;Failed to load model: \&apos;&quot; + model + &quot;\&apos;&quot;));
-        return;
-    }
-    ResourceTranscoder&lt;Z, R&gt; transcoder = loadProvider.getTranscoder();
-    if (Log.isLoggable(TAG, Log.VERBOSE)) {
-        logV(&quot;finished setup for calling load in &quot; + LogTime.getElapsedMillis(startTime));
-    }
-    loadedFromMemoryCache = true;
-    // 开始网络加载图片
-    loadStatus = engine.load(signature, width, height, dataFetcher, loadProvider, transformation, transcoder,
-            priority, isMemoryCacheable, diskCacheStrategy, this);
-    loadedFromMemoryCache = resource != null;
-    if (Log.isLoggable(TAG, Log.VERBOSE)) {
-        logV(&quot;finished onSizeReady in &quot; + LogTime.getElapsedMillis(startTime));
-    }
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">Engine.java</span><br></pre></td></tr></table></figure>
-<p>public class Engine implements EngineJobListener,<br>        MemoryCache.ResourceRemovedListener,<br>        EngineResource.ResourceListener {</p>
-<pre><code>public &lt;T, Z, R&gt; LoadStatus load(Key signature, int width, int height, DataFetcher&lt;T&gt; fetcher,
-        DataLoadProvider&lt;T, Z&gt; loadProvider, Transformation&lt;Z&gt; transformation, ResourceTranscoder&lt;Z, R&gt; transcoder,
-        Priority priority, boolean isMemoryCacheable, DiskCacheStrategy diskCacheStrategy, ResourceCallback cb) {
-    Util.assertMainThread();
-    long startTime = LogTime.getLogTime();
-
-    final String id = fetcher.getId();
-    // 根据请求key以及width、height一起构成了一个EngineKey, 如果width、height改变了，
-    // 则会认为是一个新的Key，会重新缓存。
-    EngineKey key = keyFactory.buildKey(id, signature, width, height, loadProvider.getCacheDecoder(),
-            loadProvider.getSourceDecoder(), transformation, loadProvider.getEncoder(),
-            transcoder, loadProvider.getSourceEncoder());
-
-    // 1.从内存中获取，isMemoryCacheable：是否允许内存缓存策略
-    EngineResource&lt;?&gt; cached = loadFromCache(key, isMemoryCacheable);
-    if (cached != null) {
-        cb.onResourceReady(cached);
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            logWithTimeAndKey(&quot;Loaded resource from cache&quot;, startTime, key);
-        }
-        return null;
-    }
-
-    //2.从activeResources中获取 isMemoryCacheable：是否允许内存缓存策略
-    EngineResource&lt;?&gt; active = loadFromActiveResources(key, isMemoryCacheable);
-    if (active != null) {
-        cb.onResourceReady(active);
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            logWithTimeAndKey(&quot;Loaded resource from active resources&quot;, startTime, key);
-        }
-        return null;
-    }
-
-
-    EngineJob current = jobs.get(key);
-    if (current != null) {
-        current.addCallback(cb);
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            logWithTimeAndKey(&quot;Added to existing load&quot;, startTime, key);
-        }
-        return new LoadStatus(cb, current);
-    }
-
-    EngineJob engineJob = engineJobFactory.build(key, isMemoryCacheable);
-    DecodeJob&lt;T, Z, R&gt; decodeJob = new DecodeJob&lt;T, Z, R&gt;(key, width, height, fetcher, loadProvider, transformation,
-            transcoder, diskCacheProvider, diskCacheStrategy, priority);
-    EngineRunnable runnable = new EngineRunnable(engineJob, decodeJob, priority);
-    jobs.put(key, engineJob);
-    engineJob.addCallback(cb);
-    engineJob.start(runnable);
-
-    if (Log.isLoggable(TAG, Log.VERBOSE)) {
-        logWithTimeAndKey(&quot;Started new load&quot;, startTime, key);
-    }
-    return new LoadStatus(cb, engineJob);
-}    </code></pre><p>}            </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">EngineJob.java</span><br></pre></td></tr></table></figure>
-<p>class EngineJob implements EngineRunnable.EngineRunnableManager {</p>
-<pre><code>@Override
-public void run() {
-    if (isCancelled) {
-        return;
-    }
-
-    Exception exception = null;
-    Resource&lt;?&gt; resource = null;
-    try {
-        resource = decode();
-    } catch (OutOfMemoryError e) {
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            Log.v(TAG, &quot;Out Of Memory Error decoding&quot;, e);
-        }
-        exception = new ErrorWrappingGlideException(e);
-    } catch (Exception e) {
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            Log.v(TAG, &quot;Exception decoding&quot;, e);
-        }
-        exception = e;
-    }
-
-    if (isCancelled) {
-        if (resource != null) {
-            resource.recycle();
-        }
-        return;
-    }
-
-    if (resource == null) {
-        onLoadFailed(exception);
-    } else {
-        onLoadComplete(resource);
-    }
-}
-
-/**
- * 优先从磁盘缓存中寻找
- */
-private Resource&lt;?&gt; decode() throws Exception {
-    if (isDecodingFromCache()) {
-        return decodeFromCache();
-    } else {
-        return decodeFromSource();
-    }
-}
-
-// 进行网路请求
-private Resource&lt;?&gt; decodeFromSource() throws Exception {
-    return decodeJob.decodeFromSource();
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">**DecodeJob.java**</span><br></pre></td></tr></table></figure>
-<p>class DecodeJob&lt;A, T, Z&gt; {</p>
-<pre><code>public Resource&lt;Z&gt; decodeFromSource() throws Exception {
-    // 网络请求
-    Resource&lt;T&gt; decoded = decodeSource();
-    // 对返回结果进行Encode编码
-    return transformEncodeAndTranscode(decoded);
-}
-
-private Resource&lt;T&gt; decodeSource() throws Exception {
-    Resource&lt;T&gt; decoded = null;
-    try {
-        // 最终会走到HttpUrlFetcher.loadData返回InputStream
-        final A data = fetcher.loadData(priority);
-        decoded = decodeFromSourceData(data);
-    } finally {
-        fetcher.cleanup();
-    }
-    return decoded;
-}
-
-// 此处最终会走到StreamBitmapDecoder的decode方法
-// 计算sampleSize、
-// Bitmap result = BitmapFactory.decodeStream(is, null, options);
-private Resource&lt;T&gt; decodeFromSourceData(A data) throws IOException {
-    final Resource&lt;T&gt; decoded;
-    decoded = loadProvider.getSourceDecoder().decode(data, width, height);
-    return decoded;
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">**HttpUrlFetcher**</span><br></pre></td></tr></table></figure>
-<p>public class HttpUrlFetcher implements DataFetcher<InputStream> {</p>
-<pre><code>private HttpURLConnection urlConnection;
-private InputStream stream;
-
-@Override
-public InputStream loadData(Priority priority) throws Exception {
-    return loadDataWithRedirects(glideUrl.toURL(), 0 /*redirects*/, null /*lastUrl*/, glideUrl.getHeaders());
-}
-
-private InputStream loadDataWithRedirects(URL url, int redirects, URL lastUrl, Map&lt;String, String&gt; headers)
-        throws IOException {
-    ...
-    urlConnection = connectionFactory.build(url);
-    for (Map.Entry&lt;String, String&gt; headerEntry : headers.entrySet()) {
-      urlConnection.addRequestProperty(headerEntry.getKey(), headerEntry.getValue());
-    }
-    urlConnection.setConnectTimeout(2500);
-    urlConnection.setReadTimeout(2500);
-    urlConnection.setUseCaches(false);
-    urlConnection.setDoInput(true);
-
-    // Connect explicitly to avoid errors in decoders if connection fails.
-    urlConnection.connect();
-    if (isCancelled) {
-        return null;
-    }
-    final int statusCode = urlConnection.getResponseCode();
-    if (statusCode / 100 == 2) { // 200 OK
-        return getStreamForSuccessfulRequest(urlConnection);
-    } else if (statusCode / 100 == 3) { // 3XX 重定向
-        String redirectUrlString = urlConnection.getHeaderField(&quot;Location&quot;);
-        if (TextUtils.isEmpty(redirectUrlString)) {
-            throw new IOException(&quot;Received empty or null redirect url&quot;);
-        }
-        URL redirectUrl = new URL(url, redirectUrlString);
-        return loadDataWithRedirects(redirectUrl, redirects + 1, url, headers);
-    }
-    ...
-}
-
-private InputStream getStreamForSuccessfulRequest(HttpURLConnection urlConnection) throws IOException {
-    ...
-    stream = urlConnection.getInputStream();
-    return stream;
-}    </code></pre><p>}</p>
-<p>```</p>
-<p><img src="https://img-blog.csdn.net/20170515074139121?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvRXRoYW5Dbw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="Glide 执行过程"></p>
-<h4 id="了解更多"><a href="#了解更多" class="headerlink" title="了解更多"></a>了解更多</h4><p><a href="https://blog.csdn.net/u011733020/article/details/52446902" target="_blank" rel="noopener">1. Glide（图片异步加载缓存库）发起request获取resource</a></p>
-<p><a href="https://juejin.im/post/5e2109e25188254c257c40c6#heading-42" target="_blank" rel="noopener">2. Android主流三方库源码分析（三、深入理解Glide源码）</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/9/">9</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/">10</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -3251,7 +2586,7 @@ private InputStream getStreamForSuccessfulRequest(HttpURLConnection urlConnectio
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">90</span>
+          <span class="site-state-item-count">93</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
