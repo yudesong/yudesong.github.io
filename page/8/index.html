@@ -160,113 +160,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/30/8%20Zygote%E8%BF%9B%E7%A8%8B%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yudesong">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/05/30/8%20Zygote%E8%BF%9B%E7%A8%8B%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" class="post-title-link" itemprop="url">8 Zygote进程启动流程</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-05-30 00:29:04" itemprop="dateCreated datePublished" datetime="2020-05-30T00:29:04+08:00">2020-05-30</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>大家都知道android系统的Zygote进程是所有的android进程的父进程，包括SystemServer和各种应用进程都是通过Zygote进程fork出来的。Zygote（孵化）进程相当于是android系统的根进程，后面所有的进程都是通过这个进程fork出来的，而Zygote进程则是通过linux系统的init进程启动的，也就是说，android系统中各种进程的启动方式</p>
-<p>init进程  –&gt; Zygote进程 –&gt; SystemServer进程 –&gt;各种应用进程</p>
-<ul>
-<li><p>init进程：linux的根进程，android系统是基于linux系统的，因此可以算作是整个android操作系统的第一个进程；</p>
-</li>
-<li><p>Zygote进程：android系统的根进程，主要作用：可以作用Zygote进程fork出SystemServer进程和各种应用进程；</p>
-</li>
-<li><p>SystemService进程：主要是在这个进程中启动系统的各项服务，比如ActivityManagerService，PackageManagerService，WindowManagerService服务等等；</p>
-</li>
-<li><p>各种应用进程：启动自己编写的客户端应用时，一般都是重新启动一个应用进程，有自己的虚拟机与运行环境；</p>
-</li>
-</ul>
-<p>本文主要介绍一下Zygote进程的启动流程，关于SystenServer进程和各种应用进程的启动方式会在以后的文章中介绍。</p>
-<p>init进程在启动Zygote进程时一般都会调用ZygoteInit类的main方法，因此我们这里看一下该方法的具体实现(基于android23源码)；</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String argv[]) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            RuntimeInit.enableDdms();</span><br><span class="line">            &#x2F;&#x2F; Start profiling the zygote initialization.</span><br><span class="line">            SamplingProfilerIntegration.start();</span><br><span class="line"></span><br><span class="line">            boolean startSystemServer &#x3D; false;</span><br><span class="line">            String socketName &#x3D; &quot;zygote&quot;;</span><br><span class="line">            String abiList &#x3D; null;</span><br><span class="line">            for (int i &#x3D; 1; i &lt; argv.length; i++) &#123;</span><br><span class="line">                if (&quot;start-system-server&quot;.equals(argv[i])) &#123;</span><br><span class="line">                    startSystemServer &#x3D; true;</span><br><span class="line">                &#125; else if (argv[i].startsWith(ABI_LIST_ARG)) &#123;</span><br><span class="line">                    abiList &#x3D; argv[i].substring(ABI_LIST_ARG.length());</span><br><span class="line">                &#125; else if (argv[i].startsWith(SOCKET_NAME_ARG)) &#123;</span><br><span class="line">                    socketName &#x3D; argv[i].substring(SOCKET_NAME_ARG.length());</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    throw new RuntimeException(&quot;Unknown command line argument: &quot; + argv[i]);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            if (abiList &#x3D;&#x3D; null) &#123;</span><br><span class="line">                throw new RuntimeException(&quot;No ABI list supplied.&quot;);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            registerZygoteSocket(socketName);</span><br><span class="line">            EventLog.writeEvent(LOG_BOOT_PROGRESS_PRELOAD_START,</span><br><span class="line">                SystemClock.uptimeMillis());</span><br><span class="line">            preload();</span><br><span class="line">            EventLog.writeEvent(LOG_BOOT_PROGRESS_PRELOAD_END,</span><br><span class="line">                SystemClock.uptimeMillis());</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Finish profiling the zygote initialization.</span><br><span class="line">            SamplingProfilerIntegration.writeZygoteSnapshot();</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Do an initial gc to clean up after startup</span><br><span class="line">            gcAndFinalize();</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; Disable tracing so that forked processes do not inherit stale tracing tags from</span><br><span class="line">            &#x2F;&#x2F; Zygote.</span><br><span class="line">            Trace.setTracingEnabled(false);</span><br><span class="line"></span><br><span class="line">            if (startSystemServer) &#123;</span><br><span class="line">                startSystemServer(abiList, socketName);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            Log.i(TAG, &quot;Accepting command socket connections&quot;);</span><br><span class="line">            runSelectLoop(abiList);</span><br><span class="line"></span><br><span class="line">            closeServerSocket();</span><br><span class="line">        &#125; catch (MethodAndArgsCaller caller) &#123;</span><br><span class="line">            caller.run();</span><br><span class="line">        &#125; catch (RuntimeException ex) &#123;</span><br><span class="line">            Log.e(TAG, &quot;Zygote died with exception&quot;, ex);</span><br><span class="line">            closeServerSocket();</span><br><span class="line">            throw ex;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>第一行主要是调用enableDdms()，设置DDMS可用，可以发现DDMS启动的时机还是比较早的，在整个Zygote进程刚刚开始要启动额时候就设置可用了。</p>
-</li>
-<li><p>下面的循环主要是解析main方法的参数获取是否需要启动SystemService进程，获取abi列表，获取scoket连接名称<br>（这里需要注意的是：android系统中进程之间通讯的方式是Binder，但是有一个例外是SystemService进程与Zygote进程之间是通过Socket的方式进行通讯的）</p>
-</li>
-<li><p>然后调用registerZygoteSocket（String socketName）为Zygote进程注册socket：</p>
-</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">private static void registerZygoteSocket(String socketName) &#123;</span><br><span class="line">        if (sServerSocket &#x3D;&#x3D; null) &#123;</span><br><span class="line">            int fileDesc;</span><br><span class="line">            final String fullSocketName &#x3D; ANDROID_SOCKET_PREFIX + socketName;</span><br><span class="line">            try &#123;</span><br><span class="line">                String env &#x3D; System.getenv(fullSocketName);</span><br><span class="line">                fileDesc &#x3D; Integer.parseInt(env);</span><br><span class="line">            &#125; catch (RuntimeException ex) &#123;</span><br><span class="line">                throw new RuntimeException(fullSocketName + &quot; unset or invalid&quot;, ex);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            try &#123;</span><br><span class="line">                FileDescriptor fd &#x3D; new FileDescriptor();</span><br><span class="line">                fd.setInt$(fileDesc);</span><br><span class="line">                sServerSocket &#x3D; new LocalServerSocket(fd);</span><br><span class="line">            &#125; catch (IOException ex) &#123;</span><br><span class="line">                throw new RuntimeException(</span><br><span class="line">                        &quot;Error binding to local socket &#39;&quot; + fileDesc + &quot;&#39;&quot;, ex);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>接着调用系统方法preLoad()</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">static void preload() &#123;</span><br><span class="line">        Log.d(TAG, &quot;begin preload&quot;);</span><br><span class="line">        preloadClasses();</span><br><span class="line">        preloadResources();</span><br><span class="line">        preloadOpenGL();</span><br><span class="line">        preloadSharedLibraries();</span><br><span class="line">        preloadTextResources();</span><br><span class="line">        &#x2F;&#x2F; Ask the WebViewFactory to do any initialization that must run in the zygote process,</span><br><span class="line">        &#x2F;&#x2F; for memory sharing purposes.</span><br><span class="line">        WebViewFactory.prepareWebViewInZygote();</span><br><span class="line">        Log.d(TAG, &quot;end preload&quot;);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p>这其中：<br>preloadClasses()用于初始化Zygote中需要的class类；<br>preloadResources()用于初始化系统资源；<br>preloadOpenGL()用于初始化OpenGL；<br>preloadSharedLibraries()用于初始化系统libraries；<br>preloadTextResources()用于初始化文字资源；<br>prepareWebViewInZygote()用于初始化webview;</p>
-<ul>
-<li>然后调用startSystemServer(abiList, socket);</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line">private static boolean startSystemServer(String abiList, String socketName)</span><br><span class="line">            throws MethodAndArgsCaller, RuntimeException &#123;</span><br><span class="line">        long capabilities &#x3D; posixCapabilitiesAsBits(</span><br><span class="line">            OsConstants.CAP_BLOCK_SUSPEND,</span><br><span class="line">            OsConstants.CAP_KILL,</span><br><span class="line">            OsConstants.CAP_NET_ADMIN,</span><br><span class="line">            OsConstants.CAP_NET_BIND_SERVICE,</span><br><span class="line">            OsConstants.CAP_NET_BROADCAST,</span><br><span class="line">            OsConstants.CAP_NET_RAW,</span><br><span class="line">            OsConstants.CAP_SYS_MODULE,</span><br><span class="line">            OsConstants.CAP_SYS_NICE,</span><br><span class="line">            OsConstants.CAP_SYS_RESOURCE,</span><br><span class="line">            OsConstants.CAP_SYS_TIME,</span><br><span class="line">            OsConstants.CAP_SYS_TTY_CONFIG</span><br><span class="line">        );</span><br><span class="line">        &#x2F;* Hardcoded command line to start the system server *&#x2F;</span><br><span class="line">        String args[] &#x3D; &#123;</span><br><span class="line">            &quot;--setuid&#x3D;1000&quot;,</span><br><span class="line">            &quot;--setgid&#x3D;1000&quot;,</span><br><span class="line">            &quot;--setgroups&#x3D;1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1018,1021,1032,3001,3002,3003,3006,3007&quot;,</span><br><span class="line">            &quot;--capabilities&#x3D;&quot; + capabilities + &quot;,&quot; + capabilities,</span><br><span class="line">            &quot;--nice-name&#x3D;system_server&quot;,</span><br><span class="line">            &quot;--runtime-args&quot;,</span><br><span class="line">            &quot;com.android.server.SystemServer&quot;,</span><br><span class="line">        &#125;;</span><br><span class="line">        ZygoteConnection.Arguments parsedArgs &#x3D; null;</span><br><span class="line"></span><br><span class="line">        int pid;</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            parsedArgs &#x3D; new ZygoteConnection.Arguments(args);</span><br><span class="line">            ZygoteConnection.applyDebuggerSystemProperty(parsedArgs);</span><br><span class="line">            ZygoteConnection.applyInvokeWithSystemProperty(parsedArgs);</span><br><span class="line"></span><br><span class="line">            &#x2F;* Request to fork the system server process *&#x2F;</span><br><span class="line">            pid &#x3D; Zygote.forkSystemServer(</span><br><span class="line">                    parsedArgs.uid, parsedArgs.gid,</span><br><span class="line">                    parsedArgs.gids,</span><br><span class="line">                    parsedArgs.debugFlags,</span><br><span class="line">                    null,</span><br><span class="line">                    parsedArgs.permittedCapabilities,</span><br><span class="line">                    parsedArgs.effectiveCapabilities);</span><br><span class="line">        &#125; catch (IllegalArgumentException ex) &#123;</span><br><span class="line">            throw new RuntimeException(ex);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        &#x2F;* For child process *&#x2F;</span><br><span class="line">        if (pid &#x3D;&#x3D; 0) &#123;</span><br><span class="line">            if (hasSecondZygote(abiList)) &#123;</span><br><span class="line">                waitForSecondaryZygote(socketName);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            handleSystemServerProcess(parsedArgs);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-<p>可以看到这段逻辑的执行逻辑就是通过Zygote fork出SystemServer进程。</p>
-<p>总结：<br>Zygote进程mian方法主要执行逻辑：</p>
-<ul>
-<li><p>初始化DDMS；</p>
-</li>
-<li><p>注册Zygote进程的socket通讯；</p>
-</li>
-<li><p>初始化Zygote中的各种类，资源文件，OpenGL，类库，Text资源等等；</p>
-</li>
-<li><p>初始化完成之后fork出SystemServer进程；</p>
-</li>
-<li><p>fork出SystemServer进程之后，关闭socket连接；</p>
-</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/30/7%20android%E4%B9%8BLruCache/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1182,6 +1075,83 @@
   
   
 
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/30/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-AtomicInteger/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/05/30/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-AtomicInteger/" class="post-title-link" itemprop="url">JDK 源码解析 -- AtomicInteger</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-30 00:06:27" itemprop="dateCreated datePublished" datetime="2020-05-30T00:06:27+08:00">2020-05-30</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>java.util.concurrent.atomic包里面的类主要是用于在高并发环境下的高效程序处理,来帮助我们简化同步处理。</p>
+<p>AtomicInteger是一个提供原子操作的Integer类，在Java语言中，++i和i++操作并不是线程安全的，在使用的时候，不可避免的会用到synchronized关键字。而AtomicInteger则通过一种线程安全的加减操作接口，使用AtomicInteger是非常的安全的.而且因为AtomicInteger由硬件提供原子操作指令实现的。在非激烈竞争的情况下，开销更小，速度更快。<br>使用实例:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">public class AtomicIntegerDemo &#123;</span><br><span class="line"></span><br><span class="line">    private static AtomicInteger atomicInteger &#x3D; new AtomicInteger(0);</span><br><span class="line">    </span><br><span class="line">    public static void main(String[] args) throws InterruptedException &#123;</span><br><span class="line">        CountDownLatch countDownLatch &#x3D; new CountDownLatch(100);</span><br><span class="line">        Thread[] threads &#x3D; new Thread[100];</span><br><span class="line">        for (int i &#x3D; 0; i &lt; threads.length; i++) &#123;</span><br><span class="line">            threads[i] &#x3D; new Thread(() -&gt; &#123;</span><br><span class="line">                atomicInteger.incrementAndGet();</span><br><span class="line">                countDownLatch.countDown();</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">        Arrays.stream(threads).forEach(t -&gt; &#123;</span><br><span class="line">            t.start();</span><br><span class="line">        &#125;);</span><br><span class="line">        countDownLatch.await();</span><br><span class="line">        System.out.println(atomicInteger.get() + &quot;&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先，让我们来看看AtomicInteger的源代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 继承了 Number， 这主要是提供方法将数值转化为 byte, double, long等基本数据类型。</span><br><span class="line">public class AtomicInteger extends Number implements java.io.Serializable  &#123;</span><br><span class="line">    private static final long serialVersionUID &#x3D; 6214790243416807050L;</span><br><span class="line">    &#x2F;&#x2F; setup to use Unsafe.compareAndSwapInt for updates</span><br><span class="line">    private static final Unsafe unsafe &#x3D; Unsafe.getUnsafe();</span><br><span class="line">    private static final long valueOffset;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 静态代码块, 用于获取value的内存地址</span><br><span class="line">    static &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            &#x2F;&#x2F; Unsafe 的 objectFieldOffset 方法可以获取成员属性在内存中的地址相对于对象内存地址的偏移量</span><br><span class="line">            valueOffset &#x3D; unsafe.objectFieldOffset</span><br><span class="line">                (AtomicInteger.class.getDeclaredField(&quot;value&quot;));</span><br><span class="line">        &#125; catch (Exception ex) &#123; throw new Error(ex); &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; volatile 关键字修饰， 使 value 变量的改变具有可见性， </span><br><span class="line">    &#x2F;&#x2F; 底层实现是内存栅栏，保证每次取到的是最新值。</span><br><span class="line">    private volatile int value;</span><br><span class="line"></span><br><span class="line">    public final int get() &#123;</span><br><span class="line">        return value;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public final int getAndDecrement() &#123;  </span><br><span class="line">        &#x2F;&#x2F; 可以看到 for 是一个死循环， 是采用忙等（也叫自旋）的方式</span><br><span class="line">        &#x2F;&#x2F; 不断地尝试（乐观锁）－1 操作， 直到成功才退出。 </span><br><span class="line">        for (;;) &#123;  </span><br><span class="line">            int current &#x3D; get();  </span><br><span class="line">            int next &#x3D; current - 1;  </span><br><span class="line">            if (compareAndSet(current, next))  </span><br><span class="line">                return current;  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 利用 JNI 调用底层其他语言实现的方法， </span><br><span class="line">    &#x2F;&#x2F; 利用操作系统提供的 CAS（只要当前值和原来不一致就重新取值直到成功） 来保证原子性。</span><br><span class="line">    public final boolean compareAndSet(int expect, int update) &#123;  </span><br><span class="line">        return unsafe.compareAndSwapInt(this, valueOffset, expect, update);  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这里有必要提一下CAS的操作：CAS 操作包含三个操作数 —— 内存位置（V）、预期原值（A）和新值(B)。 如果内存位置的值与预期原值相匹配，那么处理器会自动将该位置值更新为新值 。否则，处理器不做任何操作。</p>
+<h6 id="CAS-的缺点"><a href="#CAS-的缺点" class="headerlink" title="CAS 的缺点"></a>CAS 的缺点</h6><ul>
+<li>ABA问题。因为 CAS 需要在操作值的时候检查下值有没有发生变化，如果没有发生变化则更新，但是如果一个值原来是A，变成了B，又变成了A，那么使用CAS进行检查时会发现它的值没有发生变化，但是实际上却变化了。ABA问题的解决思路就是使用版本号。在变量前面追加上版本号，每次变量更新的时候把版本号加一，那么A－B－A 就会变成1A-2B－3A。</li>
+<li>循环时间长开销大。自旋 CAS 如果长时间不成功，会给 CPU 带来非常大的执行开销。如果JVM能支持处理器提供的 pause 指令那么效率会有一定的提升，pause 指令有两个作用，第一它可以延迟流水线执行指令（de-pipeline）,使 CPU 不会消耗过多的执行资源，延迟的时间取决于具体实现的版本，在一些处理器上延迟时间是零。第二它可以避免在退出循环的时候因内存顺序冲突（memory order violation：内存顺序冲突一般是由伪/假共享引起，假共享是指多个 CPU 同时修改同一个缓存行的不同部分而引起其中一个CPU的操作无效，当出现这个内存顺序冲突时，CPU必须清空流水线）而引起 CPU 流水线被清空（CPU pipeline flush），从而提高 CPU 的执行效率。</li>
+<li>只能保证一个共享变量的原子操作。当对一个共享变量执行操作时，我们可以使用循环CAS的方式来保证原子操作，但是对多个共享变量操作时，循环CAS就无法保证操作的原子性，这个时候就可以用锁，或者有一个取巧的办法，就是把多个共享变量合并成一个共享变量来操作。比如有两个共享变量i＝2,j=a，合并一下ij=2a，然后用CAS来操作ij。从Java1.5开始JDK提供了AtomicReference类来保证引用对象之间的原子性，你可以把多个变量放在一个对象里来进行CAS操作。</li>
+</ul>
+<h5 id="解决ABA问题"><a href="#解决ABA问题" class="headerlink" title="解决ABA问题"></a>解决ABA问题</h5><blockquote>
+<p>AtomicStampedReference/AtomicMarkableReference都会用版本戳version来对记录或对象标记，避免并发操作带来的问题</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">final int stamp &#x3D; 1; &#x2F;&#x2F; 定义时间戳</span><br><span class="line">private static User userA &#x3D; new User(&quot;张三&quot;, 18);</span><br><span class="line">private static User userB &#x3D; new User(&quot;李四&quot;, 24);</span><br><span class="line">&#x2F;&#x2F; 初始化，userA与stamp组装为一个pair,封装进AtomicStampedReference&lt;T&gt;</span><br><span class="line">private static AtomicStampedReference&lt;User&gt; atomicStampedReference &#x3D; new AtomicStampedReference&lt;&gt;(userA, 0);</span><br><span class="line">&#x2F;&#x2F; 将UserB替换UserA，并且时间戳自增</span><br><span class="line">atomicStampedReference.compareAndSet(userA, userB, atomicStampedReference.getStamp(), atomicStampedReference.getStamp() + 1);</span><br></pre></td></tr></table></figure>
+
+<p>下面简单分析一下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">public class AtomicStampedReference&lt;V&gt; &#123;</span><br><span class="line">    private static class Pair&lt;T&gt; &#123;</span><br><span class="line">        &#x2F;&#x2F; 引用对象</span><br><span class="line">        final T reference;</span><br><span class="line">        &#x2F;&#x2F; 时间戳</span><br><span class="line">        final int stamp;</span><br><span class="line"></span><br><span class="line">        private Pair(T var1, int var2) &#123;</span><br><span class="line">            this.reference &#x3D; var1;</span><br><span class="line">            this.stamp &#x3D; var2;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        static &lt;T&gt; AtomicStampedReference.Pair&lt;T&gt; of(T var0, int var1) &#123;</span><br><span class="line">            return new AtomicStampedReference.Pair(var0, var1);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 内部定义pair</span><br><span class="line">    private volatile AtomicStampedReference.Pair&lt;V&gt; pair;</span><br><span class="line">    private static final Unsafe UNSAFE &#x3D; Unsafe.getUnsafe();</span><br><span class="line">    private static final long pairOffset;</span><br><span class="line">    &#x2F;&#x2F; 初始化pair对象的内存地址相对偏移量</span><br><span class="line">    static &#123;</span><br><span class="line">        pairOffset &#x3D; objectFieldOffset(UNSAFE, &quot;pair&quot;, AtomicStampedReference.class);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 将var1、var2构建成Pair</span><br><span class="line">    public AtomicStampedReference(V var1, int var2) &#123;</span><br><span class="line">        this.pair &#x3D; AtomicStampedReference.Pair.of(var1, var2);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public boolean compareAndSet(V var1, V var2, int var3, int var4) &#123;</span><br><span class="line">        AtomicStampedReference.Pair var5 &#x3D; this.pair;</span><br><span class="line">        return var1 &#x3D;&#x3D; var5.reference &amp;&amp; var3 &#x3D;&#x3D; var5.stamp &amp;&amp; (var2 &#x3D;&#x3D; var5.reference &amp;&amp; var4 &#x3D;&#x3D; var5.stamp || this.casPair(var5, AtomicStampedReference.Pair.of(var2, var4)));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>参考博客<br><a href="https://blog.csdn.net/qq_35357656/article/details/78657373" target="_blank" rel="noopener">1. CAS操作</a><br><a href="https://blog.csdn.net/ls5718/article/details/52563959" target="_blank" rel="noopener">2. Java中CAS详解</a><br><a href="https://zhuanlan.zhihu.com/p/37302263" target="_blank" rel="noopener">3. AtomicInteger 源码解析</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
 
   
   <nav class="pagination">
@@ -1251,7 +1221,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">93</span>
+          <span class="site-state-item-count">92</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

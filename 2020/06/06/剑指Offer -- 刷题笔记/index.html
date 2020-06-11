@@ -28,7 +28,7 @@
 <meta property="og:description" content="1. 二维数组中的查找 在一个二维数组中（每个一维数组的长度相同），每一行都按照从左到右递增的顺序排序，每一列都按照从上到下递增的顺序排序。请完成一个函数，输入这样的一个二维数组和一个整数，判断数组中是否含有该整数。 思路： 首先获取二维数组的行数以及列数, 从第一行的最后一列开始比较，如果array[i][j] &gt; target, 那就在数组的前面一列里面寻找，否则在下面一行寻找。 123">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-06-06T09:05:08.662Z">
-<meta property="article:modified_time" content="2020-06-07T05:53:38.287Z">
+<meta property="article:modified_time" content="2020-06-08T12:12:44.646Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="算法">
 <meta name="twitter:card" content="summary">
@@ -276,8 +276,13 @@
 <p>操作给定的二叉树，将其变换为源二叉树的镜像。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 递归</span><br><span class="line">public void Mirror(TreeNode root) &#123;</span><br><span class="line">    if (root &#x3D;&#x3D; null) return;</span><br><span class="line">    TreeNode temp &#x3D; root.right;</span><br><span class="line">    root.right &#x3D; root.left;</span><br><span class="line">    root.left &#x3D; temp;</span><br><span class="line">    Mirror(root.left);</span><br><span class="line">    Mirror(root.right);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 非递归</span><br><span class="line">public void Mirror(TreeNode root) &#123;</span><br><span class="line">    if(root &#x3D;&#x3D; null) return;</span><br><span class="line">    Queue&lt;TreeNode&gt; nodes &#x3D; new LinkedList&lt;&gt;();</span><br><span class="line">    TreeNode curr, temp;</span><br><span class="line">    nodes.offer(root);</span><br><span class="line">    while (!nodes.isEmpty()) &#123;</span><br><span class="line">        int len &#x3D; nodes.size();</span><br><span class="line">        for (int i &#x3D; 0; i &lt; len; i++)&#123;</span><br><span class="line">            curr &#x3D; nodes.poll();</span><br><span class="line">            temp &#x3D; curr.left;</span><br><span class="line">            curr.left &#x3D; curr.right;</span><br><span class="line">            curr.right &#x3D; temp;</span><br><span class="line">            if (curr.left !&#x3D; null) nodes.offer(curr.left);</span><br><span class="line">            if (curr.right !&#x3D; null) nodes.offer(curr.right);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>*<em>18. *</em></p>
+<p><strong>18. 从上往下打印二叉树</strong></p>
+<p>从上往下打印出二叉树的每个节点，同层节点从左至右打印。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 从上往下打印二叉树 (二叉树层次遍历 + 队列)</span><br><span class="line">public ArrayList&lt;Integer&gt; PrintFromTopToBottom(TreeNode root) &#123;</span><br><span class="line">    ArrayList&lt;Integer&gt; arrayList &#x3D; new ArrayList&lt;&gt;();</span><br><span class="line">    if (root &#x3D;&#x3D; null) return arrayList;</span><br><span class="line">    ArrayList&lt;TreeNode&gt; temp &#x3D; new ArrayList&lt;&gt;();</span><br><span class="line">    temp.add(root);</span><br><span class="line">    while (!temp.isEmpty()) &#123;</span><br><span class="line">        TreeNode node &#x3D; temp.remove(0);</span><br><span class="line">        if (node.left !&#x3D; null) &#123;</span><br><span class="line">            temp.add(node.left);</span><br><span class="line">        &#125;</span><br><span class="line">        if (node.right !&#x3D; null) &#123;</span><br><span class="line">            temp.add(node.right);</span><br><span class="line">        &#125;</span><br><span class="line">        arrayList.add(node.val);</span><br><span class="line">    &#125;</span><br><span class="line">    return arrayList;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
+<p><strong>19. 二叉树中和为某一值的路径</strong></p>
+<p>输入一颗二叉树的根节点和一个整数，打印出二叉树中结点值的和为输入整数的所有路径。路径定义为从树的根结点开始往下一直到叶结点所经过的结点形成一条路径。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
     </div>
 
     
@@ -373,7 +378,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">93</span>
+          <span class="site-state-item-count">92</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
