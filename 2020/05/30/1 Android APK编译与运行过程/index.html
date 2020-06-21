@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="一、APK构建过程我们可以根据Google官方提供的流程图来具体了解构建的过程：   下面是具体描述： 1.AAPT(Android Asset Packaging Tool)工具会打包应用中的资源文件，如AndroidManifest.xml、layout布局中的xml等，并将xml文件编译为二进制形式，当然assets文件夹中的文件不会被编译，图片及raw文件夹中的资源也会保持原来的形态，需要">
+<meta property="og:type" content="article">
+<meta property="og:title" content="1 Android APK编译与运行过程">
+<meta property="og:url" content="http://yoursite.com/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="一、APK构建过程我们可以根据Google官方提供的流程图来具体了解构建的过程：   下面是具体描述： 1.AAPT(Android Asset Packaging Tool)工具会打包应用中的资源文件，如AndroidManifest.xml、layout布局中的xml等，并将xml文件编译为二进制形式，当然assets文件夹中的文件不会被编译，图片及raw文件夹中的资源也会保持原来的形态，需要">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/81fedf6fb4d9134c741caaeec8db757a.png">
+<meta property="og:image" content="http://yoursite.com/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/5713484-5fd820650bb9317b.png">
+<meta property="article:published_time" content="2020-05-29T16:29:03.975Z">
+<meta property="article:modified_time" content="2020-06-21T07:37:29.771Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android系统层">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/81fedf6fb4d9134c741caaeec8db757a.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>1 Android APK编译与运行过程 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          1 Android APK编译与运行过程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-30 00:29:03" itemprop="dateCreated datePublished" datetime="2020-05-30T00:29:03+08:00">2020-05-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/" itemprop="url" rel="index"><span itemprop="name">源码</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/APK%E6%9E%84%E5%BB%BA/" itemprop="url" rel="index"><span itemprop="name">APK构建</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="一、APK构建过程"><a href="#一、APK构建过程" class="headerlink" title="一、APK构建过程"></a>一、APK构建过程</h4><p>我们可以根据Google官方提供的流程图来具体了解构建的过程：</p>
+<img src="/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/81fedf6fb4d9134c741caaeec8db757a.png" class="" title="[Android APK构建]">
+
+<p>下面是具体描述：</p>
+<p>1.<strong>AAPT(Android Asset Packaging Tool)</strong>工具会打包应用中的资源文件，如AndroidManifest.xml、layout布局中的xml等，并将xml文件编译为二进制形式，当然assets文件夹中的文件不会被编译，图片及raw文件夹中的资源也会保持原来的形态，需要注意的是raw文件夹中的资源也会生成资源id。AAPT编译完成之后会生成R.java文件。</p>
+<p>2.<strong>AIDL工具</strong>会将所有的aidl接口转化为java接口。</p>
+<p>3.所有的java代码，包括R.java与aidl文件都会被<strong>Java编译器</strong>编译成.class文件。</p>
+<p>4.<strong>Dex工具</strong>会将上述产生的.class文件及第三库及其他.class文件编译成.dex文件（dex文件是Dalvik虚拟机可以执行的格式），dex文件最终会被打包进APK文件。</p>
+<p>5.<strong>ApkBuilder工具</strong>会将编译过的资源及未编译过的资源（如图片等）以及.dex文件打包成APK文件。</p>
+<p>6.生成APK文件后，需要对其签名才可安装到设备，平时测试时会使用debug <strong>keystore</strong>，当正式发布应用时必须使用release版的keystore对应用进行签名。</p>
+<p>7.如果对APK正式签名，还需要使用<strong>zipalign工具</strong>对APK进行对齐操作，它的主要工作是将apk包进行对齐处理，使apk包中的所有资源文件距离文件起始偏移为4字节整数倍，这样通过内存映射访问apk文件时速度会更快。</p>
+<p>下面一张图是一个多模块APK编译过程：</p>
+<img src="/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/5713484-5fd820650bb9317b.png" class="" title="[Android APK完整构建]">
+
+<h4 id="二、混淆过程"><a href="#二、混淆过程" class="headerlink" title="二、混淆过程"></a>二、混淆过程</h4><p>ProGuard是一个混淆代码的开源项目，它的主要作用是混淆代码，主要有4个功能：</p>
+<ul>
+<li>压缩(Shrink)：检测并移除代码中无用的类、字段、方法和特性(Attribute)</li>
+<li>优化(Optimize)：字节码进行优化，移除无用的指令。</li>
+<li>混淆(Obfuscate)：使用a、b、c、d这样简短而无意义的名称，对垒、字段和方法进行重命名。</li>
+<li>预检测(Preveirfy)：在Java平台对处理后的代码进行预检测，确保加载class文件是可执行的。</li>
+</ul>
+<p>ProGuard的基本命令：</p>
+<ul>
+<li>keep：保留类和类中的成员，防止他们被混淆</li>
+<li>keepnames：保留类和类中的成员防止被混淆，但成员如果没有被引用将被删除</li>
+<li>dontwarn：忽视警告</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">-keep public class * extends android.app.Activity</span><br><span class="line"># 枚举类不能被混淆</span><br><span class="line">-keepclassmembers enum * &#123;</span><br><span class="line">    public static **[] values();</span><br><span class="line">    public static ** valueOf(java.lang.String);</span><br><span class="line">&#125;</span><br><span class="line"># 保留Parcelable序列化的类不能被混淆</span><br><span class="line">-keep class * implements android.os.Parcelable&#123;</span><br><span class="line">    public static final android.os.Parcelable$Creator *;</span><br><span class="line">&#125;</span><br><span class="line"># 保留Serializable 序列化的类不被混淆</span><br><span class="line">-keepclassmembers class * implements java.io.Serializable &#123;</span><br><span class="line">   static final long serialVersionUID;</span><br><span class="line">   private static final java.io.ObjectStreamField[] serialPersistentFields;</span><br><span class="line">   !static !transient &lt;fields&gt;;</span><br><span class="line">   private void writeObject(java.io.ObjectOutputStream);</span><br><span class="line">   private void readObject(java.io.ObjectInputStream);</span><br><span class="line">   java.lang.Object writeReplace();</span><br><span class="line">   java.lang.Object readResolve();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"># 对R文件下的所有类及其方法，都不能被混淆</span><br><span class="line">-keepclassmembers class **.R$* &#123;</span><br><span class="line">    *；</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="三、APK签名"><a href="#三、APK签名" class="headerlink" title="三、APK签名"></a>三、APK签名</h4><p>Android提供了两种对Apk的签名方式，一种是基于JAR的签名方式，另一种是基于Apk的签名方式，它们的主要区别在于使用的签名文件不一样：jarsigner使用keystore文件进行签名；apksigner除了支持使用keystore文件进行签名外，还支持直接指定pem证书文件和私钥进行签名。</p>
+<p>更具体的可以参考以下文章：<br><a href="https://www.jianshu.com/p/682bb351099f" target="_blank" rel="noopener">1. Apk签名机制之——JAR签名机制详解</a><br><a href="https://www.jianshu.com/p/308515c94dc6" target="_blank" rel="noopener">2. Apk签名机制之——V2签名机制详解</a></p>
+<h4 id="四、-dex-vdex-odex-art区别"><a href="#四、-dex-vdex-odex-art区别" class="headerlink" title="四、 dex vdex odex art区别"></a>四、 dex vdex odex art区别</h4><p><strong>odex</strong></p>
+<p>在Android N 之前,Dalvik虚拟机执行程序dex文件前,系统会对dex文件做优化,生成可执行文件odex，保存到data/dalvik-cache目录，最后把apk文件中的dex文件删除。这样做可以加快软件的启动速度，预先提取，减少对RAM的占用。没有odex的话，系统要从apk包中提取dex再运行。</p>
+<p>在AndroidO之后，odex是从<strong>vdex</strong>这个文件中提取了部分模块生成的一个新的<strong>可执行二进制码</strong>文件 ，odex从vdex中提取后，vdex的大小就减少了。</p>
+<ul>
+<li>第一次开机就会生成在/system/app/<packagename>/oat/ 下</li>
+<li>在系统运行过程中，虚拟机将其 从 “/system/app” 下 copy 到 “/data/davilk-cache/” 下</li>
+<li>odex + vdex = apk 的全部源码 （vdex 并不是独立于odex 的文件 odex + vdex 才代表一个apk ）</li>
+</ul>
+<blockquote>
+<p>Odex的优点</p>
+<ol>
+<li>刷完机首次进入系统的时间会缩短一些，文件的运行速度也有所提升。</li>
+<li>APK文件不能单独安装，并且如果反编译APK文件，一般也只能得到资源文件。可以说是起到一定的保护作用，避免被肆意修改和使用。这样做可以使其厂商保证一定的反盗版，因为没有没有dex文件的apk是无法正常安装的。</li>
+<li>会增加一些可安装应用的空间，虽然不是很多。</li>
+</ol>
+<p>Odex的缺点<br>1.不方便修改ROM以及文件本身。<br>2.增加ROM包的体积，虽然不是很多。<br>3.当升级某个被Odex的应用后，这个应用可能会出现故障，最常见的就是FC。<br>从其它ROM中提取的Odex程序，不能直接用于当前的手机系统，也就是说，机型、手机版本要一一对应。症状为替换后，无法显示应用。</p>
+</blockquote>
+<p><strong>vdex</strong></p>
+<p>android O新增的格式包,dex代码直接转化的可执行二进制码文件</p>
+<blockquote>
+<ol>
+<li>第一次开机就会生成在/system/app/<packagename>/oat/下；</li>
+<li>在系统运行过程中，虚拟机将其 从 “/system/app” 下 copy 到 “/data/davilk-cache/” 下</li>
+</ol>
+</blockquote>
+<p><strong>art</strong></p>
+<p>odex进行优化生成的可执行二进制码文件，主要是apk<strong>启动的常用函数相关地址的记录</strong>，方便寻址相关； 通常会在data/dalvik-cache/保存常用的jar包的相关地址记录。</p>
+<ul>
+<li>1.第一次开机不会生成在/system/app/<packagename>/oat/ 下，以后也不会；</li>
+<li>2.odex 文件在运行时，虚拟机会计算函数调用频率，进行函数地址的修改；</li>
+<li>3.最后在/data/davilk-cache/ 由虚拟机生成；</li>
+<li>4.生成art 文件后，/system/app 下的odex 和 vdex 会无效，即使你删除，apk也会正常运行</li>
+<li>5.push 一个新的apk file 覆盖之前/system/app 下apk file ，会触发PKMS 扫描时下发force_dex flag ，强行生成新的vdex 文件 ，覆盖之前的vdex 文件，由于某种机制，这个新vdex 文件会copy到/data/dalvik-cache/下，于是art 文件也变化了。</li>
+</ul>
+<p><strong>oat</strong><br>ART虚拟机使用的是oat文件，oat文件是一种Android私有ELF文件格式，它不仅包含有从DEX文件翻译而来的本地机器指令，还包含有原来的DEX文件内容。APK在安装的过程中，会通过dex2oat工具生成一个OAT文件。对于apk来说，oat文件实际上就是对odex文件的包装，即oat=odex，而对于一些framework中的一些jar包，会生成相应的oat尾缀的文件，如system@<a href="mailto:framework@boot-telephony-common.oat">framework@boot-telephony-common.oat</a>。</p>
+<h4 id="五、-JVM、Dalvik、ART区别"><a href="#五、-JVM、Dalvik、ART区别" class="headerlink" title="五、 JVM、Dalvik、ART区别"></a>五、 JVM、Dalvik、ART区别</h4><p><strong>Dalvik</strong><br>Google公司自己设计<strong>基于寄存器架构</strong>用于Android平台的Java虚拟机,支持.dex文件，具有：可执行文件体积小(AndroidSDK中有一个叫dx的工具负责将Java字节码转换为Dalvik字节码。dx工具对Java类文件重新排列消除其中的冗余信息，重新组合形成一个常量池，所有的类文件共享同一个常量池。由于dx工具对常量池的压缩，使得相同的字符串，常量在DEX文件中只出现一次，从而减小了文件的体积)、执行速度更快、所有的Android程序都运行在Android系统进程里，每个进程对应着一个Dalvik虚拟机实例</p>
+<p><strong>JVM</strong><br>Java虚拟机运行的是Java字节码,是基于虚拟机栈</p>
+<blockquote>
+<p>Java虚拟机基于栈架构，程序在运行时虚拟机需要频繁的从栈上读取或写入数据，这个过程需要更多的指令分派与内存访问次数，会耗费不少CPU时间，对于像手机设备资源有限的设备来说，这是相当大的一笔开销。Dalvik虚拟机基于寄存器架构。数据的访问通过寄存器间直接传递，这样的访问方式比基于栈方式要快很多。</p>
+</blockquote>
+<p><strong>ART</strong><br>在Android 5.0 (Lolipop)正式替代Dalvik VM。<br>它的主要特点是有事先编译（Ahead-of-Time compilation，简称AOT编译）功能，可以在安装APK或者动态加载DEX文件时将其中的Java方法编译为本地代码，运行程序的时候不需要再做JIT编译。</p>
+<p><strong>JIT</strong><br>JIT在Android2.2到Android4.4版本（7.0版本也有），JIT的目的是为了提高Android的运行效率。当App运行时，每当遇到一个新类，JIT编译器就会对这个类进行即时编译，经过编译后的代码，会被优化成相当精简的原生型指令码（即native code），这样在下次执行到相同逻辑的时候，速度就会更快。</p>
+<blockquote>
+<p>JIT缺陷 1. 每次启动应用都需要重新编译（没有缓存） 2. 运行时比较耗电，耗电量大</p>
+</blockquote>
+<p><strong>AOT</strong><br>AOT(Ahead Of Time)是指从字面来看是说提前编译。AOT是静态编译,应用在安装的时候会启动dex2oat过程把 dex预编译成ELF文件，每次运行程序的时候不用重新编译。 ART对GC过程的也进行了改进。</p>
+<blockquote>
+<p>AOT的缺陷<br>1.应用安装和系统升级之后的应用优化比较耗时（重新编译，把程序代码转换成机器语言）<br>2.优化后的文件会占用额外的存储空间（缓存转换结果）</p>
+</blockquote>
+<p><strong>JIT和AOT共存</strong></p>
+<p>Android 7.0上，JIT 编译器被再次使用，采用AOT/JIT 混合编译的策略，特点</p>
+<blockquote>
+<ol>
+<li>应用在安装的时候dex不会再被编译</li>
+<li>App运行时,dex文件先通过解析器被直接执行，热点函数会被识别并被JIT编译后存储在 jit code cache 中并生成profile文件以记录热点函数的信息。</li>
+<li>手机进入IDLE（空闲）或者Charging（充电）状态的时候，系统会扫描App目录下的profile文件并执行AOT过程进行编译。</li>
+</ol>
+</blockquote>
+<h5 id="参考更多"><a href="#参考更多" class="headerlink" title="参考更多"></a>参考更多</h5><p><a href="https://www.cnblogs.com/ldq2016/p/10308559.html" target="_blank" rel="noopener">1. Android应用程序（APK）的编译打包过程</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E7%B3%BB%E7%BB%9F%E5%B1%82/" rel="tag"># Android系统层</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/30/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-HashMap%E3%80%81ConcurrentHashMap/" rel="prev" title="JDK 源码解析 -- HashMap、ConcurrentHashMap">
+      <i class="fa fa-chevron-left"></i> JDK 源码解析 -- HashMap、ConcurrentHashMap
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/30/2%20android%E5%BC%82%E6%AD%A5%E6%B6%88%E6%81%AF%E6%9C%BA%E5%88%B6/" rel="next" title="2 android异步消息机制">
+      2 android异步消息机制 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、APK构建过程"><span class="nav-number">1.</span> <span class="nav-text">一、APK构建过程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、混淆过程"><span class="nav-number">2.</span> <span class="nav-text">二、混淆过程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#三、APK签名"><span class="nav-number">3.</span> <span class="nav-text">三、APK签名</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#四、-dex-vdex-odex-art区别"><span class="nav-number">4.</span> <span class="nav-text">四、 dex vdex odex art区别</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#五、-JVM、Dalvik、ART区别"><span class="nav-number">5.</span> <span class="nav-text">五、 JVM、Dalvik、ART区别</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#参考更多"><span class="nav-number">5.1.</span> <span class="nav-text">参考更多</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
