@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="0 前言在很多情况下，访问一个程序变量（对象实例字段，类静态字段和数组元素）可能会使用不同的顺序执行，而不是程序语义所指定的顺序执行。具体几种情况，如下： 编译器 能够自由的以优化的名义去改变指令顺序；在特定的环境下，处理器 可能会次序颠倒的执行指令；数据可能在 寄存器、处理器缓冲区和主内存 中以不同的次序移动，而不是按照程序指定的顺序；例如，如果一个线程写入值到字段 a，然后写入值到字段 b，而">
+  <meta name="description" content="0 前言在很多情况下，访问一个程序变量（对象实例字段，类静态字段和数组元素）可能会使用不同的顺序执行，而不是程序语义所指定的顺序执行。具体几种情况，如下：">
 <meta property="og:type" content="article">
 <meta property="og:title" content="啃碎并发（11）：内存模型之重排序">
 <meta property="og:url" content="http://yoursite.com/2020/06/03/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8811%EF%BC%89%EF%BC%9A%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E4%B9%8B%E9%87%8D%E6%8E%92%E5%BA%8F/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="0 前言在很多情况下，访问一个程序变量（对象实例字段，类静态字段和数组元素）可能会使用不同的顺序执行，而不是程序语义所指定的顺序执行。具体几种情况，如下： 编译器 能够自由的以优化的名义去改变指令顺序；在特定的环境下，处理器 可能会次序颠倒的执行指令；数据可能在 寄存器、处理器缓冲区和主内存 中以不同的次序移动，而不是按照程序指定的顺序；例如，如果一个线程写入值到字段 a，然后写入值到字段 b，而">
+<meta property="og:description" content="0 前言在很多情况下，访问一个程序变量（对象实例字段，类静态字段和数组元素）可能会使用不同的顺序执行，而不是程序语义所指定的顺序执行。具体几种情况，如下：">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-06-03T01:05:20.419Z">
-<meta property="article:modified_time" content="2020-06-21T07:18:46.236Z">
+<meta property="article:modified_time" content="2020-06-21T08:55:29.472Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="JAVA并发">
 <meta name="twitter:card" content="summary">
@@ -217,6 +217,8 @@
 
       
         <p>0 前言<br>在很多情况下，访问一个程序变量（对象实例字段，类静态字段和数组元素）可能会使用不同的顺序执行，而不是程序语义所指定的顺序执行。具体几种情况，如下：</p>
+<a id="more"></a>
+
 <p>编译器 能够自由的以优化的名义去改变指令顺序；<br>在特定的环境下，处理器 可能会次序颠倒的执行指令；<br>数据可能在 寄存器、处理器缓冲区和主内存 中以不同的次序移动，而不是按照程序指定的顺序；<br>例如，如果一个线程写入值到字段 a，然后写入值到字段 b，而且 b 的值不依赖于 a 的值，那么，处理器就能够自由的调整它们的执行顺序，而且缓冲区能够在 a 之前刷新 b 的值到主内存。有许多潜在的重排序的来源，例如编译器，JIT以及缓冲区。</p>
 <p>所以，从Java源码变成可以被机器（或虚拟机）识别执行的程序，至少要经过编译期和运行期。在这两个期间，重排序分为两类：编译器重排序、处理器重排序（乱序执行），分别对应编译时和运行时环境。由于重排序的存在，指令实际的执行顺序，并不是源码中看到的顺序。</p>
 <p>1 编译器重排序<br>编译器在不改变单线程程序语义的前提下，可以重新安排语句的执行顺序，在不改变程序语义的前提下，尽可能减少寄存器的读取、存储次数，充分复用寄存器的存储值。</p>
@@ -348,20 +350,20 @@ public void read() {
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">10</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -388,7 +390,7 @@ public void read() {
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

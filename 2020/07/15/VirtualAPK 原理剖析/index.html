@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="VirtualAPK 原理剖析一、概述VirtualAPK 那么其中的难点很明显是对四大组件支持，因为大家都清楚，四大组件都是需要在AndroidManifest中注册的，而插件apk中的组件是不可能预先知晓名字，提前注册中宿主apk中的，所以现在基本都采用一些hack方案类解决，VirtualAPK大体方案如下：  Activity：在宿主apk中提前占几个坑，然后通过“欺上瞒下”（这个词好像是">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VirtualAPK 原理剖析">
+<meta property="og:url" content="http://yoursite.com/2020/07/15/VirtualAPK%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="VirtualAPK 原理剖析一、概述VirtualAPK 那么其中的难点很明显是对四大组件支持，因为大家都清楚，四大组件都是需要在AndroidManifest中注册的，而插件apk中的组件是不可能预先知晓名字，提前注册中宿主apk中的，所以现在基本都采用一些hack方案类解决，VirtualAPK大体方案如下：  Activity：在宿主apk中提前占几个坑，然后通过“欺上瞒下”（这个词好像是">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-07-15T12:19:06.116Z">
+<meta property="article:modified_time" content="2020-07-17T05:28:37.073Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android系统层">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/07/15/VirtualAPK%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>VirtualAPK 原理剖析 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/15/VirtualAPK%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          VirtualAPK 原理剖析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-15 20:19:06" itemprop="dateCreated datePublished" datetime="2020-07-15T20:19:06+08:00">2020-07-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/" itemprop="url" rel="index"><span itemprop="name">源码</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/VirtualAPK/" itemprop="url" rel="index"><span itemprop="name">VirtualAPK</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="VirtualAPK-原理剖析"><a href="#VirtualAPK-原理剖析" class="headerlink" title="VirtualAPK 原理剖析"></a>VirtualAPK 原理剖析</h4><h4 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h4><p><a href="https://github.com/didi/VirtualAPK" target="_blank" rel="noopener">VirtualAPK</a></p>
+<p>那么其中的难点很明显是对四大组件支持，因为大家都清楚，四大组件都是需要在AndroidManifest中注册的，而插件apk中的组件是不可能预先知晓名字，提前注册中宿主apk中的，所以现在基本都采用一些hack方案类解决，VirtualAPK大体方案如下：</p>
+<ul>
+<li>Activity：在宿主apk中提前占几个坑，然后通过“欺上瞒下”（这个词好像是360之前的ppt中提到）的方式，启动插件apk的Activity；因为要支持不同的launchMode以及一些特殊的属性，需要占多个坑。</li>
+<li>Service：通过代理Service的方式去分发；主进程和其他进程，VirtualAPK使用了两个代理Service。</li>
+<li>BroadcastReceiver：静态转动态</li>
+<li>ContentProvider：通过一个代理Provider进行分发。<br>这些占坑的数量并不是固定的，比如Activity想支持某个属性，该属性不能动态设置，只能在Manifest中设置，那就需要去占坑支持。所以占坑数量这些，可以根据自己的需求进行调整</li>
+</ul>
+<h4 id="二、Activity的支持"><a href="#二、Activity的支持" class="headerlink" title="二、Activity的支持"></a>二、Activity的支持</h4><p>这里就不按照某个流程一行行代码往下读了，针对性的讲一些关键流程，可能更好阅读一些。</p>
+<p>首先看一段启动插件Activity的代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">final String pkg &#x3D; &quot;com.didi.virtualapk.demo&quot;;</span><br><span class="line">if (PluginManager.getInstance(this).getLoadedPlugin(pkg) &#x3D;&#x3D; null) &#123;</span><br><span class="line">    Toast.makeText(this, &quot;plugin [com.didi.virtualapk.demo] not loaded&quot;, Toast.LENGTH_SHORT).show();</span><br><span class="line">    return;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; test Activity and Service</span><br><span class="line">Intent intent &#x3D; new Intent();</span><br><span class="line">intent.setClassName(pkg, &quot;com.didi.virtualapk.demo.aidl.BookManagerActivity&quot;);</span><br><span class="line">startActivity(intent);</span><br></pre></td></tr></table></figure>
+<p>可以看到优先根据包名判断该插件是否已经加载，所以在插件使用前其实还需要调用</p>
+<p>pluginManager.loadPlugin(apk);<br>1<br>加载插件。</p>
+<p>这里就不赘述源码了，大致为调用PackageParser.parsePackage解析apk，获得该apk对应的PackageInfo，资源相关（AssetManager，Resources），DexClassLoader（加载类），四大组件相关集合（mActivityInfos，mServiceInfos，mReceiverInfos，mProviderInfos），针对Plugin的PluginContext等一堆信息，封装为LoadedPlugin对象。</p>
+<p>详细可以参考com.didi.virtualapk.internal.LoadedPlugin类。</p>
+<p>ok，如果该插件以及加载过，则直接通过startActivity去启动插件中目标Activity。</p>
+<p>（1）替换Activity<br>这里大家肯定会有疑惑，该Activity必然没有在Manifest中注册，这么启动不会报错吗？</p>
+<p>正常肯定会报错呀，所以我们看看它是怎么做的吧。</p>
+<p>跟进startActivity的调用流程，会发现其最终会进入Instrumentation的execStartActivity方法，然后再通过ActivityManagerProxy与AMS进行交互。</p>
+<p>而Activity是否存在的校验是发生在AMS端，所以我们在于AMS交互前，提前将Activity的ComponentName进行替换为占坑的名字不就好了么？</p>
+<p>这里可以选择hook Instrumentation，或者ActivityManagerProxy都可以达到目标，VirtualAPK选择了hook Instrumentation.</p>
+<p>打开PluginManager可以看到如下方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">private void hookInstrumentationAndHandler() &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        Instrumentation baseInstrumentation &#x3D; ReflectUtil.getInstrumentation(this.mContext);</span><br><span class="line">        if (baseInstrumentation.getClass().getName().contains(&quot;lbe&quot;)) &#123;</span><br><span class="line">            &#x2F;&#x2F; reject executing in paralell space, for example, lbe.</span><br><span class="line">            System.exit(0);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        final VAInstrumentation instrumentation &#x3D; new VAInstrumentation(this, baseInstrumentation);</span><br><span class="line">        Object activityThread &#x3D; ReflectUtil.getActivityThread(this.mContext);</span><br><span class="line">        ReflectUtil.setInstrumentation(activityThread, instrumentation);</span><br><span class="line">        ReflectUtil.setHandlerCallback(this.mContext, instrumentation);</span><br><span class="line">        this.mInstrumentation &#x3D; instrumentation;</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到首先通过反射拿到了原本的Instrumentation对象，拿的过程是首先拿到ActivityThread，由于ActivityThread可以通过静态变量sCurrentActivityThread或者静态方法currentActivityThread()获取，所以拿到其对象相当轻松。拿到ActivityThread对象后，调用其getInstrumentation()方法，即可获取当前的Instrumentation对象。</p>
+<p>然后自己创建了一个VAInstrumentation对象，接下来就直接反射将VAInstrumentation对象设置给ActivityThread对象即可。</p>
+<p>这样就完成了hook Instrumentation,之后调用Instrumentation的任何方法，都可以在VAInstrumentation进行拦截并做一些修改。</p>
+<p>这里还hook了ActivityThread的mH类的Callback，暂不赘述。</p>
+<p>刚才说了，可以通过Instrumentation的execStartActivity方法进行偷梁换柱，所以我们直接看对应的方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">public ActivityResult execStartActivity(</span><br><span class="line">        Context who, IBinder contextThread, IBinder token, Activity target,</span><br><span class="line">        Intent intent, int requestCode, Bundle options) &#123;</span><br><span class="line">    mPluginManager.getComponentsHandler().transformIntentToExplicitAsNeeded(intent);</span><br><span class="line">    &#x2F;&#x2F; null component is an implicitly intent</span><br><span class="line">    if (intent.getComponent() !&#x3D; null) &#123;</span><br><span class="line">        Log.i(TAG, String.format(&quot;execStartActivity[%s : %s]&quot;, intent.getComponent().getPackageName(),</span><br><span class="line">                intent.getComponent().getClassName()));</span><br><span class="line">        &#x2F;&#x2F; resolve intent with Stub Activity if needed</span><br><span class="line">        this.mPluginManager.getComponentsHandler().markIntentIfNeeded(intent);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ActivityResult result &#x3D; realExecStartActivity(who, contextThread, token, target,</span><br><span class="line">                intent, requestCode, options);</span><br><span class="line"></span><br><span class="line">    return result;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先调用transformIntentToExplicitAsNeeded，这个主要是当component为null时，根据启动Activity时，配置的action，data,category等去已加载的plugin中匹配到确定的Activity的。</p>
+<p>本例我们的写法ComponentName肯定不为null，所以直接看markIntentIfNeeded()方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">public void markIntentIfNeeded(Intent intent) &#123;</span><br><span class="line">    if (intent.getComponent() &#x3D;&#x3D; null) &#123;</span><br><span class="line">        return;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    String targetPackageName &#x3D; intent.getComponent().getPackageName();</span><br><span class="line">    String targetClassName &#x3D; intent.getComponent().getClassName();</span><br><span class="line">    &#x2F;&#x2F; search map and return specific launchmode stub activity</span><br><span class="line">    if (!targetPackageName.equals(mContext.getPackageName())</span><br><span class="line">            &amp;&amp; mPluginManager.getLoadedPlugin(targetPackageName) !&#x3D; null) &#123;</span><br><span class="line">        intent.putExtra(Constants.KEY_IS_PLUGIN, true);</span><br><span class="line">        intent.putExtra(Constants.KEY_TARGET_PACKAGE, targetPackageName);</span><br><span class="line">        intent.putExtra(Constants.KEY_TARGET_ACTIVITY, targetClassName);</span><br><span class="line">        dispatchStubActivity(intent);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在该方法中判断如果启动的是插件中类，则将启动的包名和Activity类名存到了intent中，可以看到这里存储明显是为了后面恢复用的。</p>
+<p>然后调用了dispatchStubActivity(intent)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">private void dispatchStubActivity(Intent intent) &#123;</span><br><span class="line">    ComponentName component &#x3D; intent.getComponent();</span><br><span class="line">    String targetClassName &#x3D; intent.getComponent().getClassName();</span><br><span class="line">    LoadedPlugin loadedPlugin &#x3D; mPluginManager.getLoadedPlugin(intent);</span><br><span class="line">    ActivityInfo info &#x3D; loadedPlugin.getActivityInfo(component);</span><br><span class="line">    if (info &#x3D;&#x3D; null) &#123;</span><br><span class="line">        throw new RuntimeException(&quot;can not find &quot; + component);</span><br><span class="line">    &#125;</span><br><span class="line">    int launchMode &#x3D; info.launchMode;</span><br><span class="line">    Resources.Theme themeObj &#x3D; loadedPlugin.getResources().newTheme();</span><br><span class="line">    themeObj.applyStyle(info.theme, true);</span><br><span class="line">    String stubActivity &#x3D; mStubActivityInfo.getStubActivity(targetClassName, launchMode, themeObj);</span><br><span class="line">    Log.i(TAG, String.format(&quot;dispatchStubActivity,[%s -&gt; %s]&quot;, targetClassName, stubActivity));</span><br><span class="line">    intent.setClassName(mContext, stubActivity);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以直接看最后一行，intent通过setClassName替换启动的目标Activity了！这个stubActivity是由mStubActivityInfo.getStubActivity(targetClassName, launchMode, themeObj)返回。</p>
+<p>很明显，传入的参数launchMode、themeObj都是决定选择哪一个占坑类用的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">public String getStubActivity(String className, int launchMode, Theme theme) &#123;</span><br><span class="line">    String stubActivity&#x3D; mCachedStubActivity.get(className);</span><br><span class="line">    if (stubActivity !&#x3D; null) &#123;</span><br><span class="line">        return stubActivity;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    TypedArray array &#x3D; theme.obtainStyledAttributes(new int[]&#123;</span><br><span class="line">            android.R.attr.windowIsTranslucent,</span><br><span class="line">            android.R.attr.windowBackground</span><br><span class="line">    &#125;);</span><br><span class="line">    boolean windowIsTranslucent &#x3D; array.getBoolean(0, false);</span><br><span class="line">    array.recycle();</span><br><span class="line">    if (Constants.DEBUG) &#123;</span><br><span class="line">        Log.d(&quot;StubActivityInfo&quot;, &quot;getStubActivity, is transparent theme ? &quot; + windowIsTranslucent);</span><br><span class="line">    &#125;</span><br><span class="line">    stubActivity &#x3D; String.format(STUB_ACTIVITY_STANDARD, corePackage, usedStandardStubActivity);</span><br><span class="line">    switch (launchMode) &#123;</span><br><span class="line">        case ActivityInfo.LAUNCH_MULTIPLE: &#123;</span><br><span class="line">            stubActivity &#x3D; String.format(STUB_ACTIVITY_STANDARD, corePackage, usedStandardStubActivity);</span><br><span class="line">            if (windowIsTranslucent) &#123;</span><br><span class="line">                stubActivity &#x3D; String.format(STUB_ACTIVITY_STANDARD, corePackage, 2);</span><br><span class="line">            &#125;</span><br><span class="line">            break;</span><br><span class="line">        &#125;</span><br><span class="line">        case ActivityInfo.LAUNCH_SINGLE_TOP: &#123;</span><br><span class="line">            usedSingleTopStubActivity &#x3D; usedSingleTopStubActivity % MAX_COUNT_SINGLETOP + 1;</span><br><span class="line">            stubActivity &#x3D; String.format(STUB_ACTIVITY_SINGLETOP, corePackage, usedSingleTopStubActivity);</span><br><span class="line">            break;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">       &#x2F;&#x2F; 省略LAUNCH_SINGLE_TASK，LAUNCH_SINGLE_INSTANCE</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    mCachedStubActivity.put(className, stubActivity);</span><br><span class="line">    return stubActivity;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到主要就是根据launchMode去选择不同的占坑类。<br>例如：</p>
+<p>stubActivity = String.format(STUB_ACTIVITY_STANDARD, corePackage, usedStandardStubActivity);<br>1<br>STUB_ACTIVITY_STANDARD值为：”%s.A$%d”, corePackage值为com.didi.virtualapk.core，usedStandardStubActivity为数字值。</p>
+<p>所以最终类名格式为：com.didi.virtualapk.core.A$1</p>
+<p>再看一眼，CoreLibrary下的AndroidManifest中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&lt;activity android:name&#x3D;&quot;.A$1&quot; android:launchMode&#x3D;&quot;standard&quot;&#x2F;&gt;</span><br><span class="line">&lt;activity android:name&#x3D;&quot;.A$2&quot; android:launchMode&#x3D;&quot;standard&quot;</span><br><span class="line">    android:theme&#x3D;&quot;@android:style&#x2F;Theme.Translucent&quot; &#x2F;&gt;</span><br><span class="line"></span><br><span class="line">&lt;!-- Stub Activities --&gt;</span><br><span class="line">&lt;activity android:name&#x3D;&quot;.B$1&quot; android:launchMode&#x3D;&quot;singleTop&quot;&#x2F;&gt;</span><br><span class="line">&lt;activity android:name&#x3D;&quot;.B$2&quot; android:launchMode&#x3D;&quot;singleTop&quot;&#x2F;&gt;</span><br><span class="line">&lt;activity android:name&#x3D;&quot;.B$3&quot; android:launchMode&#x3D;&quot;singleTop&quot;&#x2F;&gt;</span><br></pre></td></tr></table></figure>
+
+<p>到这里就可以看到，替换我们启动的Activity为占坑Activity，将我们原本启动的包名，类名存储到了Intent中。</p>
+<p>这样做只完成了一半，为什么这么说呢？</p>
+<p>(2) 还原Activity<br>因为欺骗过了AMS，AMS执行完成后，最终要启动的不可能是占坑Activity，还应该是我们的启动的目标Activity呀。</p>
+<p>这里需要知道Activity的启动流程：</p>
+<p>AMS在处理完启动Activity后，会调用：app.thread.scheduleLaunchActivity，这里的thread对应的server端未我们ActivityThread中的ApplicationThread对象(binder可以理解有一个client端和一个server端)，所以会调用ApplicationThread.scheduleLaunchActivity方法，在其内部会调用mH类的sendMessage方法，传递的标识为H.LAUNCH_ACTIVITY，进入调用到ActivityThread的handleLaunchActivity方法-&gt;ActivityThread#handleLaunchActivity-&gt;mInstrumentation.newActivity()。</p>
+<p>ps:这里流程不清楚没关系，暂时理解为最终会回调到Instrumentation的newActivity方法即可，细节可以自己去查看结合老罗的blog理解。</p>
+<p>关键的来了，最终又到了Instrumentation的newActivity方法，还记得这个类我们已经改为VAInstrumentation啦：</p>
+<p>直接看其newActivity方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public Activity newActivity(ClassLoader cl, String className, Intent intent) throws InstantiationException, IllegalAccessException, ClassNotFoundException &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        cl.loadClass(className);</span><br><span class="line">    &#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line">        LoadedPlugin plugin &#x3D; this.mPluginManager.getLoadedPlugin(intent);</span><br><span class="line">        String targetClassName &#x3D; PluginUtil.getTargetActivity(intent);</span><br><span class="line"></span><br><span class="line">        if (targetClassName !&#x3D; null) &#123;</span><br><span class="line">            Activity activity &#x3D; mBase.newActivity(plugin.getClassLoader(), targetClassName, intent);</span><br><span class="line">            activity.setIntent(intent);</span><br><span class="line"></span><br><span class="line">          &#x2F;&#x2F; 省略兼容性处理代码</span><br><span class="line">            return activity;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return mBase.newActivity(cl, className, intent);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>核心就是首先从intent中取出我们的目标Activity，然后通过plugin的ClassLoader去加载（还记得在加载插件时，会生成一个LoadedPlugin对象，其中会对应其初始化一个DexClassLoader）。</p>
+<p>这样就完成了Activity的“偷梁换柱”。</p>
+<p>还没完，接下来在callActivityOnCreate方法中：</p>
+<p> @Override<br>public void callActivityOnCreate(Activity activity, Bundle icicle) {<br>    final Intent intent = activity.getIntent();<br>    if (PluginUtil.isIntentFromPlugin(intent)) {<br>        Context base = activity.getBaseContext();<br>        try {<br>            LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(intent);<br>            ReflectUtil.setField(base.getClass(), base, “mResources”, plugin.getResources());<br>            ReflectUtil.setField(ContextWrapper.class, activity, “mBase”, plugin.getPluginContext());<br>            ReflectUtil.setField(Activity.class, activity, “mApplication”, plugin.getApplication());<br>            ReflectUtil.setFieldNoException(ContextThemeWrapper.class, activity, “mBase”, plugin.getPluginContext());</p>
+<pre><code>        // set screenOrientation
+        ActivityInfo activityInfo = plugin.getActivityInfo(PluginUtil.getComponent(intent));
+        if (activityInfo.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
+            activity.setRequestedOrientation(activityInfo.screenOrientation);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+}
+
+mBase.callActivityOnCreate(activity, icicle);</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">设置了修改了mResources、mBase（Context）、mApplication对象。以及设置一些可动态设置的属性，这里仅设置了屏幕方向。</span><br><span class="line"></span><br><span class="line">这里提一下，将mBase替换为PluginContext，可以修改Resources、AssetManager以及拦截相当多的操作。</span><br><span class="line"></span><br><span class="line">看一眼代码就清楚了：</span><br><span class="line"></span><br><span class="line">原本Activity的部分get操作</span><br><span class="line"></span><br><span class="line"># ContextWrapper</span><br></pre></td></tr></table></figure>
+<p>@Override<br>public AssetManager getAssets() {<br>    return mBase.getAssets();<br>}</p>
+<p>@Override<br>public Resources getResources()<br>{<br>    return mBase.getResources();<br>}</p>
+<p>@Override<br>public PackageManager getPackageManager() {<br>    return mBase.getPackageManager();<br>}</p>
+<p>@Override<br>public ContentResolver getContentResolver() {<br>    return mBase.getContentResolver();<br>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">直接替换为：</span><br><span class="line"></span><br><span class="line"># PluginContext</span><br><span class="line"></span><br><span class="line">@Override</span><br><span class="line">public Resources getResources() &#123;</span><br><span class="line">    return this.mPlugin.getResources();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@Override</span><br><span class="line">public AssetManager getAssets() &#123;</span><br><span class="line">    return this.mPlugin.getAssets();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@Override</span><br><span class="line">public ContentResolver getContentResolver() &#123;</span><br><span class="line">    return new PluginContentResolver(getHostContext());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>看得出来还是非常巧妙的。可以做的事情也非常多，后面对ContentProvider的描述也会提现出来。</p>
+<p>好了，到此Activity就可以正常启动了。</p>
+<p>下面看Service。</p>
+<p>三、Service的支持<br>Service和Activity有点不同，显而易见的首先我们也会将要启动的Service类替换为占坑的Service类，但是有一点不同，在Standard模式下多次启动同一个占坑Activity会创建多个对象来对象我们的目标类。而Service多次启动只会调用onStartCommond方法，甚至常规多次调用bindService，seviceConn对象不变，甚至都不会多次回调bindService方法（多次调用可以通过给Intent设置不同Action解决）。</p>
+<p>还有一点，最明显的差异是，Activity的生命周期是由用户交互决定的，而Service的声明周期是我们主动通过代码调用的。</p>
+<p>也就是说，start、stop、bind、unbind都是我们显示调用的，所以我们可以拦截这几个方法，做一些事情。</p>
+<p>Virtual Apk的做法，即将所有的操作进行拦截，都改为startService，然后统一在onStartCommond中分发。</p>
+<p>下面看详细代码：</p>
+<p>(1) hook IActivityManager<br>再次来到PluginManager，发下如下方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">private void hookSystemServices() &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        Singleton&lt;IActivityManager&gt; defaultSingleton &#x3D; (Singleton&lt;IActivityManager&gt;) ReflectUtil.getField(ActivityManagerNative.class, null, &quot;gDefault&quot;);</span><br><span class="line">        IActivityManager activityManagerProxy &#x3D; ActivityManagerProxy.newInstance(this, defaultSingleton.get());</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; Hook IActivityManager from ActivityManagerNative</span><br><span class="line">        ReflectUtil.setField(defaultSingleton.getClass().getSuperclass(), defaultSingleton, &quot;mInstance&quot;, activityManagerProxy);</span><br><span class="line"></span><br><span class="line">        if (defaultSingleton.get() &#x3D;&#x3D; activityManagerProxy) &#123;</span><br><span class="line">            this.mActivityManager &#x3D; activityManagerProxy;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先拿到ActivityManagerNative中的gDefault对象，该对象返回的是一个Singleton<IActivityManager>,然后拿到其mInstance对象，即IActivityManager对象（可以理解为和AMS交互的binder的client对象）对象。</p>
+<p>然后通过动态代理的方式，替换为了一个代理对象。</p>
+<p>那么重点看对应的InvocationHandler对象即可，该代理对象调用的方法都会辗转到其invoke方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public Object invoke(Object proxy, Method method, Object[] args) throws Throwable &#123;</span><br><span class="line">    if (&quot;startService&quot;.equals(method.getName())) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            return startService(proxy, method, args);</span><br><span class="line">        &#125; catch (Throwable e) &#123;</span><br><span class="line">            Log.e(TAG, &quot;Start service error&quot;, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else if (&quot;stopService&quot;.equals(method.getName())) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            return stopService(proxy, method, args);</span><br><span class="line">        &#125; catch (Throwable e) &#123;</span><br><span class="line">            Log.e(TAG, &quot;Stop Service error&quot;, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else if (&quot;stopServiceToken&quot;.equals(method.getName())) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            return stopServiceToken(proxy, method, args);</span><br><span class="line">        &#125; catch (Throwable e) &#123;</span><br><span class="line">            Log.e(TAG, &quot;Stop service token error&quot;, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; 省略bindService，unbindService等方法</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当我们调用startService时，跟进代码，可以发现调用流程为：</p>
+<p>startService-&gt;startServiceCommon-&gt;ActivityManagerNative.getDefault().startService<br>1<br>这个getDefault刚被我们hook，所以会被上述方法拦截，然后调用：startService(proxy, method, args)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">private Object startService(Object proxy, Method method, Object[] args) throws Throwable &#123;</span><br><span class="line">    IApplicationThread appThread &#x3D; (IApplicationThread) args[0];</span><br><span class="line">    Intent target &#x3D; (Intent) args[1];</span><br><span class="line">    ResolveInfo resolveInfo &#x3D; this.mPluginManager.resolveService(target, 0);</span><br><span class="line">    if (null &#x3D;&#x3D; resolveInfo || null &#x3D;&#x3D; resolveInfo.serviceInfo) &#123;</span><br><span class="line">        &#x2F;&#x2F; is host service</span><br><span class="line">        return method.invoke(this.mActivityManager, args);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return startDelegateServiceForTarget(target, resolveInfo.serviceInfo, null, RemoteService.EXTRA_COMMAND_START_SERVICE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先不看代码，考虑下我们这里唯一要做的就是通过Intent保存关键数据，替换启动的Service类为占坑类。</p>
+<p>所以直接看最后的方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">private ComponentName startDelegateServiceForTarget(Intent target,</span><br><span class="line">                                                    ServiceInfo serviceInfo,</span><br><span class="line">                                                    Bundle extras, int command) &#123;</span><br><span class="line">    Intent wrapperIntent &#x3D; wrapperTargetIntent(target, serviceInfo, extras, command);</span><br><span class="line">    return mPluginManager.getHostContext().startService(wrapperIntent);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最后一行就是启动了，那么替换的操作应该在wrapperTargetIntent中完成：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">private Intent wrapperTargetIntent(Intent target, ServiceInfo serviceInfo, Bundle extras, int command) &#123;</span><br><span class="line">    &#x2F;&#x2F; fill in service with ComponentName</span><br><span class="line">    target.setComponent(new ComponentName(serviceInfo.packageName, serviceInfo.name));</span><br><span class="line">    String pluginLocation &#x3D; mPluginManager.getLoadedPlugin(target.getComponent()).getLocation();</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; start delegate service to run plugin service inside</span><br><span class="line">    boolean local &#x3D; PluginUtil.isLocalService(serviceInfo);</span><br><span class="line">    Class&lt;? extends Service&gt; delegate &#x3D; local ? LocalService.class : RemoteService.class;</span><br><span class="line">    Intent intent &#x3D; new Intent();</span><br><span class="line">    intent.setClass(mPluginManager.getHostContext(), delegate);</span><br><span class="line">    intent.putExtra(RemoteService.EXTRA_TARGET, target);</span><br><span class="line">    intent.putExtra(RemoteService.EXTRA_COMMAND, command);</span><br><span class="line">    intent.putExtra(RemoteService.EXTRA_PLUGIN_LOCATION, pluginLocation);</span><br><span class="line">    if (extras !&#x3D; null) &#123;</span><br><span class="line">        intent.putExtras(extras);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return intent;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>果不其然，重新初始化了Intent，设置了目标类为LocalService（多进程时设置为RemoteService），然后将原本的Intent存储到EXTRA_TARGET，携带command为EXTRA_COMMAND_START_SERVICE，以及插件apk路径。</p>
+<p>（2）代理分发<br>那么接下来代码就到了LocalService的onStartCommond中啦：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public int onStartCommand(Intent intent, int flags, int startId) &#123;</span><br><span class="line">    &#x2F;&#x2F; 省略一些代码...</span><br><span class="line"></span><br><span class="line">    Intent target &#x3D; intent.getParcelableExtra(EXTRA_TARGET);</span><br><span class="line">    int command &#x3D; intent.getIntExtra(EXTRA_COMMAND, 0);</span><br><span class="line">    if (null &#x3D;&#x3D; target || command &lt;&#x3D; 0) &#123;</span><br><span class="line">        return START_STICKY;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ComponentName component &#x3D; target.getComponent();</span><br><span class="line">    LoadedPlugin plugin &#x3D; mPluginManager.getLoadedPlugin(component);</span><br><span class="line"></span><br><span class="line">    switch (command) &#123;</span><br><span class="line">        case EXTRA_COMMAND_START_SERVICE: &#123;</span><br><span class="line">            ActivityThread mainThread &#x3D; (ActivityThread)ReflectUtil.getActivityThread(getBaseContext());</span><br><span class="line">            IApplicationThread appThread &#x3D; mainThread.getApplicationThread();</span><br><span class="line">            Service service;</span><br><span class="line"></span><br><span class="line">            if (this.mPluginManager.getComponentsHandler().isServiceAvailable(component)) &#123;</span><br><span class="line">                service &#x3D; this.mPluginManager.getComponentsHandler().getService(component);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                try &#123;</span><br><span class="line">                    service &#x3D; (Service) plugin.getClassLoader().loadClass(component.getClassName()).newInstance();</span><br><span class="line"></span><br><span class="line">                    Application app &#x3D; plugin.getApplication();</span><br><span class="line">                    IBinder token &#x3D; appThread.asBinder();</span><br><span class="line">                    Method attach &#x3D; service.getClass().getMethod(&quot;attach&quot;, Context.class, ActivityThread.class, String.class, IBinder.class, Application.class, Object.class);</span><br><span class="line">                    IActivityManager am &#x3D; mPluginManager.getActivityManager();</span><br><span class="line"></span><br><span class="line">                    attach.invoke(service, plugin.getPluginContext(), mainThread, component.getClassName(), token, app, am);</span><br><span class="line">                    service.onCreate();</span><br><span class="line">                    this.mPluginManager.getComponentsHandler().rememberService(component, service);</span><br><span class="line">                &#125; catch (Throwable t) &#123;</span><br><span class="line">                    return START_STICKY;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            service.onStartCommand(target, 0, this.mPluginManager.getComponentsHandler().getServiceCounter(service).getAndIncrement());</span><br><span class="line">            break;</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F; 省略下面的代码</span><br><span class="line">         case EXTRA_COMMAND_BIND_SERVICE:break;</span><br><span class="line">         case EXTRA_COMMAND_STOP_SERVICE:break;</span><br><span class="line">         case EXTRA_COMMAND_UNBIND_SERVICE:break;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里代码很简单了，根据command类型，比如EXTRA_COMMAND_START_SERVICE，直接通过plugin的ClassLoader去load目标Service的class，然后反射创建实例。比较重要的是，Service创建好后，需要调用它的attach方法，这里凑够参数，然后反射调用即可，最后调用onCreate、onStartCommand收工。然后将其保存起来，stop的时候取出来调用其onDestroy即可。</p>
+<p>bind、unbind以及stop的代码与上述基本一致，不在赘述。</p>
+<p>唯一提醒的就是，刚才看到还hook了一个方法叫做：stopServiceToken，该方法是什么时候用的呢？</p>
+<p>主要有一些特殊的Service，比如IntentService，其stopSelf是由自身调用的，最终会调用mActivityManager.stopServiceToken方法，同样的中转为STOP操作即可。</p>
+<p>四、BroadcastReceiver的支持<br>这个比较简单，直接解析Manifest后，静态转动态即可。</p>
+<p>相关代码在LoadedPlugin的构造方法中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">for (PackageParser.Activity receiver : this.mPackage.receivers) &#123;</span><br><span class="line">    receivers.put(receiver.getComponentName(), receiver.info);</span><br><span class="line"></span><br><span class="line">    try &#123;</span><br><span class="line">        BroadcastReceiver br &#x3D; BroadcastReceiver.class.cast(getClassLoader().loadClass(receiver.getComponentName().getClassName()).newInstance());</span><br><span class="line">        for (PackageParser.ActivityIntentInfo aii : receiver.intents) &#123;</span><br><span class="line">            this.mHostContext.registerReceiver(br, aii);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到解析到receiver信息后，直接通过pluginClassloader去loadClass拿到receiver对象，然后调用this.mHostContext.registerReceiver即可。</p>
+<p>五、ContentProvider的支持<br>（1）hook IContentProvider<br>ContentProvider的支持依然是通过代理分发。</p>
+<p>看一段CP使用的代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Cursor bookCursor &#x3D; getContentResolver().query(bookUri, new String[]&#123;&quot;_id&quot;, &quot;name&quot;&#125;, null, null, null);</span><br></pre></td></tr></table></figure>
+
+<p>这里用到了PluginContext，在生成Activity、Service的时候，为其设置的Context都为PluginContext对象。</p>
+<p>所以当你调用getContentResolver时，调用的为PluginContext的getContentResolver。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public ContentResolver getContentResolver() &#123;</span><br><span class="line">    return new PluginContentResolver(getHostContext());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>返回的是一个PluginContentResolver对象，当我们调用query方法时，会辗转调用到<br>ContentResolver.acquireUnstableProvider方法。该方法被PluginContentResolver中复写:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">protected IContentProvider acquireUnstableProvider(Context context, String auth) &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        if (mPluginManager.resolveContentProvider(auth, 0) !&#x3D; null) &#123;</span><br><span class="line">            return mPluginManager.getIContentProvider();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        return (IContentProvider) sAcquireUnstableProvider.invoke(mBase, context, auth);</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return null;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果调用的auth为插件apk中的provider，则直接返回mPluginManager.getIContentProvider()。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public synchronized IContentProvider getIContentProvider() &#123;</span><br><span class="line">    if (mIContentProvider &#x3D;&#x3D; null) &#123;</span><br><span class="line">        hookIContentProviderAsNeeded();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return mIContentProvider;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>咦，又看到一个hook方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">private void hookIContentProviderAsNeeded() &#123;</span><br><span class="line">    Uri uri &#x3D; Uri.parse(PluginContentResolver.getUri(mContext));</span><br><span class="line">    mContext.getContentResolver().call(uri, &quot;wakeup&quot;, null, null);</span><br><span class="line">    try &#123;</span><br><span class="line">        Field authority &#x3D; null;</span><br><span class="line">        Field mProvider &#x3D; null;</span><br><span class="line">        ActivityThread activityThread &#x3D; (ActivityThread) ReflectUtil.getActivityThread(mContext);</span><br><span class="line">        Map mProviderMap &#x3D; (Map) ReflectUtil.getField(activityThread.getClass(), activityThread, &quot;mProviderMap&quot;);</span><br><span class="line">        Iterator iter &#x3D; mProviderMap.entrySet().iterator();</span><br><span class="line">        while (iter.hasNext()) &#123;</span><br><span class="line">            Map.Entry entry &#x3D; (Map.Entry) iter.next();</span><br><span class="line">            Object key &#x3D; entry.getKey();</span><br><span class="line">            Object val &#x3D; entry.getValue();</span><br><span class="line">            String auth;</span><br><span class="line">            if (key instanceof String) &#123;</span><br><span class="line">                auth &#x3D; (String) key;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                if (authority &#x3D;&#x3D; null) &#123;</span><br><span class="line">                    authority &#x3D; key.getClass().getDeclaredField(&quot;authority&quot;);</span><br><span class="line">                    authority.setAccessible(true);</span><br><span class="line">                &#125;</span><br><span class="line">                auth &#x3D; (String) authority.get(key);</span><br><span class="line">            &#125;</span><br><span class="line">            if (auth.equals(PluginContentResolver.getAuthority(mContext))) &#123;</span><br><span class="line">                if (mProvider &#x3D;&#x3D; null) &#123;</span><br><span class="line">                    mProvider &#x3D; val.getClass().getDeclaredField(&quot;mProvider&quot;);</span><br><span class="line">                    mProvider.setAccessible(true);</span><br><span class="line">                &#125;</span><br><span class="line">                IContentProvider rawProvider &#x3D; (IContentProvider) mProvider.get(val);</span><br><span class="line">                IContentProvider proxy &#x3D; IContentProviderProxy.newInstance(mContext, rawProvider);</span><br><span class="line">                mIContentProvider &#x3D; proxy;</span><br><span class="line">                Log.d(TAG, &quot;hookIContentProvider succeed : &quot; + mIContentProvider);</span><br><span class="line">                break;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>前两行比较重要，第一行是拿到了占坑的provider的uri，然后主动调用了其call方法。<br>如果你跟进去，会发现，其会调用acquireProvider-&gt;mMainThread.acquireProvider-&gt;ActivityManagerNative.getDefault().getContentProvider-&gt;installProvider。简单来说，其首先调用已经注册provider，得到返回的IContentProvider对象。</p>
+<p>这个IContentProvider对象是在ActivityThread.installProvider方法中加入到mProviderMap中。</p>
+<p>而ActivityThread对象又容易获取，mProviderMap又是它成员变量，那么也容易获取，所以上面的一大坨（除了前两行）代码，就为了拿到占坑的provider对应的IContentProvider对象。</p>
+<p>然后通过动态代理的方式，进行了hook，关注InvocationHandler的实例IContentProviderProxy。</p>
+<p>IContentProvider能干吗呢？其实就能拦截我们正常的query、insert、update、delete等操作。</p>
+<p>拦截这些方法干嘛？</p>
+<p>当然是修改uri啦，把用户调用的uri，替换为占坑provider的uri，再把原本的uri作为参数拼接在占坑provider的uri后面即可。</p>
+<p>好了，直接看invoke方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public Object invoke(Object proxy, Method method, Object[] args) throws Throwable &#123;</span><br><span class="line">    Log.v(TAG, method.toGenericString() + &quot; : &quot; + Arrays.toString(args));</span><br><span class="line">    wrapperUri(method, args);</span><br><span class="line"></span><br><span class="line">    try &#123;</span><br><span class="line">        return method.invoke(mBase, args);</span><br><span class="line">    &#125; catch (InvocationTargetException e) &#123;</span><br><span class="line">        throw e.getTargetException();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>直接看wrapperUri</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">private void wrapperUri(Method method, Object[] args) &#123;</span><br><span class="line">    Uri uri &#x3D; null;</span><br><span class="line">    int index &#x3D; 0;</span><br><span class="line">    if (args !&#x3D; null) &#123;</span><br><span class="line">        for (int i &#x3D; 0; i &lt; args.length; i++) &#123;</span><br><span class="line">            if (args[i] instanceof Uri) &#123;</span><br><span class="line">                uri &#x3D; (Uri) args[i];</span><br><span class="line">                index &#x3D; i;</span><br><span class="line">                break;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 省略部分代码</span><br><span class="line"></span><br><span class="line">    PluginManager pluginManager &#x3D; PluginManager.getInstance(mContext);</span><br><span class="line">    ProviderInfo info &#x3D; pluginManager.resolveContentProvider(uri.getAuthority(), 0);</span><br><span class="line">    if (info !&#x3D; null) &#123;</span><br><span class="line">        String pkg &#x3D; info.packageName;</span><br><span class="line">        LoadedPlugin plugin &#x3D; pluginManager.getLoadedPlugin(pkg);</span><br><span class="line">        String pluginUri &#x3D; Uri.encode(uri.toString());</span><br><span class="line">        StringBuilder builder &#x3D; new StringBuilder(PluginContentResolver.getUri(mContext));</span><br><span class="line">        builder.append(&quot;&#x2F;?plugin&#x3D;&quot; + plugin.getLocation());</span><br><span class="line">        builder.append(&quot;&amp;pkg&#x3D;&quot; + pkg);</span><br><span class="line">        builder.append(&quot;&amp;uri&#x3D;&quot; + pluginUri);</span><br><span class="line">        Uri wrapperUri &#x3D; Uri.parse(builder.toString());</span><br><span class="line">        if (method.getName().equals(&quot;call&quot;)) &#123;</span><br><span class="line">            bundleInCallMethod.putString(KEY_WRAPPER_URI, wrapperUri.toString());</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            args[index] &#x3D; wrapperUri;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从参数中找到uri，往下看，搞了个StringBuilder首先加入占坑provider的uri，然后将目标uri，pkg,plugin等参数等拼接上去，替换到args中的uri，然后继续走原本的流程。</p>
+<p>假设是query方法，应该就到达我们占坑provider的query方法啦。</p>
+<p>（2）代理分发<br>占坑如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;provider</span><br><span class="line">    android:name&#x3D;&quot;com.didi.virtualapk.delegate.RemoteContentProvider&quot;</span><br><span class="line">    android:authorities&#x3D;&quot;$&#123;applicationId&#125;.VirtualAPK.Provider&quot;</span><br><span class="line">    android:process&#x3D;&quot;:daemon&quot; &#x2F;&gt;</span><br></pre></td></tr></table></figure>
+<p>打开RemoteContentProvider，直接看query方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public Cursor query(Uri uri, String[] projection, String selection,</span><br><span class="line">                    String[] selectionArgs, String sortOrder) &#123;</span><br><span class="line"></span><br><span class="line">    ContentProvider provider &#x3D; getContentProvider(uri);</span><br><span class="line">    Uri pluginUri &#x3D; Uri.parse(uri.getQueryParameter(KEY_URI));</span><br><span class="line">    if (provider !&#x3D; null) &#123;</span><br><span class="line">        return provider.query(pluginUri, projection, selection, selectionArgs, sortOrder);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return null;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到通过传入的生成了一个新的provider,然后拿到目标uri，在直接调用provider.query传入目标uri即可。</p>
+<p>那么这个provider实际上是这个代理类帮我们生成的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">private ContentProvider getContentProvider(final Uri uri) &#123;</span><br><span class="line">    final PluginManager pluginManager &#x3D; PluginManager.getInstance(getContext());</span><br><span class="line">    Uri pluginUri &#x3D; Uri.parse(uri.getQueryParameter(KEY_URI));</span><br><span class="line">    final String auth &#x3D; pluginUri.getAuthority();</span><br><span class="line">    &#x2F;&#x2F; 省略了缓存管理</span><br><span class="line">    LoadedPlugin plugin &#x3D; pluginManager.getLoadedPlugin(uri.getQueryParameter(KEY_PKG));</span><br><span class="line">    if (plugin &#x3D;&#x3D; null) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            pluginManager.loadPlugin(new File(uri.getQueryParameter(KEY_PLUGIN)));</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    final ProviderInfo providerInfo &#x3D; pluginManager.resolveContentProvider(auth, 0);</span><br><span class="line">    if (providerInfo !&#x3D; null) &#123;</span><br><span class="line">        RunUtil.runOnUiThread(new Runnable() &#123;</span><br><span class="line">            @Override</span><br><span class="line">            public void run() &#123;</span><br><span class="line">                try &#123;</span><br><span class="line">                    LoadedPlugin loadedPlugin &#x3D; pluginManager.getLoadedPlugin(uri.getQueryParameter(KEY_PKG));</span><br><span class="line">                    ContentProvider contentProvider &#x3D; (ContentProvider) Class.forName(providerInfo.name).newInstance();</span><br><span class="line">                    contentProvider.attachInfo(loadedPlugin.getPluginContext(), providerInfo);</span><br><span class="line">                    sCachedProviders.put(auth, contentProvider);</span><br><span class="line">                &#125; catch (Exception e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;, true);</span><br><span class="line">        return sCachedProviders.get(auth);</span><br><span class="line">    &#125;</span><br><span class="line">    return null;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>很简单，取出原本的uri，拿到auth，在通过加载plugin得到providerInfo，反射生成provider对象，在调用其attachInfo方法即可。</p>
+<p>其他的几个方法：insert、update、delete、call逻辑基本相同，就不赘述了。</p>
+<p>感觉这里其实通过hook AMS的getContentProvider方法也能完成上述流程，感觉好像可以更彻底，不需要依赖PluginContext了。</p>
+<p>六、总结<br>总结下，其实就是文初的内容，可以看到VritualApk大体方案如下：</p>
+<p>Activity：在宿主apk中提前占几个坑，然后通过“欺上瞒下”（这个词好像是360之前的ppt中提到）的方式，启动插件apk的Activity；因为要支持不同的launchMode以及一些特殊的属性，需要占多个坑。<br>Service：通过代理Service的方式去分发；主进程和其他进程，VirtualAPK使用了两个代理Service。<br>BroadcastReceiver：静态转动态。<br>ContentProvider：通过一个代理Provider进行分发。<br>整体代码看起来还是很轻松的~</p>
+<p>当然如果你要选择某一个插件化方案进行使用，一定要了解其中的实现原理，文档上描述的并不是所有细节，很多一些属性什么的，以及由于其实现的方式造成一些特性的不支持。了解源码，可以方便自己排查问题，扩展，甚至写一套根据自己业务需求的插件化方案~~</p>
+<p>再多嘴一句，还是建议大多多在某一方面深入了解，不要痴迷于UI特效（上班路上看看我的推文就好啦<del>玩笑</del>，很多特效的，了解下原理即可）~~其实我早期浪费了很多时间在上面，在你掌握了自定义View的详细细节、事件分发机制这些机制后，大部分UI的编写都是时间问题。</p>
+<p>不要在上面浪费过多时间，比别人多研究几个特效并不会对自己的提升有巨大的帮助，过来人，忠言逆耳~。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E7%B3%BB%E7%BB%9F%E5%B1%82/" rel="tag"># Android系统层</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/10/ARouter%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/" rel="prev" title="ARouter 原理剖析">
+      <i class="fa fa-chevron-left"></i> ARouter 原理剖析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/16/ANR%E5%8E%9F%E7%90%86/" rel="next" title="ANR原理">
+      ANR原理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#VirtualAPK-原理剖析"><span class="nav-number">1.</span> <span class="nav-text">VirtualAPK 原理剖析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#一、概述"><span class="nav-number">2.</span> <span class="nav-text">一、概述</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、Activity的支持"><span class="nav-number">3.</span> <span class="nav-text">二、Activity的支持</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Native Crash 异常捕获一、背景在Android平台，native crash一直是crash里的大头。native crash具有上下文不全、出错信息模糊、难以捕捉等特点，比java crash更难修复。所以一个合格的异常捕获组件也要能达到以下目的： 二、信号机制1.程序奔溃在Unix-like系统中，所有的崩溃都是编程错误或者硬件错误相关的，系统遇到不可恢复的错误时会触发崩溃机制让程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自定义Native Crash异常捕获">
+<meta property="og:url" content="http://yoursite.com/2020/08/21/%E8%87%AA%E5%AE%9A%E4%B9%89Native%20Crash%E5%BC%82%E5%B8%B8%E6%8D%95%E8%8E%B7/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Native Crash 异常捕获一、背景在Android平台，native crash一直是crash里的大头。native crash具有上下文不全、出错信息模糊、难以捕捉等特点，比java crash更难修复。所以一个合格的异常捕获组件也要能达到以下目的： 二、信号机制1.程序奔溃在Unix-like系统中，所有的崩溃都是编程错误或者硬件错误相关的，系统遇到不可恢复的错误时会触发崩溃机制让程">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-08-21T02:43:49.230Z">
+<meta property="article:modified_time" content="2020-08-21T02:43:34.110Z">
+<meta property="article:author" content="yudesong">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/08/21/%E8%87%AA%E5%AE%9A%E4%B9%89Native%20Crash%E5%BC%82%E5%B8%B8%E6%8D%95%E8%8E%B7/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>自定义Native Crash异常捕获 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/08/21/%E8%87%AA%E5%AE%9A%E4%B9%89Native%20Crash%E5%BC%82%E5%B8%B8%E6%8D%95%E8%8E%B7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          自定义Native Crash异常捕获
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-08-21 10:43:49 / 修改时间：10:43:34" itemprop="dateCreated datePublished" datetime="2020-08-21T10:43:49+08:00">2020-08-21</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Native-Crash-异常捕获"><a href="#Native-Crash-异常捕获" class="headerlink" title="Native Crash 异常捕获"></a>Native Crash 异常捕获</h2><h3 id="一、背景"><a href="#一、背景" class="headerlink" title="一、背景"></a>一、背景</h3><p>在Android平台，native crash一直是crash里的大头。native crash具有上下文不全、出错信息模糊、难以捕捉等特点，比java crash更难修复。所以一个合格的异常捕获组件也要能达到以下目的：</p>
+<h3 id="二、信号机制"><a href="#二、信号机制" class="headerlink" title="二、信号机制"></a>二、信号机制</h3><p>1.程序奔溃<br>在Unix-like系统中，所有的崩溃都是编程错误或者硬件错误相关的，系统遇到不可恢复的错误时会触发崩溃机制让程序退出，如除零、段地址错误等。<br>异常发生时，CPU通过异常中断的方式，触发异常处理流程。不同的处理器，有不同的异常中断类型和中断处理方式。<br>linux把这些中断处理，统一为信号量，可以注册信号量向量进行处理。<br>信号机制是进程之间相互传递消息的一种方法，信号全称为软中断信号。</p>
+<p>2.信号机制<br>函数运行在用户态，当遇到系统调用、中断或是异常的情况时，程序会进入内核态。信号涉及到了这两种状态之间的转换。</p>
+<p>(1) 信号的接收<br>接收信号的任务是由内核代理的，当内核接收到信号后，会将其放到对应进程的信号队列中，同时向进程发送一个中断，使其陷入内核态。注意，此时信号还只是在队列中，对进程来说暂时是不知道有信号到来的。</p>
+<p>(2) 信号的检测<br>进程陷入内核态后，有两种场景会对信号进行检测：</p>
+<p>进程从内核态返回到用户态前进行信号检测<br>进程在内核态中，从睡眠状态被唤醒的时候进行信号检测<br>当发现有新信号时，便会进入下一步，信号的处理。</p>
+<p>(3) 信号的处理<br>信号处理函数是运行在用户态的，调用处理函数前，内核会将当前内核栈的内容备份拷贝到用户栈上，并且修改指令寄存器（eip）将其指向信号处理函数。</p>
+<p>接下来进程返回到用户态中，执行相应的信号处理函数。</p>
+<p>信号处理函数执行完成后，还需要返回内核态，检查是否还有其它信号未处理。如果所有信号都处理完成，就会将内核栈恢复（从用户栈的备份拷贝回来），同时恢复指令寄存器（eip）将其指向中断前的运行位置，最后回到用户态继续执行进程。</p>
+<p>至此，一个完整的信号处理流程便结束了，如果同时有多个信号到达，上面的处理流程会在第2步和第3步骤间重复进行。</p>
+<p>(4) 常见信号量类型</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">#define SIGHUP 1  &#x2F;&#x2F; 终端连接结束时发出(不管正常或非正常)</span><br><span class="line">#define SIGINT 2  &#x2F;&#x2F; 程序终止(例如Ctrl-C)</span><br><span class="line">#define SIGQUIT 3 &#x2F;&#x2F; 程序退出(Ctrl-\)</span><br><span class="line">#define SIGILL 4 &#x2F;&#x2F; 执行了非法指令，或者试图执行数据段，堆栈溢出</span><br><span class="line">#define SIGTRAP 5 &#x2F;&#x2F; 断点时产生，由debugger使用</span><br><span class="line">#define SIGABRT 6 &#x2F;&#x2F; 调用abort函数生成的信号，表示程序异常</span><br><span class="line">#define SIGIOT 6 &#x2F;&#x2F; 同上，更全，IO异常也会发出</span><br><span class="line">#define SIGBUS 7 &#x2F;&#x2F; 非法地址，包括内存地址对齐出错，比如访问一个4字节的整数, 但其地址不是4的倍数</span><br><span class="line">#define SIGFPE 8 &#x2F;&#x2F; 计算错误，比如除0、溢出</span><br><span class="line">#define SIGKILL 9 &#x2F;&#x2F; 强制结束程序，具有最高优先级，本信号不能被阻塞、处理和忽略</span><br><span class="line">#define SIGUSR1 10 &#x2F;&#x2F; 未使用，保留</span><br><span class="line">#define SIGSEGV 11 &#x2F;&#x2F; 非法内存操作，与SIGBUS不同，他是对合法地址的非法访问，比如访问没有读权限的内存，向没有写权限的地址写数据</span><br><span class="line">#define SIGUSR2 12 &#x2F;&#x2F; 未使用，保留</span><br><span class="line">#define SIGPIPE 13 &#x2F;&#x2F; 管道破裂，通常在进程间通信产生</span><br><span class="line">#define SIGALRM 14 &#x2F;&#x2F; 定时信号,</span><br><span class="line">#define SIGTERM 15 &#x2F;&#x2F; 结束程序，类似温和的SIGKILL，可被阻塞和处理。通常程序如果终止不了，才会尝试SIGKILL</span><br><span class="line">#define SIGSTKFLT 16  &#x2F;&#x2F; 协处理器堆栈错误</span><br><span class="line">#define SIGCHLD 17 &#x2F;&#x2F; 子进程结束时, 父进程会收到这个信号。</span><br><span class="line">#define SIGCONT 18 &#x2F;&#x2F; 让一个停止的进程继续执行</span><br><span class="line">#define SIGSTOP 19 &#x2F;&#x2F; 停止进程,本信号不能被阻塞,处理或忽略</span><br><span class="line">#define SIGTSTP 20 &#x2F;&#x2F; 停止进程,但该信号可以被处理和忽略</span><br><span class="line">#define SIGTTIN 21 &#x2F;&#x2F; 当后台作业要从用户终端读数据时, 该作业中的所有进程会收到SIGTTIN信号</span><br><span class="line">#define SIGTTOU 22 &#x2F;&#x2F; 类似于SIGTTIN, 但在写终端时收到</span><br><span class="line">#define SIGURG 23 &#x2F;&#x2F; 有紧急数据或out-of-band数据到达socket时产生</span><br><span class="line">#define SIGXCPU 24 &#x2F;&#x2F; 超过CPU时间资源限制时发出</span><br><span class="line">#define SIGXFSZ 25 &#x2F;&#x2F; 当进程企图扩大文件以至于超过文件大小资源限制</span><br><span class="line">#define SIGVTALRM 26 &#x2F;&#x2F; 虚拟时钟信号. 类似于SIGALRM, 但是计算的是该进程占用的CPU时间.</span><br><span class="line">#define SIGPROF 27 &#x2F;&#x2F; 类似于SIGALRM&#x2F;SIGVTALRM, 但包括该进程用的CPU时间以及系统调用的时间</span><br><span class="line">#define SIGWINCH 28 &#x2F;&#x2F; 窗口大小改变时发出</span><br><span class="line">#define SIGIO 29 &#x2F;&#x2F; 文件描述符准备就绪, 可以开始进行输入&#x2F;输出操作</span><br><span class="line">#define SIGPOLL SIGIO &#x2F;&#x2F; 同上，别称</span><br><span class="line">#define SIGPWR 30 &#x2F;&#x2F; 电源异常</span><br><span class="line">#define SIGSYS 31 &#x2F;&#x2F; 非法的系统调用</span><br></pre></td></tr></table></figure>
+
+<p>通常我们在做 crash 收集的时候，主要关注这几个信号量：</p>
+<blockquote>
+<p>const int signal_array[] = {SIGILL, SIGABRT, SIGBUS, SIGFPE, SIGSEGV, SIGSTKFLT, SIGSYS};</p>
+</blockquote>
+<h3 id="三、捕捉native-crash"><a href="#三、捕捉native-crash" class="headerlink" title="三、捕捉native crash"></a>三、捕捉native crash</h3><p>** 1. 注册信号处理函数**</p>
+<p>第一步就是要用信号处理函数捕获到native crash(SIGSEGV, SIGBUS等)。在posix系统，可以用sigaction()：</p>
+<blockquote>
+<p>#include &lt;signal.h&gt;<br>int sigaction(int signum,const struct sigaction *act,struct sigaction *oldact));<br>signum：代表信号编码，可以是除SIGKILL及SIGSTOP外的任何一个特定有效的信号，如果为这两个信号定义自己的处理函数，将导致信号安装错误。<br>act：指向结构体sigaction的一个实例的指针，该实例指定了对特定信号的处理，如果设置为空，进程会执行默认处理。<br>oldact：和参数act类似，只不过保存的是原来对相应信号的处理，也可设置为NULL。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 注册信号处理函数</span><br><span class="line">void signal_handle(int code, siginfo_t *si, void *context) &#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void init() &#123;</span><br><span class="line">    struct sigaction old_signal_handlers[SIGNALS_LEN];</span><br><span class="line">    </span><br><span class="line">    struct sigaction handler;  </span><br><span class="line">    memset(&amp;handler, 0, sizeof(handler));  </span><br><span class="line">    sigemptyset(&amp;handler.sa_mask);  </span><br><span class="line">    handler.sa_sigaction &#x3D; signal_handle;  </span><br><span class="line">    handler.sa_flags &#x3D; SA_SIGINFO;  </span><br><span class="line">    </span><br><span class="line">    for (int i &#x3D; 0; i &lt; SIGNALS_LEN; ++i) &#123;</span><br><span class="line">        sigaction(signal_array[i], &amp;handler, &amp; old_signal_handlers[i]);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>** 2. 设置额外栈空间**</p>
+<blockquote>
+<p>#include &lt;signal.h&gt;<br>int sigaltstack(const stack_t *ss, stack_t *oss);<br>SIGSEGV很有可能是栈溢出引起的，如果在默认的栈上运行很有可能会破坏程序运行的现场，无法获取到正确的上下文。而且当栈满了（太多次递归，栈上太多对象），系统会在同一个已经满了的栈上调用SIGSEGV的信号处理函数，又再一次引起同样的信号。</p>
+</blockquote>
+<p>我们应该开辟一块新的空间作为运行信号处理函数的栈。可以使用sigaltstack在任意线程注册一个可选的栈，保留一下在紧急情况下使用的空间。（系统会在危险情况下把栈指针指向这个地方，使得可以在一个新的栈上运行信号处理函数）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">void init() &#123;</span><br><span class="line">    stack_t stack;  </span><br><span class="line">    memset(&amp;stack, 0, sizeof(stack));  </span><br><span class="line">    &#x2F;* Reserver the system default stack size. We don&#39;t need that much by the way. *&#x2F;  </span><br><span class="line">    stack.ss_size &#x3D; SIGSTKSZ;  </span><br><span class="line">    stack.ss_sp &#x3D; malloc(stack.ss_size);  </span><br><span class="line">    stack.ss_flags &#x3D; 0;  </span><br><span class="line">    &#x2F;* Install alternate stack size. Be sure the memory region is valid until you revert it. *&#x2F;  </span><br><span class="line">    if (stack.ss_sp !&#x3D; NULL &amp;&amp; sigaltstack(&amp;stack, NULL) &#x3D;&#x3D; 0) &#123;  </span><br><span class="line">      ...  </span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>** 3. 兼容其他signal处理**</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">void signal_handle(int code, siginfo_t *si, void *context) &#123;</span><br><span class="line"> </span><br><span class="line">    &#x2F;* Call previous handler. *&#x2F;  </span><br><span class="line">    old_handler.sa_sigaction(code, si, sc);  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>某些信号可能在之前已经被安装过信号处理函数，而sigaction一个信号量只能注册一个处理函数，这意味着我们的处理函数会覆盖其他人的处理信号<br>保存旧的处理函数，在处理完我们的信号处理函数后，在重新运行老的处理函数就能完成兼容。</p>
+<h3 id="五、注意事项"><a href="#五、注意事项" class="headerlink" title="五、注意事项"></a>五、注意事项</h3><p>1.防止死锁或者死循环<br>首先我们要了解async-signal-safe和可重入函数概念：</p>
+<p>A signal handler function must be very careful, since processing elsewhere may be interrupted at some arbitrary point in the execution of the program.<br>POSIX has the concept of “safe function”. If a signal interrupts the execution of an unsafe function, and handler either calls an unsafe function or handler terminates via a call to longjmp() or siglongjmp() and the program subsequently calls an unsafe function, then the behavior of the program is undefined.</p>
+<p>回想下在“信号机制”一节中的图示，进程捕捉到信号并对其进行处理时，进程正在执行的正常指令序列就被信号处理程序临时中断，它首先执行该信号处理程序中的指令（类似发生硬件中断）。但在信号处理程序中，不能判断捕捉到信号时进程执行到何处。如果进程正在执行malloc，在其堆中分配另外的存储空间，而此时由于捕捉到信号而插入执行该信号处理程序，其中又调用malloc，这时会发生什么？这可能会对进程造成破坏，因为malloc通常为它所分配的存储区维护一个链表，而插入执行信号处理程序时，进程可能正在更改此链表。（参考《UNIX环境高级编程》）</p>
+<p>Single UNIX Specification说明了在信号处理程序中保证调用安全的函数。这些函数是可重入的并被称为是异步信号安全（async-signal-safe）。除了可重入以外，在信号处理操作期间，它会阻塞任何会引起不一致的信号发送。下面是这些异步信号安全函数：</p>
+<p>但即使我们自己在信号处理程序中不使用不可重入的函数，也无法保证保存的旧的信号处理程序中不会有非异步信号安全的函数。所以要使用alarm保证信号处理程序不会陷入死锁或者死循环的状态。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">static void signal_handler(const int code, siginfo_t *const si,</span><br><span class="line">                                    void *const sc) &#123;</span><br><span class="line"></span><br><span class="line">    &#x2F;* Ensure we do not deadlock. Default of ALRM is to die.</span><br><span class="line">    * (signal() and alarm() are signal-safe) *&#x2F;</span><br><span class="line">    signal(code, SIG_DFL);</span><br><span class="line">    signal(SIGALRM, SIG_DFL);</span><br><span class="line"></span><br><span class="line">    &#x2F;* Ensure we do not deadlock. Default of ALRM is to die.</span><br><span class="line">      * (signal() and alarm() are signal-safe) *&#x2F;</span><br><span class="line">    (void) alarm(8);</span><br><span class="line">    ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>** 2. 在哪里打印堆栈**</p>
+<p><strong>(1) 子进程</strong></p>
+<p>考虑到信号处理程序中的诸多限制，一般会clone一个新的进程，在其中完成解析堆栈等任务。</p>
+<p>下面是Google Breakpad的流程图，在新的进程中DoDump，使用ptrace解析crash进程的堆栈，同时信号处理程序等待子进程完成任务后，再调用旧的信号处理函数。父子进程使用管道通信。</p>
+<p>(2) 子线程<br>在我的实验中，在子进程或者信号处理函数中，经常无法回调给java层。于是我选择了在初始化的时候就建立了子线程并一直等待，等到捕捉到crash信号时，唤醒这条线程dump出crash堆栈，并把crash堆栈回调给java。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">static void nativeInit(JNIEnv* env, jclass javaClass, jstring packageNameStr, jstring tombstoneFilePathStr, jobject obj) &#123;</span><br><span class="line">    ...</span><br><span class="line">    initCondition();</span><br><span class="line"></span><br><span class="line">    pthread_t thd;</span><br><span class="line">    int ret &#x3D; pthread_create(&amp;thd, NULL, DumpThreadEntry, NULL);</span><br><span class="line">    if(ret) &#123;</span><br><span class="line">        qmlog(&quot;%s&quot;, &quot;pthread_create error&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void* DumpThreadEntry(void *argv) &#123;</span><br><span class="line">    JNIEnv* env &#x3D; NULL;</span><br><span class="line">     if((*g_jvm)-&gt;AttachCurrentThread(g_jvm, &amp;env, NULL) !&#x3D; JNI_OK)</span><br><span class="line">    &#123;</span><br><span class="line">        LOGE(&quot;AttachCurrentThread() failed&quot;);</span><br><span class="line">        estatus &#x3D; 0;</span><br><span class="line">        return &amp;estatus;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    while (true) &#123;</span><br><span class="line">        &#x2F;&#x2F;等待信号处理函数唤醒</span><br><span class="line">        waitForSignal();</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;回调native异常堆栈给java层</span><br><span class="line">        throw_exception(env);</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;告诉信号处理函数已经处理完了</span><br><span class="line">        notifyThrowException();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if((*g_jvm)-&gt;DetachCurrentThread(g_jvm) !&#x3D; JNI_OK)</span><br><span class="line">    &#123;</span><br><span class="line">        LOGE(&quot;DetachCurrentThread() failed&quot;);</span><br><span class="line">        estatus &#x3D; 0;</span><br><span class="line">        return &amp;estatus;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return &amp;estatus;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="六、收集native-crash原因"><a href="#六、收集native-crash原因" class="headerlink" title="六、收集native crash原因"></a>六、收集native crash原因</h3><p>信号处理函数的入参中有丰富的错误信息，下面我们来一一分析。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;*信号处理函数*&#x2F;</span><br><span class="line">void (*sa_sigaction)(const int code, siginfo_t *const si, void * const sc) </span><br><span class="line"></span><br><span class="line">siginfo_t &#123;</span><br><span class="line">   int      si_signo;     &#x2F;* Signal number 信号量 *&#x2F;</span><br><span class="line">   int      si_errno;     &#x2F;* An errno value *&#x2F;</span><br><span class="line">   int      si_code;      &#x2F;* Signal code 错误码 *&#x2F;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>** 1. code**</p>
+<p>发生native crash之后，logcat中会打出如下一句信息：</p>
+<blockquote>
+<p>signal 11 (SIGSEGV), code 0 (SI_USER), fault addr 0x0</p>
+</blockquote>
+<p>根据code去查表，其实就可以知道发生native crash的大致原因：</p>
+<p>代码的一部分如下，其实就是根据不同的code，输出不同信息，这些都是固定的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">case SIGFPE:</span><br><span class="line">    switch(code) &#123;</span><br><span class="line">    case FPE_INTDIV:</span><br><span class="line">      return &quot;Integer divide by zero&quot;;</span><br><span class="line">    case FPE_INTOVF:</span><br><span class="line">      return &quot;Integer overflow&quot;;</span><br><span class="line">    case FPE_FLTDIV:</span><br><span class="line">      return &quot;Floating-point divide by zero&quot;;</span><br><span class="line">    case FPE_FLTOVF:</span><br><span class="line">      return &quot;Floating-point overflow&quot;;</span><br><span class="line">    case FPE_FLTUND:</span><br><span class="line">      return &quot;Floating-point underflow&quot;;</span><br><span class="line">    case FPE_FLTRES:</span><br><span class="line">      return &quot;Floating-point inexact result&quot;;</span><br><span class="line">    case FPE_FLTINV:</span><br><span class="line">      return &quot;Invalid floating-point operation&quot;;</span><br><span class="line">    case FPE_FLTSUB:</span><br><span class="line">      return &quot;Subscript out of range&quot;;</span><br><span class="line">    default:</span><br><span class="line">      return &quot;Floating-point&quot;;</span><br><span class="line">    &#125;</span><br><span class="line">    break;</span><br><span class="line">  case SIGSEGV:</span><br><span class="line">    switch(code) &#123;</span><br><span class="line">    case SEGV_MAPERR:</span><br><span class="line">      return &quot;Address not mapped to object&quot;;</span><br><span class="line">    case SEGV_ACCERR:</span><br><span class="line">      return &quot;Invalid permissions for mapped object&quot;;</span><br><span class="line">    default:</span><br><span class="line">      return &quot;Segmentation violation&quot;;</span><br><span class="line">    &#125;</span><br><span class="line">    break;</span><br></pre></td></tr></table></figure>
+
+<p>** 2. pc值**</p>
+<p>信号处理函数中的第三个入参sc是uc_mcontext的结构体，是cpu相关的上下文，包括当前线程的寄存器信息和奔溃时的pc值。能够知道崩溃时的pc，就能知道崩溃时执行的是那条指令。</p>
+<p>不过这个结构体的定义是平台相关，不同平台、不同cpu架构中的定义都不一样：</p>
+<p>x86-64架构：uc_mcontext.gregs[REG_RIP]<br>arm架构：uc_mcontext.arm_pc</p>
+<p>** 3. 共享库名字和相对偏移地址**<br>(1) dladdr()<br>pc值是程序加载到内存中的绝对地址，我们需要拿到奔溃代码相对于共享库的相对偏移地址，才能使用addr2line分析出是哪一行代码。通过dladdr()可以获得共享库加载到内存的起始地址，和pc值相减就可以获得相对偏移地址，并且可以获得共享库的名字。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Dl_info info;  </span><br><span class="line">if (dladdr(addr, &amp;info) !&#x3D; 0 &amp;&amp; info.dli_fname !&#x3D; NULL) &#123;  </span><br><span class="line">  void * const nearest &#x3D; info.dli_saddr;  </span><br><span class="line">  &#x2F;&#x2F;相对偏移地址</span><br><span class="line">  const uintptr_t addr_relative &#x3D;  </span><br><span class="line">    ((uintptr_t) addr - (uintptr_t) info.dli_fbase);  </span><br><span class="line">  ...  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>作为有追求的我们，肯定不满足于仅仅通过一个函数就获得答案。我们尝试下如何手工分析出相对地址。首先要了解下进程的地址空间布局。</p>
+<p>(2) Linux下进程的地址空间布局</p>
+<p>任何一个程序通常都包括代码段和数据段，这些代码和数据本身都是静态的。程序要想运行，首先要由操作系统负责为其创建进程，并在进程的虚拟地址空间中为其代码段和数据段建立映射。光有代码段和数据段是不够的，进程在运行过程中还要有其动态环境，其中最重要的就是堆栈。</p>
+<p>上图中Random stack offset和Random mmap offset等随机值意在防止恶意程序。Linux通过对栈、内存映射段、堆的起始地址加上随机偏移量来打乱布局，以免恶意程序通过计算访问栈、库函数等地址。</p>
+<p>栈(stack)，作为进程的临时数据区,增长方向是从高地址到低地址。</p>
+<p>(3) /proc/self/maps：检查各个模块加载在内存的地址范围<br>在Linux系统中，/proc/self/maps保存了各个程序段在内存中的加载地址范围，grep出共享库的名字，就可以知道共享库的加载基值是多少。</p>
+<p>得到相对偏移地址之后，使用readelf查看共享库的符号表，就可以知道是哪个函数crash了。</p>
+<h3 id="七、获取堆栈"><a href="#七、获取堆栈" class="headerlink" title="七、获取堆栈"></a>七、获取堆栈</h3><p>1.原理<br>在前一步，我们获取了奔溃时的pc值和各个寄存器的内容，通过SP和FP所限定的stack frame，就可以得到母函数的SP和FP，从而得到母函数的stack frame（PC，LR，SP，FP会在函数调用的第一时间压栈），以此追溯，即可得到所有函数的调用顺序。</p>
+<p>2.实现<br>在4.1.1以上，5.0以下：使用安卓系统自带的libcorkscrew.so<br>5.0以上：安卓系统中没有了libcorkscrew.so，使用自己编译的libunwind</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">#ifdef USE_UNWIND</span><br><span class="line">    &#x2F;* Frame buffer initial position. *&#x2F;</span><br><span class="line">    t-&gt;frames_size &#x3D; 0;</span><br><span class="line"></span><br><span class="line">    &#x2F;* Skip us and the caller. *&#x2F;</span><br><span class="line">   t-&gt;f rames_skip &#x3D; 0;</span><br><span class="line"></span><br><span class="line">    &#x2F;* 使用libcorkscrew解堆栈 *&#x2F;</span><br><span class="line">#ifdef USE_CORKSCREW</span><br><span class="line">    t-&gt;frames_size &#x3D; backtrace_signal(si, sc, t-&gt;frames, 0, BACKTRACE_FRAMES_MAX);</span><br><span class="line">#else</span><br><span class="line">    &#x2F;* Unwind frames (equivalent to backtrace()) *&#x2F;</span><br><span class="line">    _Unwind_Backtrace(coffeecatch_unwind_callback, t);</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">&#x2F;* 如果无法加载libcorkscrew，则使用自己编译的libunwind解堆栈 *&#x2F;</span><br><span class="line">#ifdef USE_LIBUNWIND</span><br><span class="line">    if (t-&gt;frames_size &#x3D;&#x3D; 0) &#123;</span><br><span class="line">        size_t i;</span><br><span class="line">        t-&gt;frames_size &#x3D; unwind_signal(si, sc, t-&gt;uframes, 0,BACKTRACE_FRAMES_MAX);</span><br><span class="line">        for(i &#x3D; 0 ; i &lt; t-&gt;frames_size ; i++) &#123;</span><br><span class="line">            t-&gt;frames[i].absolute_pc &#x3D; (uintptr_t) t-&gt;uframes[i];</span><br><span class="line">            t-&gt;frames[i].stack_top &#x3D; 0;</span><br><span class="line">            t-&gt;frames[i].stack_size &#x3D; 0;</span><br><span class="line">            __android_log_print(ANDROID_LOG_DEBUG, TAG, &quot;absolute_pc:%x&quot;, t-&gt;frames[i].absolute_pc);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+<p>libunwind是一个独立的开源库，高版本的安卓源码中也使用了libunwind作为解堆栈的工具，并针对安卓做了一些适配。下面是使用libunwind解堆栈的主循环，每次循环解一层堆栈。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">static ALWAYS_INLINE int</span><br><span class="line">slow_backtrace (void **buffer, int size, unw_context_t *uc)</span><br><span class="line">&#123;</span><br><span class="line">  unw_cursor_t cursor;</span><br><span class="line">  unw_word_t ip;</span><br><span class="line">  int n &#x3D; 0;</span><br><span class="line"></span><br><span class="line">  if (unlikely (unw_init_local (&amp;cursor, uc) &lt; 0))</span><br><span class="line">    return 0;</span><br><span class="line"></span><br><span class="line">  while (unw_step (&amp;cursor) &gt; 0)</span><br><span class="line">    &#123;</span><br><span class="line">      if (n &gt;&#x3D; size)</span><br><span class="line">          return n;</span><br><span class="line"></span><br><span class="line">      if (unw_get_reg (&amp;cursor, UNW_REG_IP, &amp;ip) &lt; 0)</span><br><span class="line">          return n;</span><br><span class="line">      buffer[n++] &#x3D; (void *) (uintptr_t) ip;</span><br><span class="line">    &#125;</span><br><span class="line">  return n;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>八、获取函数符号<br>(1) libcorkscrew<br>可以通过libcorkscrew中的get_backtrace_symbols函数获得函数符号。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;*</span><br><span class="line">* Describes the symbols associated with a backtrace frame.</span><br><span class="line">*&#x2F;</span><br><span class="line">typedef struct &#123;</span><br><span class="line">    uintptr_t relative_pc;</span><br><span class="line">    uintptr_t relative_symbol_addr;</span><br><span class="line">    char* map_name;</span><br><span class="line">    char* symbol_name;</span><br><span class="line">    char* demangled_name;</span><br><span class="line">&#125; backtrace_symbol_t;</span><br><span class="line"></span><br><span class="line">&#x2F;*</span><br><span class="line">* Gets the symbols for each frame of a backtrace.</span><br><span class="line">* The symbols array must be big enough to hold one symbol record per frame.</span><br><span class="line">* The symbols must later be freed using free_backtrace_symbols.</span><br><span class="line">*&#x2F;</span><br><span class="line">void get_backtrace_symbols(const backtrace_frame_t* backtrace, size_t frames,</span><br><span class="line">        backtrace_symbol_t* backtrace_symbols);</span><br></pre></td></tr></table></figure>
+
+<p>** (2) dladdr**<br>更通用的方法是通过dladdr获得函数名字。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">int dladdr(void *addr, Dl_info *info);</span><br><span class="line"></span><br><span class="line">typedef struct &#123;</span><br><span class="line">   const char *dli_fname;  &#x2F;* Pathname of shared object that</span><br><span class="line">                              contains address *&#x2F;</span><br><span class="line">   void       *dli_fbase;  &#x2F;* Base address at which shared</span><br><span class="line">                              object is loaded *&#x2F;</span><br><span class="line">   const char *dli_sname;  &#x2F;* Name of symbol whose definition</span><br><span class="line">                              overlaps addr *&#x2F;</span><br><span class="line">   void       *dli_saddr;  &#x2F;* Exact address of symbol named</span><br><span class="line">                              in dli_sname *&#x2F;</span><br><span class="line">&#125; Dl_info;</span><br></pre></td></tr></table></figure>
+<p>传入每一层堆栈的相对偏移地址，就可以从dli_fname中获得函数名字。</p>
+<p>九、获得java堆栈<br>如何获得native crash所对应的java层堆栈，这个问题曾经困扰了我一段时间。这里有一个前提：我们认为crash线程就是捕获到信号的线程，虽然这在SIGABRT下不一定可靠。有了这个认知，接下来就好办了。在信号处理函数中获得当前线程的名字，然后把crash线程的名字传给java层，在java里dump出这个线程的堆栈，就是crash所对应的java层堆栈了。</p>
+<p>在c中获得线程名字：</p>
+<p>char* getThreadName(pid_t tid) {<br>    if (tid &lt;= 1) {<br>        return NULL;<br>    }<br>    char* path = (char <em>) calloc(1, 80);<br>    char</em> line = (char *) calloc(1, THREAD_NAME_LENGTH);</p>
+<pre><code>snprintf(path, PATH_MAX, &quot;proc/%d/comm&quot;, tid);
+FILE* commFile = NULL;
+if (commFile = fopen(path, &quot;r&quot;)) {
+    fgets(line, THREAD_NAME_LENGTH, commFile);
+    fclose(commFile);
+}
+free(path);
+if (line) {
+    int length = strlen(line);
+    if (line[length - 1] == &apos;\n&apos;) {
+        line[length - 1] = &apos;\0&apos;;
+    }
+}
+return line;</code></pre><p>}<br>然后传给java层：</p>
+<pre><code>/**
+ * 根据线程名获得线程对象，native层会调用该方法，不能混淆
+ * @param threadName
+ * @return
+ */
+@Keep
+public static Thread getThreadByName(String threadName) {
+    if (TextUtils.isEmpty(threadName)) {
+        return null;
+    }
+
+    Set&lt;Thread&gt; threadSet = Thread.getAllStackTraces().keySet();
+    Thread[] threadArray = threadSet.toArray(new Thread[threadSet.size()]);
+
+    Thread theThread = null;
+    for(Thread thread : threadArray) {
+        if (thread.getName().equals(threadName)) {
+            theThread =  thread;
+        }
+    }
+
+    Log.d(TAG, &quot;threadName: &quot; + threadName + &quot;, thread: &quot; + theThread);
+    return theThread;
+}</code></pre><p>十、 结果展示<br>经过诸多探索，终于得到了完美的堆栈：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">java.lang.Error: signal 11 (Address not mapped to object) at address 0x0</span><br><span class="line">  at dalvik.system.NativeStart.run(Native Method)</span><br><span class="line">Caused by: java.lang.Error: signal 11 (Address not mapped to object) at address 0x0</span><br><span class="line">  at &#x2F;data&#x2F;app-lib&#x2F;com.tencent.moai.crashcatcher.demo-1&#x2F;libQMCrashGenerator.so.0xd8e(dangerousFunction:0x5:0)</span><br><span class="line">  at &#x2F;data&#x2F;app-lib&#x2F;com.tencent.moai.crashcatcher.demo-1&#x2F;libQMCrashGenerator.so.0xd95(wrapDangerousFunction:0x2:0)</span><br><span class="line">  at &#x2F;data&#x2F;app-lib&#x2F;com.tencent.moai.crashcatcher.demo-1&#x2F;libQMCrashGenerator.so.0xd9d(nativeInvalidAddressCrash:0x2:0)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libdvm.so.0x1ee8c(dvmPlatformInvoke:0x70:0)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libdvm.so.0x503b7(dvmCallJNIMethod(unsigned int const*, JValue*, Method const*, Thread*):0x1ee:0)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libdvm.so.0x28268(Native Method)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libdvm.so.0x2f738(dvmMterpStd(Thread*):0x44:0)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libdvm.so.0x2cda8(dvmInterpret(Thread*, Method const*, JValue*):0xb8:0)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libdvm.so.0x648e3(dvmInvokeMethod(Object*, Method const*, ArrayObject*, ArrayObject*, ClassObject*, bool):0x1aa:0)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libdvm.so.0x6cff9(Native Method)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libdvm.so.0x28268(Native Method)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libdvm.so.0x2f738(dvmMterpStd(Thread*):0x44:0)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libdvm.so.0x2cda8(dvmInterpret(Thread*, Method const*, JValue*):0xb8:0)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libdvm.so.0x643d9(dvmCallMethodV(Thread*, Method const*, Object*, bool, JValue*, std::__va_list):0x14c:0)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libdvm.so.0x4bca1(Native Method)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libandroid_runtime.so.0x50ac3(Native Method)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libandroid_runtime.so.0x518e7(android::AndroidRuntime::start(char const*, char const*):0x206:0)</span><br><span class="line">  at &#x2F;system&#x2F;bin&#x2F;app_process.0xf33(Native Method)</span><br><span class="line">  at &#x2F;system&#x2F;lib&#x2F;libc.so.0xf584(__libc_init:0x64:0)</span><br><span class="line">  at &#x2F;system&#x2F;bin&#x2F;app_process.0x107c(Native Method)</span><br><span class="line">Caused by: java.lang.Error: java stack</span><br><span class="line">  at com.tencent.crashcatcher.CrashCatcher.nativeInvalidAddressCrash(Native Method)</span><br><span class="line">  at com.tencent.crashcatcher.CrashCatcher.invalidAddressCrash(CrashCatcher.java:33)</span><br><span class="line">  at com.tencent.moai.crashcatcher.demo.MainActivity$4.onClick(MainActivity.java:56)</span><br><span class="line">  at android.view.View.performClick(View.java:4488)</span><br><span class="line">  at android.view.View$PerformClick.run(View.java:18860)</span><br><span class="line">  at android.os.Handler.handleCallback(Handler.java:808)</span><br><span class="line">  at android.os.Handler.dispatchMessage(Handler.java:103)</span><br><span class="line">  at android.os.Looper.loop(Looper.java:222)</span><br><span class="line">  at android.app.ActivityThread.main(ActivityThread.java:5484)</span><br><span class="line">  at java.lang.reflect.Method.invokeNative(Native Method)</span><br><span class="line">  at java.lang.reflect.Method.invoke(Method.java:515)</span><br><span class="line">  at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:860)</span><br><span class="line">  at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:676)</span><br><span class="line">  at dalvik.system.NativeStart.main(Native Method)</span><br></pre></td></tr></table></figure>
+
+<p>在native层构造了一个Error传给java，所以在java层可以很轻松地根据堆栈进行业务上的处理。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public interface CrashHandleListener &#123;</span><br><span class="line">    @Keep</span><br><span class="line">    void onCrash(int id, Error e);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>另外初始化时就建立等待回调线程的方式，提供了稳定的给java层的回调。在回调中我们打印了app的状态信息，包括activity的堆栈、app是否在前台等，以及打印crash前的logcat日志和把应用日志flush进文件。针对某些具体的native crash还做了业务上的处理，例如遇到热补丁框架相关的crash时就回滚补丁。</p>
+<p>在用户环境中的很多native crash单靠堆栈是解决不了的，logcat是非常重要的补充。好几例webview crash都是通过发生crash时的logcat定位的。比如我们曾经遇到过的一个的webview crash：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">#00 pc 00039874  &#x2F;system&#x2F;lib&#x2F;libc.so (tgkill+12)</span><br><span class="line">#01 pc 00013b5d  &#x2F;system&#x2F;lib&#x2F;libc.so (pthread_kill+52)</span><br><span class="line">#02 pc 0001477b  &#x2F;system&#x2F;lib&#x2F;libc.so (raise+10)</span><br><span class="line">#03 pc 00010ff5  &#x2F;system&#x2F;lib&#x2F;libc.so (__libc_android_abort+36)</span><br><span class="line">#04 pc 0000f554  &#x2F;system&#x2F;lib&#x2F;libc.so (abort+4)</span><br><span class="line">#05 pc 00239885  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#06 pc 00219da3  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#07 pc 00206459  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#08 pc 001fb6c7  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#09 pc 001edc97  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#10 pc 001ec5ad  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#11 pc 001ec617  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#12 pc 001ec5e5  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#13 pc 001ec5bf  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#14 pc 0022c941  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#15 pc 0022c92b  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#16 pc 0022e6a1  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#17 pc 0022ebcd  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#18 pc 0022ee1d  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#19 pc 0022c511  &#x2F;system&#x2F;lib&#x2F;libwebviewchromium.so</span><br><span class="line">#20 pc 00013347  &#x2F;system&#x2F;lib&#x2F;libc.so (_ZL15__pthread_startPv+30)</span><br><span class="line">#21 pc 0001135f  &#x2F;system&#x2F;lib&#x2F;libc.so (__start_thread+6)</span><br></pre></td></tr></table></figure>
+<p>单凭堆栈根本看不出来是什么问题，但是在logcat中却看到这样一个warning log：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">05-21 15:09:28.423 W&#x2F;System.err(16811): java.lang.NullPointerException: Attempt to get length of null array</span><br><span class="line">05-21 15:09:28.424 W&#x2F;System.err(16811):     at java.io.ByteArrayInputStream.&lt;init&gt;(ByteArrayInputStream.java:60)</span><br><span class="line">05-21 15:09:28.424 W&#x2F;System.err(16811):     at com.tencent.*.InlineImage.fetcher.HttpImageFetcher.fetchFromNetwork(HttpImageFetcher.java:86)</span><br><span class="line">05-21 15:09:28.424 W&#x2F;System.err(16811):     at com.tencent.*.InlineImage.fetcher.BaseFetcher.fetch(BaseFetcher.java:24)</span><br><span class="line">05-21 15:09:28.424 W&#x2F;System.err(16811):     at com.tencent.*.InlineImage.delaystream.DelayInputStream.read(DelayInputStream.java:36)</span><br><span class="line">05-21 15:09:28.424 W&#x2F;System.err(16811):     at com.tencent.*.InlineImage.delaystream.DelayHttpInputStream.read(DelayHttpInputStream.java:12)</span><br><span class="line">05-21 15:09:28.424 W&#x2F;System.err(16811):     at java.io.InputStream.read(InputStream.java:181)</span><br><span class="line">05-21 15:09:28.424 W&#x2F;System.err(16811):     at org.chromium.android_webview.InputStreamUtil.read(InputStreamUtil.java:54)</span><br><span class="line">查代码发现是我们在WebViewClient的shouldInterceptRequest接口中的业务代码发生了NullPointerException， 传进去WebView内部变成了natvie crash，问题解决。</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<p>=============================================================</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">char *head_cpu &#x3D; nullptr;</span><br><span class="line">asprintf(&amp;head_cpu, &quot;r0 %08lx  r1 %08lx  r2 %08lx  r3 %08lx\n&quot;</span><br><span class="line">                 &quot;r4 %08lx  r5 %08lx  r6 %08lx  r7 %08lx\n&quot;</span><br><span class="line">                 &quot;r8 %08lx  r9 %08lx  sl %08lx  fp %08lx\n&quot;</span><br><span class="line">                 &quot;ip %08lx  sp %08lx  lr %08lx  pc %08lx  cpsr %08lx\n&quot;,</span><br><span class="line">         t-&gt;uc_mcontext.arm_r0, t-&gt;uc_mcontext.arm_r1, t-&gt;uc_mcontext.arm_r2,</span><br><span class="line">         t-&gt;uc_mcontext.arm_r3, t-&gt;uc_mcontext.arm_r4, t-&gt;uc_mcontext.arm_r5,</span><br><span class="line">         t-&gt;uc_mcontext.arm_r6, t-&gt;uc_mcontext.arm_r7, t-&gt;uc_mcontext.arm_r8,</span><br><span class="line">         t-&gt;uc_mcontext.arm_r9, t-&gt;uc_mcontext.arm_r10, t-&gt;uc_mcontext.arm_fp,</span><br><span class="line">         t-&gt;uc_mcontext.arm_ip, t-&gt;uc_mcontext.arm_sp, t-&gt;uc_mcontext.arm_lr,</span><br><span class="line">         t-&gt;uc_mcontext.arm_pc, t-&gt;uc_mcontext.arm_cpsr);</span><br></pre></td></tr></table></figure>
+<p>不过uc_mcontext结构体的定义是平台相关的，比如我们熟知的arm、x86这种都不是同一个结构体定义，上面的代码只列出了arm架构的寄存器信息，要兼容其他架构的 cpu 在处理的时候，就得要寄出宏编译大法，不同的架构使用不同的定义。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">uintptr_t pc_from_ucontext(const ucontext_t *uc) &#123;</span><br><span class="line">#if (defined(__arm__))</span><br><span class="line">    return uc-&gt;uc_mcontext.arm_pc;</span><br><span class="line">#elif defined(__aarch64__)</span><br><span class="line">    return uc-&gt;uc_mcontext.pc;</span><br><span class="line">#elif (defined(__x86_64__))</span><br><span class="line">    return uc-&gt;uc_mcontext.gregs[REG_RIP];</span><br><span class="line">#elif (defined(__i386))</span><br><span class="line">  return uc-&gt;uc_mcontext.gregs[REG_EIP];</span><br><span class="line">#elif (defined (__ppc__)) || (defined (__powerpc__))</span><br><span class="line">  return uc-&gt;uc_mcontext.regs-&gt;nip;</span><br><span class="line">#elif (defined(__hppa__))</span><br><span class="line">  return uc-&gt;uc_mcontext.sc_iaoq[0] &amp; ~0x3UL;</span><br><span class="line">#elif (defined(__sparc__) &amp;&amp; defined (__arch64__))</span><br><span class="line">  return uc-&gt;uc_mcontext.mc_gregs[MC_PC];</span><br><span class="line">#elif (defined(__sparc__) &amp;&amp; !defined (__arch64__))</span><br><span class="line">  return uc-&gt;uc_mcontext.gregs[REG_PC];</span><br><span class="line">#else</span><br><span class="line">#error &quot;Architecture is unknown, please report me!&quot;</span><br><span class="line">#endif</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>pc值转内存地址<br>pc值是程序加载到内存中的绝对地址，绝对地址不能直接使用，因为每次程序运行创建的内存肯定都不是固定区域的内存，所以绝对地址肯定每次运行都不一致。我们需要拿到崩溃代码相对于当前库的相对偏移地址，这样才能使用 addr2line 分析出是哪一行代码。通过dladdr()可以获得共享库加载到内存的起始地址，和pc值相减就可以获得相对偏移地址，并且可以获得共享库的名字。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Dl_info info;  </span><br><span class="line">if (dladdr(addr, &amp;info) &amp;&amp; info.dli_fname) &#123;  </span><br><span class="line">  void * const nearest &#x3D; info.dli_saddr;  </span><br><span class="line">  uintptr_t addr_relative &#x3D; addr - info.dli_fbase;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>获取 Crash 发生时的函数调用栈<br>获取函数调用栈是最麻烦的，至今没有一个好用的，全都要做一些大改动。常见的做法有四种：</p>
+<p>第一种：直接使用系统的&lt;unwind.h&gt;库，可以获取到出错文件与函数名。只不过需要自己解析函数符号，同时经常会捕获到系统错误，需要手动过滤。<br>第二种：在4.1.1以上，5.0以下，使用系统自带的libcorkscrew.so，5.0开始，系统中没有了libcorkscrew.so，可以自己编译系统源码中的libunwind。libunwind是一个开源库，事实上高版本的安卓源码中就使用了他的优化版替换libcorkscrew。<br>第三种：使用开源库coffeecatch，但是这种方案也不能百分之百兼容所有机型。<br>第四种：使用 Google 的breakpad，这是所有 C/C++堆栈获取的权威方案，基本上业界都是基于这个库来做的。只不过这个库是全平台的 android、iOS、Windows、Linux、MacOS 全都有，所以非常大，在使用的时候得把无关的平台剥离掉减小体积。<br>下</p>
+<p>面以第一种为例讲一下实现：<br>核心方法是使用&lt;unwind.h&gt;库提供的一个方法_Unwind_Backtrace()这个函数可以传入一个函数指针作为回调，指针指向的函数有一个重要的参数是_Unwind_Context类型的结构体指针。<br>可以使用_Unwind_GetIP()函数将当前函数调用栈中每个函数的绝对内存地址（也就是上文中提到的 pc 值），写入到_Unwind_Context结构体中，最终返回的是当前调用栈的全部函数地址了，_Unwind_Word实际上就是一个unsigned int。<br>而capture_backtrace()返回的就是当前我们获取到调用栈中内容的数量。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * callback used when using &lt;unwind.h&gt; to get the trace for the current context</span><br><span class="line"> *&#x2F;</span><br><span class="line">_Unwind_Reason_Code unwind_callback(struct _Unwind_Context *context, void *arg) &#123;</span><br><span class="line">    backtrace_state_t *state &#x3D; (backtrace_state_t *) arg;</span><br><span class="line">    _Unwind_Word pc &#x3D; _Unwind_GetIP(context);</span><br><span class="line">    if (pc) &#123;</span><br><span class="line">        if (state-&gt;current &#x3D;&#x3D; state-&gt;end) &#123;</span><br><span class="line">            return _URC_END_OF_STACK;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            *state-&gt;current++ &#x3D; (void *) pc;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return _URC_NO_REASON;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * uses built in &lt;unwind.h&gt; to get the trace for the current context</span><br><span class="line"> *&#x2F;</span><br><span class="line">size_t capture_backtrace(void **buffer, size_t max) &#123;</span><br><span class="line">    backtrace_state_t state &#x3D; &#123;buffer, buffer + max&#125;;</span><br><span class="line">    _Unwind_Backtrace(unwind_callback, &amp;state);</span><br><span class="line">    return state.current - buffer;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当所有的函数的绝对内存地址(pc 值)都获取到了，就可以用上文讲的办法将 pc 值转换为相对偏移量，获取到真正的函数信息和相对内存地址了。</p>
+<p>void *buffer[max_line];<br>int frames_size = capture_backtrace(buffer, max_line);<br>for (int i = 0; i &lt; frames_size; i++) {<br>    Dnfo; l_info i<br>    const void *addr = buffer[i];<br>    if (dladdr(addr, &amp;info) &amp;&amp; info.dli_fname) {<br>      void * const nearest = info.dli_saddr;<br>      uintptr_t addr_relative = addr - info.dli_fbase;<br>}<br>Dl_info是一个结构体，内部封装了函数所在文件、函数名、当前库的基地址等信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">typedef struct &#123;</span><br><span class="line">    const char *dli_fname;  &#x2F;* Pathname of shared object that</span><br><span class="line">                               contains address *&#x2F;</span><br><span class="line">    void       *dli_fbase;  &#x2F;* Address at which shared object</span><br><span class="line">                               is loaded *&#x2F;</span><br><span class="line">    const char *dli_sname;  &#x2F;* Name of nearest symbol with address</span><br><span class="line">                               lower than addr *&#x2F;</span><br><span class="line">    void       *dli_saddr;  &#x2F;* Exact address of symbol named</span><br><span class="line">                               in dli_sname *&#x2F;</span><br><span class="line">&#125; Dl_info;</span><br></pre></td></tr></table></figure>
+<p>有了这个对象，我们就能获取到全部想要的信息了。虽然获取到全部想要的信息，但&lt;unwind.h&gt;有个麻烦的就是不想要的信息也给你了，所以需要手动过滤掉各种系统错误，最终得到的数据，就可以上报到自己的服务器了。</p>
+<p>数据回传到服务器<br>数据回传有两种方式，一种是直接将信息写入文件，下次启动的时候直接由 Java 上报；另一种就是回调 Java 代码，让 Java 去处理。用 Java 处理的好处是 Java 层可以继续在当前上下文上加上 Java 层的各种状态信息，写入到同一个文件中，使得开发在解决 bug 的时候能更方便。<br>这里就简单将数据写入文件了。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">void save(const char *name, char *content) &#123;</span><br><span class="line">    FILE *file &#x3D; fopen(name, &quot;w+&quot;);</span><br><span class="line">    fputs(content, file);</span><br><span class="line">    fflush(file);</span><br><span class="line">    fclose(file);</span><br><span class="line">    &#x2F;&#x2F;可以在写入文件以后，再通知 Java 层，直接将文件名传给 Java 层更简单。  </span><br><span class="line">    report();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果你按照本文讲的，应该是可以创建一个可以工作的 Native Crash 收集库了，但是还有很多细节上的问题，比如数据的丢失问题，写文件的时候使用w+可能造成上次存储的文件丢失；如果当前函数发生了无限递归造成堆栈溢出，在统计的时候需要考虑到这种情况而新开堆栈否则本来就满了的堆栈又在当前堆栈处理溢出信号，处理肯定是会失败的；再比方说多进程多线程在 C 上的各种问题，真的是很复杂。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><p><a href="https://zhuanlan.zhihu.com/p/27834417" target="_blank" rel="noopener">Android 平台 Native 代码的崩溃捕获机制及实现</a><br><a href="https://blog.csdn.net/JMW1407/article/details/107737137" target="_blank" rel="noopener">什么是信号（signal）？信号的处理机制？利用信号进行简单的进程通信过程设计（c++）?</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/08/14/LeetCode%E5%88%9D%E7%BA%A7%E7%AE%97%E6%B3%95/" rel="prev" title="LeetCode初级算法">
+      <i class="fa fa-chevron-left"></i> LeetCode初级算法
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/10/20/Utils%E6%A1%86%E6%9E%B6%E8%A7%A3%E6%9E%90/" rel="next" title="Utils框架解析">
+      Utils框架解析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Native-Crash-异常捕获"><span class="nav-number">1.</span> <span class="nav-text">Native Crash 异常捕获</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一、背景"><span class="nav-number">1.1.</span> <span class="nav-text">一、背景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二、信号机制"><span class="nav-number">1.2.</span> <span class="nav-text">二、信号机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#三、捕捉native-crash"><span class="nav-number">1.3.</span> <span class="nav-text">三、捕捉native crash</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#五、注意事项"><span class="nav-number">1.4.</span> <span class="nav-text">五、注意事项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#六、收集native-crash原因"><span class="nav-number">1.5.</span> <span class="nav-text">六、收集native crash原因</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#七、获取堆栈"><span class="nav-number">1.6.</span> <span class="nav-text">七、获取堆栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">1.7.</span> <span class="nav-text">参考</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

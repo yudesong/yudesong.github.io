@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="一、概述二、ANR触发时机2.1 Service Timeout2.2 BroadcastQueue Timeout2.3 ContentProvider Timeout2.4 inputDispatching Timeout2.5 keyDispatching Timeout三、ANR工作3.1 appNotResponding四、其他导致ANR常见情形：避免ANR:五、遇到ANR怎么分析导出t">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ANR原理">
+<meta property="og:url" content="http://yoursite.com/2020/07/16/ANR%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="一、概述二、ANR触发时机2.1 Service Timeout2.2 BroadcastQueue Timeout2.3 ContentProvider Timeout2.4 inputDispatching Timeout2.5 keyDispatching Timeout三、ANR工作3.1 appNotResponding四、其他导致ANR常见情形：避免ANR:五、遇到ANR怎么分析导出t">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-07-16T03:21:45.946Z">
+<meta property="article:modified_time" content="2020-07-17T06:25:17.258Z">
+<meta property="article:author" content="yudesong">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/07/16/ANR%E5%8E%9F%E7%90%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ANR原理 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/16/ANR%E5%8E%9F%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ANR原理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-16 11:21:45" itemprop="dateCreated datePublished" datetime="2020-07-16T11:21:45+08:00">2020-07-16</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>一、概述<br>二、ANR触发时机<br>2.1 Service Timeout<br>2.2 BroadcastQueue Timeout<br>2.3 ContentProvider Timeout<br>2.4 inputDispatching Timeout<br>2.5 keyDispatching Timeout<br>三、ANR工作<br>3.1 appNotResponding<br>四、其他<br>导致ANR常见情形：<br>避免ANR:<br>五、遇到ANR怎么分析<br>导出trace文件<br>trace文件格式解析<br>通过分析trace文件得到ANR信息<br>trace文件顶部的线程一般是ANR的元凶<br>注意死锁和等待<br>Android ANR源码原理分析</p>
+<p>ANR即Application Not Responding，顾名思义就是应用程序无响应。在Android中，一般情况下，四大组件均是工作在主线程中的，Android中的Activity Manager和Window Manager会随时监控应用程序的响应情况，如果因为一些耗时操作（网络请求或者IO操作）造成主线程阻塞一定时间（例如造成5s内不能响应用户事件或者BroadcastReceiver的onReceive方法执行时间超过10s），那么系统就会显示ANR对话框提示用户对应的应用处于无响应状态。</p>
+<p>虽然每个程序员都不想ANR发生在自己的头上，因此，你需要严格遵守Google提供的一系列建议（看这里），简单总结就是以下两点：</p>
+<ol>
+<li>不要让主线程干耗时的工作</li>
+<li>不要让其他线程阻塞主线程的执行<br>因此，要尽量保证主线程执行工作干净利落，一个消息循环执行时间最好不超过100ms到200ms，对于一些脏活累活可以交给AsyncTask、HandlerThread、IntentService或者另外起的新线程来完成，这样应用程序就能够及时响应用户的操作而不会给用户带来卡顿的感觉。</li>
+</ol>
+<p>一、概述<br>ANR(Application Not responding)，是指应用程序未响应，Android系统对于一些事件需要在一定的时间范围内完成，如果超过预定时间能未能得到有效响应或者响应时间过长，都会造成ANR。一般地，这时往往会弹出一个提示框，告知用户当前xxx未响应，用户可选择继续等待或者Force Close。</p>
+<p>那么哪些场景会造成ANR呢？</p>
+<p>Service Timeout:服务在20s内未执行完成；<br>BroadcastQueue Timeout：比如前台广播在10s内执行完成<br>ContentProvider Timeout：内容提供者执行超时<br>inputDispatching Timeout: 输入事件分发超时5s，包括按键分发事件的超时。<br>二、ANR触发时机<br>2.1 Service Timeout<br>Service Timeout触发时机，简单说就是AMS中的mHandler收到SERVICE_TIMEOUT_MSG消息时触发。</p>
+<p>在前面文章startService流程分析详细介绍Service启动流程，在Service所在进程attach到system_server进程的过程中会调用realStartServiceLocked()方法</p>
+<p>2.1.1 realStartServiceLocked</p>
+<p>[-&gt; ActiveServices.java]</p>
+<p>private final void realStartServiceLocked(ServiceRecord r,<br>        ProcessRecord app, boolean execInFg) throws RemoteException {<br>    …<br>    //发送delay消息(SERVICE_TIMEOUT_MSG)，【见小节2.1.2】<br>    bumpServiceExecutingLocked(r, execInFg, “create”);<br>    try {<br>        …<br>        //最终执行服务的onCreate()方法<br>        app.thread.scheduleCreateService(r, r.serviceInfo,<br>                mAm.compatibilityInfoForPackageLocked(r.serviceInfo.applicationInfo),<br>                app.repProcState);</p>
+<pre><code>    } catch (DeadObjectException e) {
+        ...
+} finally {
+    if (!created) {
+        //当service启动完毕，则remove SERVICE_TIMEOUT_MSG消息【见小节2.1.3】
+        serviceDoneExecutingLocked(r, inDestroying, inDestroying);
+        ...
+    }
+}</code></pre><p>}<br>2.1.2 bumpServiceExecutingLocked</p>
+<p>该方法的主要工作发送delay消息(SERVICE_TIMEOUT_MSG)</p>
+<p>private final void bumpServiceExecutingLocked(ServiceRecord r, boolean fg, String why) {<br>    …<br>    scheduleServiceTimeoutLocked(r.app);<br>}<br>void scheduleServiceTimeoutLocked(ProcessRecord proc) {<br>    if (proc.executingServices.size() == 0 || proc.thread == null) {<br>        return;<br>    }<br>    long now = SystemClock.uptimeMillis();<br>    Message msg = mAm.mHandler.obtainMessage(<br>            ActivityManagerService.SERVICE_TIMEOUT_MSG);<br>    msg.obj = proc;<br>    //当超时后仍没有remove该SERVICE_TIMEOUT_MSG消息，则执行service Timeout流程【见2.1.4】<br>    mAm.mHandler.sendMessageAtTime(msg,<br>            proc.execServicesFg ? (now+SERVICE_TIMEOUT) : (now+ SERVICE_BACKGROUND_TIMEOUT));<br>}<br>对于前台服务，则超时为SERVICE_TIMEOUT，即timeout=20s；<br>对于后台服务，则超时为SERVICE_BACKGROUND_TIMEOUT，即timeout=200s；<br>2.1.3 serviceDoneExecutingLocked</p>
+<p>该方法的主要工作是当service启动完成，则移除service Timeout消息。</p>
+<p>private void serviceDoneExecutingLocked(ServiceRecord r, boolean inDestroying,<br>            boolean finishing) {<br>    …<br>    if (r.executeNesting &lt;= 0) {<br>        if (r.app != null) {<br>            r.app.execServicesFg = false;<br>            r.app.executingServices.remove(r);<br>            if (r.app.executingServices.size() == 0) {<br>                //当前服务所在进程中没有正在执行的service<br>                mAm.mHandler.removeMessages(ActivityManagerService.SERVICE_TIMEOUT_MSG, r.app);<br>        …<br>    }<br>    …<br>}<br>2.1.4 SERVICE_TIMEOUT_MSG</p>
+<p>到此不难理解，当SERVICE_TIMEOUT_MSG消息成功发送时，则AMS中的mHandler收到该消息则触发调用serviceTimeout。</p>
+<p>final class MainHandler extends Handler {<br>    public void handleMessage(Message msg) {<br>        switch (msg.what) {<br>            case SERVICE_TIMEOUT_MSG: {<br>                …<br>                //【见小节2.1.5】<br>                mServices.serviceTimeout((ProcessRecord)msg.obj);<br>            } break;<br>            …<br>        }<br>        …<br>    }<br>}<br>2.1.5 serviceTimeout</p>
+<p>[-&gt; ActiveServices.java]</p>
+<p>void serviceTimeout(ProcessRecord proc) {<br>    String anrMessage = null;</p>
+<pre><code>synchronized(mAm) {
+    if (proc.executingServices.size() == 0 || proc.thread == null) {
+        return;
+    }
+    final long now = SystemClock.uptimeMillis();
+    final long maxTime =  now -
+            (proc.execServicesFg ? SERVICE_TIMEOUT : SERVICE_BACKGROUND_TIMEOUT);
+    ServiceRecord timeout = null;
+    long nextTime = 0;
+    for (int i=proc.executingServices.size()-1; i&gt;=0; i--) {
+        ServiceRecord sr = proc.executingServices.valueAt(i);
+        if (sr.executingStart &lt; maxTime) {
+            timeout = sr;
+            break;
+        }
+        if (sr.executingStart &gt; nextTime) {
+            nextTime = sr.executingStart;
+        }
+    }
+    if (timeout != null &amp;&amp; mAm.mLruProcesses.contains(proc)) {
+        Slog.w(TAG, &quot;Timeout executing service: &quot; + timeout);
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new FastPrintWriter(sw, false, 1024);
+        pw.println(timeout);
+        timeout.dump(pw, &quot;    &quot;);
+        pw.close();
+        mLastAnrDump = sw.toString();
+        mAm.mHandler.removeCallbacks(mLastAnrDumpClearer);
+        mAm.mHandler.postDelayed(mLastAnrDumpClearer, LAST_ANR_LIFETIME_DURATION_MSECS);
+        anrMessage = &quot;executing service &quot; + timeout.shortName;
+    }
+}
+
+if (anrMessage != null) {
+    //当存在timeout的service，则执行appNotResponding【见小节3.1】
+    mAm.appNotResponding(proc, null, null, false, anrMessage);
+}</code></pre><p>}<br>其中anrMessage的内容为”executing service [发送超时serviceRecord信息]”;</p>
+<p>2.2 BroadcastQueue Timeout<br>BroadcastQueue Timeout触发时机，简单说就是BroadcastQueue中的mHandler收到BROADCAST_TIMEOUT_MSG消息时触发。</p>
+<p>在前面文章Android Broadcast广播机制分析详细介绍广播启动流程，在发送广播过程中会执行scheduleBroadcastsLocked方法来处理相关的广播，然后会调用到processNextBroadcast方法来处理下一条广播。</p>
+<p>processNextBroadcast执行过程分4步骤：</p>
+<p>step1. 处理并行广播<br>step2. 处理当前有序广播<br>step3. 获取下条有序广播<br>step4. 处理下条有序广播<br>2.2.1 processNextBroadcast</p>
+<p>[-&gt; BroadcastQueue.java]</p>
+<p>final void processNextBroadcast(boolean fromMsg) {<br>    synchronized(mService) {<br>        …<br>        //step 2: 处理当前有序广播<br>        do {<br>            r = mOrderedBroadcasts.get(0);<br>            //获取所有该广播所有的接收者<br>            int numReceivers = (r.receivers != null) ? r.receivers.size() : 0;<br>            if (mService.mProcessesReady &amp;&amp; r.dispatchTime &gt; 0) {<br>                long now = SystemClock.uptimeMillis();<br>                if ((numReceivers &gt; 0) &amp;&amp;<br>                        (now &gt; r.dispatchTime + (2<em>mTimeoutPeriod</em>numReceivers))) {<br>                    //当广播处理时间超时，则强制结束这条广播【见小节2.2.5】<br>                    broadcastTimeoutLocked(false);<br>                    …<br>                }<br>            }<br>            if (r.receivers == null || r.nextReceiver &gt;= numReceivers<br>                    || r.resultAbort || forceReceive) {<br>                if (r.resultTo != null) {<br>                    //处理广播消息消息<br>                    performReceiveLocked(r.callerApp, r.resultTo,<br>                        new Intent(r.intent), r.resultCode,<br>                        r.resultData, r.resultExtras, false, false, r.userId);<br>                    r.resultTo = null;<br>                }<br>                //取消BROADCAST_TIMEOUT_MSG消息【见小节2.2.3】<br>                cancelBroadcastTimeoutLocked();<br>            }<br>        } while (r == null);<br>        …</p>
+<pre><code>    //step 3: 获取下条有序广播
+    r.receiverTime = SystemClock.uptimeMillis();
+    if (!mPendingBroadcastTimeoutMessage) {
+        long timeoutTime = r.receiverTime + mTimeoutPeriod;
+        //设置广播超时时间，发送BROADCAST_TIMEOUT_MSG【见小节2.2.2】
+        setBroadcastTimeoutLocked(timeoutTime);
+    }
+    ...
+}</code></pre><p>}<br>对于广播超时处理时机：</p>
+<p>首先在step3的过程中setBroadcastTimeoutLocked(timeoutTime) 设置超时广播消息；<br>然后在step2根据广播处理情况来处理：<br>当广播接收者等待时间过长，则调用broadcastTimeoutLocked(false);<br>当，cancelBroadcastTimeoutLocked<br>2.2.2 setBroadcastTimeoutLocked</p>
+<p>final void setBroadcastTimeoutLocked(long timeoutTime) {<br>    if (! mPendingBroadcastTimeoutMessage) {<br>        Message msg = mHandler.obtainMessage(BROADCAST_TIMEOUT_MSG, this);<br>        mHandler.sendMessageAtTime(msg, timeoutTime);<br>        mPendingBroadcastTimeoutMessage = true;<br>    }<br>}<br>设置定时广播BROADCAST_TIMEOUT_MSG，即当前往后推mTimeoutPeriod时间广播还没处理完毕，则进入广播超时流程。</p>
+<p>对于前台广播，则超时为BROADCAST_FG_TIMEOUT，即timeout=10s；<br>对于后台广播，则超时为BROADCAST_BG_TIMEOUT，即timeout=60s。<br>2.2.3 cancelBroadcastTimeoutLocked</p>
+<p>final void cancelBroadcastTimeoutLocked() {<br>    if (mPendingBroadcastTimeoutMessage) {<br>        mHandler.removeMessages(BROADCAST_TIMEOUT_MSG, this);<br>        mPendingBroadcastTimeoutMessage = false;<br>    }<br>}<br>移除广播超时消息BROADCAST_TIMEOUT_MSG</p>
+<p>2.2.4 BROADCAST_TIMEOUT_MSG</p>
+<p>到此不难理解，当BROADCAST_TIMEOUT_MSG消息成功发送时，则AMS中的mHandler收到该消息则触发调用serviceTimeout。</p>
+<p>private final class BroadcastHandler extends Handler {<br>    public void handleMessage(Message msg) {<br>        switch (msg.what) {<br>            case BROADCAST_TIMEOUT_MSG: {<br>                synchronized (mService) {<br>                    //【见小节2.2.5】<br>                    broadcastTimeoutLocked(true);<br>                }<br>            } break;<br>            …<br>        }<br>        …<br>    }<br>}<br>2.2.5 broadcastTimeoutLocked</p>
+<p>[-&gt; BroadcastRecord.java]</p>
+<p>final void broadcastTimeoutLocked(boolean fromMsg) {<br>    if (fromMsg) {<br>        mPendingBroadcastTimeoutMessage = false;<br>    }</p>
+<pre><code>if (mOrderedBroadcasts.size() == 0) {
+    return;
+}
+
+long now = SystemClock.uptimeMillis();
+BroadcastRecord r = mOrderedBroadcasts.get(0);
+if (fromMsg) {
+    if (mService.mDidDexOpt) {
+        //延迟timeouts直到dexopt结束
+        mService.mDidDexOpt = false;
+        long timeoutTime = SystemClock.uptimeMillis() + mTimeoutPeriod;
+        setBroadcastTimeoutLocked(timeoutTime);
+        return;
+    }
+    if (!mService.mProcessesReady) {
+        //当系统还没有准备就绪时，广播处理流程中不存在广播超时
+        return;
+    }
+
+    long timeoutTime = r.receiverTime + mTimeoutPeriod;
+    if (timeoutTime &gt; now) {
+        //过早的timeout，重新设置广播超时
+        setBroadcastTimeoutLocked(timeoutTime);
+        return;
+    }
+}
+
+BroadcastRecord br = mOrderedBroadcasts.get(0);
+if (br.state == BroadcastRecord.WAITING_SERVICES) {
+    //广播已经处理完成，但需要等待已启动service执行完成。当等待足够时间，则处理下一条广播。
+    br.curComponent = null;
+    br.state = BroadcastRecord.IDLE;
+    processNextBroadcast(false);
+    return;
+}
+
+r.receiverTime = now;
+//当前BroadcastRecord的anr次数执行加1操作
+r.anrCount++;
+
+if (r.nextReceiver &lt;= 0) {
+    return;
+}
+
+ProcessRecord app = null;
+String anrMessage = null;
+
+Object curReceiver = r.receivers.get(r.nextReceiver-1);
+//根据情况记录广播接收者丢弃的EventLog
+logBroadcastReceiverDiscardLocked(r);
+if (curReceiver instanceof BroadcastFilter) {
+    BroadcastFilter bf = (BroadcastFilter)curReceiver;
+    if (bf.receiverList.pid != 0
+            &amp;&amp; bf.receiverList.pid != ActivityManagerService.MY_PID) {
+        synchronized (mService.mPidsSelfLocked) {
+            app = mService.mPidsSelfLocked.get(
+                    bf.receiverList.pid);
+        }
+    }
+} else {
+    app = r.curApp;
+}
+
+if (app != null) {
+    anrMessage = &quot;Broadcast of &quot; + r.intent.toString();
+}
+
+if (mPendingBroadcast == r) {
+    mPendingBroadcast = null;
+}
+
+//继续移动到下一个广播接收者
+finishReceiverLocked(r, r.resultCode, r.resultData,
+        r.resultExtras, r.resultAbort, false);
+scheduleBroadcastsLocked();
+
+if (anrMessage != null) {
+    //【见小节2.2.6】
+    mHandler.post(new AppNotResponding(app, anrMessage));
+}</code></pre><p>}<br>2.2.6 AppNotResponding</p>
+<p>[-&gt; BroadcastQueue.java]</p>
+<p>private final class AppNotResponding implements Runnable {<br>    …<br>    public void run() {<br>        //【见小节3.1】<br>        mService.appNotResponding(mApp, null, null, false, mAnnotation);<br>    }<br>}<br>2.3 ContentProvider Timeout<br>2.3.1 AMS.appNotRespondingViaProvider</p>
+<p>public void appNotRespondingViaProvider(IBinder connection) {<br>    enforceCallingPermission(<br>            android.Manifest.permission.REMOVE_TASKS, “appNotRespondingViaProvider()”);</p>
+<pre><code>final ContentProviderConnection conn = (ContentProviderConnection) connection;
+if (conn == null) {
+    return;
+}
+
+final ProcessRecord host = conn.provider.proc;
+//无法找到provider所处的进程
+if (host == null) {
+    return;
+}
+
+final long token = Binder.clearCallingIdentity();
+try {
+    //【见小节3.1】
+    appNotResponding(host, null, null, false, &quot;ContentProvider not responding&quot;);
+} finally {
+    Binder.restoreCallingIdentity(token);
+}</code></pre><p>}<br>Timeout时间20s</p>
+<p>调用链：</p>
+<p>ContentProviderClient.NotRespondingRunnable.run<br>    ContextImpl.ApplicationContentResolver.appNotRespondingViaProvider<br>        ActivityThread.appNotRespondingViaProvider<br>            AMP.appNotRespondingViaProvider<br>                AMS.appNotRespondingViaProvider</p>
+<p>2.4 inputDispatching Timeout<br>在native层InputDispatcher.cpp中经过层层调用，此处先省略过程，后续再展开，从native层com_android_server_input_InputManagerService调用到java层InputManagerService。</p>
+<p>2.4.1 IMS.notifyANR</p>
+<p>[-&gt; InputManagerService.java]</p>
+<p>private long notifyANR(InputApplicationHandle inputApplicationHandle,<br>        InputWindowHandle inputWindowHandle, String reason) {<br>    //【见小节2.4.2】<br>    return mWindowManagerCallbacks.notifyANR(<br>            inputApplicationHandle, inputWindowHandle, reason);<br>}<br>mWindowManagerCallbacks为InputMonitor对象</p>
+<p>2.4.2 notifyANR</p>
+<p>[-&gt; InputMonitor.java]</p>
+<p>public long notifyANR(InputApplicationHandle inputApplicationHandle,<br>        InputWindowHandle inputWindowHandle, String reason) {<br>    AppWindowToken appWindowToken = null;<br>    WindowState windowState = null;<br>    boolean aboveSystem = false;<br>    synchronized (mService.mWindowMap) {<br>        if (inputWindowHandle != null) {<br>            windowState = (WindowState) inputWindowHandle.windowState;<br>            if (windowState != null) {<br>                appWindowToken = windowState.mAppToken;<br>            }<br>        }<br>        if (appWindowToken == null &amp;&amp; inputApplicationHandle != null) {<br>            appWindowToken = (AppWindowToken)inputApplicationHandle.appWindowToken;<br>        }<br>        //输出input事件分发超时log<br>        if (windowState != null) {<br>            Slog.i(WindowManagerService.TAG, “Input event dispatching timed out “<br>                    + “sending to “ + windowState.mAttrs.getTitle()<br>                    + “.  Reason: “ + reason);<br>            int systemAlertLayer = mService.mPolicy.windowTypeToLayerLw(<br>                    WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);<br>            aboveSystem = windowState.mBaseLayer &gt; systemAlertLayer;<br>        } else if (appWindowToken != null) {<br>            Slog.i(WindowManagerService.TAG, “Input event dispatching timed out “<br>                    + “sending to application “ + appWindowToken.stringName<br>                    + “.  Reason: “ + reason);<br>        } else {<br>            Slog.i(WindowManagerService.TAG, “Input event dispatching timed out “<br>                    + “.  Reason: “ + reason);<br>        }<br>        mService.saveANRStateLocked(appWindowToken, windowState, reason);<br>    }</p>
+<pre><code>if (appWindowToken != null &amp;&amp; appWindowToken.appToken != null) {
+    //【见小节2.5.1】
+    boolean abort = appWindowToken.appToken.keyDispatchingTimedOut(reason);
+    if (! abort) {
+        return appWindowToken.inputDispatchingTimeoutNanos;
+    }
+} else if (windowState != null) {
+    //AMP经过binder，最终调用到AMS【见小节2.4.3】
+    long timeout = ActivityManagerNative.getDefault().inputDispatchingTimedOut(
+            windowState.mSession.mPid, aboveSystem, reason);
+    if (timeout &gt;= 0) {
+        return timeout * 1000000L; //转化为纳秒
+    }
+}
+return 0;</code></pre><p>}<br>2.4.3 AMS.inputDispatchingTimedOut</p>
+<p>public long inputDispatchingTimedOut(int pid, final boolean aboveSystem, String reason) {<br>    …<br>    ProcessRecord proc;<br>    long timeout;<br>    synchronized (this) {<br>        synchronized (mPidsSelfLocked) {<br>            proc = mPidsSelfLocked.get(pid); //根据pid查看进程record<br>        }<br>        timeout = getInputDispatchingTimeoutLocked(proc);<br>    }<br>    //【见小节2.4.4】<br>    if (!inputDispatchingTimedOut(proc, null, null, aboveSystem, reason)) {<br>        return -1;<br>    }</p>
+<pre><code>return timeout;</code></pre><p>}<br>inputDispatching的超时为KEY_DISPATCHING_TIMEOUT，即timeout = 5s</p>
+<p>2.4.4 AMS.inputDispatchingTimedOut</p>
+<p>public boolean inputDispatchingTimedOut(final ProcessRecord proc,<br>        final ActivityRecord activity, final ActivityRecord parent,<br>        final boolean aboveSystem, String reason) {<br>    …<br>    final String annotation;<br>    if (reason == null) {<br>        annotation = “Input dispatching timed out”;<br>    } else {<br>        annotation = “Input dispatching timed out (“ + reason + “)”;<br>    }</p>
+<pre><code>if (proc != null) {
+    ...
+    mHandler.post(new Runnable() {
+        public void run() {
+            //【见小节3.1】
+            appNotResponding(proc, activity, parent, aboveSystem, annotation);
+        }
+    });
+}
+return true;</code></pre><p>}<br>调用链：</p>
+<p>InputManagerService.notifyANR<br>    InputMonitor.notifyANR<br>        AMP.inputDispatchingTimedOut<br>            AMS.inputDispatchingTimedOut<br>2.5 keyDispatching Timeout<br>keyDispatching timout与inputDispatching Timeout流畅基本一致。</p>
+<p>调用链：</p>
+<p>InputManagerService.notifyANR<br>    InputMonitor.notifyANR<br>        ActivityRecord.Token.keyDispatchingTimedOut<br>            AMS.inputDispatchingTimedOut<br>Token.keyDispatchingTimedOut</p>
+<p>[-&gt; ActivityRecord.java]</p>
+<p>final class ActivityRecord {<br>    static class Token extends IApplicationToken.Stub {<br>        public boolean keyDispatchingTimedOut(String reason) {<br>            ActivityRecord r;<br>            ActivityRecord anrActivity;<br>            ProcessRecord anrApp;<br>            synchronized (mService) {<br>                r = tokenToActivityRecordLocked(this);<br>                if (r == null) {<br>                    return false;<br>                }<br>                anrActivity = r.getWaitingHistoryRecordLocked();<br>                anrApp = r != null ? r.app : null;<br>            }<br>            return mService.inputDispatchingTimedOut(anrApp, anrActivity, r, false, reason);<br>        }<br>        …<br>    }<br>}<br>对于keyDispatching Timeout的ANR，当触发该类型ANR时，如果不再有输入事件，则不会弹出ANR对话框；只有在下一次input事件产生后5s才弹出ANR提示框。</p>
+<p>三、ANR工作<br>3.1 appNotResponding<br>[-&gt; ActivityManagerService.java]</p>
+<p>final void appNotResponding(ProcessRecord app, ActivityRecord activity,<br>        ActivityRecord parent, boolean aboveSystem, final String annotation) {<br>    ArrayList<Integer> firstPids = new ArrayList<Integer>(5);<br>    SparseArray<Boolean> lastPids = new SparseArray<Boolean>(20);</p>
+<pre><code>if (mController != null) {
+    try {
+        // 0 == continue, -1 = kill process immediately
+        int res = mController.appEarlyNotResponding(app.processName, app.pid, annotation);
+        if (res &lt; 0 &amp;&amp; app.pid != MY_PID) {
+            app.kill(&quot;anr&quot;, true);
+        }
+    } catch (RemoteException e) {
+        mController = null;
+        Watchdog.getInstance().setActivityController(null);
+    }
+}
+
+long anrTime = SystemClock.uptimeMillis();
+if (MONITOR_CPU_USAGE) {
+    updateCpuStatsNow();
+}
+
+synchronized (this) {
+    // PowerManager.reboot() 会阻塞很长时间，因此忽略关机时的ANR
+    if (mShuttingDown) {
+        Slog.i(TAG, &quot;During shutdown skipping ANR: &quot; + app + &quot; &quot; + annotation);
+        return;
+    } else if (app.notResponding) {
+        Slog.i(TAG, &quot;Skipping duplicate ANR: &quot; + app + &quot; &quot; + annotation);
+        return;
+    } else if (app.crashing) {
+        Slog.i(TAG, &quot;Crashing app skipping ANR: &quot; + app + &quot; &quot; + annotation);
+        return;
+    }
+
+    app.notResponding = true;
+
+    //记录ANR
+    EventLog.writeEvent(EventLogTags.AM_ANR, app.userId, app.pid,
+            app.processName, app.info.flags, annotation);
+
+    // Dump thread traces as quickly as we can, starting with &quot;interesting&quot; processes.
+    firstPids.add(app.pid);
+
+    int parentPid = app.pid;
+    if (parent != null &amp;&amp; parent.app != null &amp;&amp; parent.app.pid &gt; 0) parentPid = parent.app.pid;
+    if (parentPid != app.pid) firstPids.add(parentPid);
+
+    if (MY_PID != app.pid &amp;&amp; MY_PID != parentPid) firstPids.add(MY_PID);
+
+    for (int i = mLruProcesses.size() - 1; i &gt;= 0; i--) {
+        ProcessRecord r = mLruProcesses.get(i);
+        if (r != null &amp;&amp; r.thread != null) {
+            int pid = r.pid;
+            if (pid &gt; 0 &amp;&amp; pid != app.pid &amp;&amp; pid != parentPid &amp;&amp; pid != MY_PID) {
+                if (r.persistent) {
+                    firstPids.add(pid);
+                } else {
+                    lastPids.put(pid, Boolean.TRUE);
+                }
+            }
+        }
+    }
+}
+
+//输出ANR到main log.
+StringBuilder info = new StringBuilder();
+info.setLength(0);
+info.append(&quot;ANR in &quot;).append(app.processName);
+if (activity != null &amp;&amp; activity.shortComponentName != null) {
+    info.append(&quot; (&quot;).append(activity.shortComponentName).append(&quot;)&quot;);
+}
+info.append(&quot;\n&quot;);
+info.append(&quot;PID: &quot;).append(app.pid).append(&quot;\n&quot;);
+if (annotation != null) {
+    info.append(&quot;Reason: &quot;).append(annotation).append(&quot;\n&quot;);
+}
+if (parent != null &amp;&amp; parent != activity) {
+    info.append(&quot;Parent: &quot;).append(parent.shortComponentName).append(&quot;\n&quot;);
+}
+
+final ProcessCpuTracker processCpuTracker = new ProcessCpuTracker(true);
+//dump栈信息
+File tracesFile = dumpStackTraces(true, firstPids, processCpuTracker, lastPids,
+        NATIVE_STACKS_OF_INTEREST);
+
+String cpuInfo = null;
+if (MONITOR_CPU_USAGE) {
+    updateCpuStatsNow();
+    synchronized (mProcessCpuTracker) {
+        //输出各个进程的CPU使用情况
+        cpuInfo = mProcessCpuTracker.printCurrentState(anrTime);
+    }
+    //输出CPU负载
+    info.append(processCpuTracker.printCurrentLoad());
+    info.append(cpuInfo);
+}
+
+info.append(processCpuTracker.printCurrentState(anrTime));
+
+Slog.e(TAG, info.toString());
+if (tracesFile == null) {
+    //发送signal 3来dump栈信息
+    Process.sendSignal(app.pid, Process.SIGNAL_QUIT);
+}
+//将anr信息添加到dropbox
+addErrorToDropBox(&quot;anr&quot;, app, app.processName, activity, parent, annotation,
+        cpuInfo, tracesFile, null);
+
+if (mController != null) {
+    try {
+        // 0 == show dialog, 1 = keep waiting, -1 = kill process immediately
+        int res = mController.appNotResponding(app.processName, app.pid, info.toString());
+        if (res != 0) {
+            if (res &lt; 0 &amp;&amp; app.pid != MY_PID) {
+                app.kill(&quot;anr&quot;, true);
+            } else {
+                synchronized (this) {
+                    mServices.scheduleServiceTimeoutLocked(app);
+                }
+            }
+            return;
+        }
+    } catch (RemoteException e) {
+        mController = null;
+        Watchdog.getInstance().setActivityController(null);
+    }
+}
+
+boolean showBackground = Settings.Secure.getInt(mContext.getContentResolver(),
+        Settings.Secure.ANR_SHOW_BACKGROUND, 0) != 0;
+
+synchronized (this) {
+    mBatteryStatsService.noteProcessAnr(app.processName, app.uid);
+
+    if (!showBackground &amp;&amp; !app.isInterestingToUserLocked() &amp;&amp; app.pid != MY_PID) {
+        app.kill(&quot;bg anr&quot;, true);
+        return;
+    }
+
+    // Set the app&apos;s notResponding state, and look up the errorReportReceiver
+    makeAppNotRespondingLocked(app,
+            activity != null ? activity.shortComponentName : null,
+            annotation != null ? &quot;ANR &quot; + annotation : &quot;ANR&quot;,
+            info.toString());
+
+    //弹出ANR对话框
+    Message msg = Message.obtain();
+    HashMap&lt;String, Object&gt; map = new HashMap&lt;String, Object&gt;();
+    msg.what = SHOW_NOT_RESPONDING_MSG;
+    msg.obj = map;
+    msg.arg1 = aboveSystem ? 1 : 0;
+    map.put(&quot;app&quot;, app);
+    if (activity != null) {
+        map.put(&quot;activity&quot;, activity);
+    }
+
+    mUiHandler.sendMessage(msg);
+}</code></pre><p>}<br>主要发送ANR， 则会输出</p>
+<p>各个进程的CPU使用情况；<br>CPU负载；<br>IOWait；<br>traces文件<br>四、其他<br>导致ANR常见情形：<br>I/O阻塞<br>网络阻塞；<br>onReceiver执行时间超过10s;<br>多线程死锁<br>避免ANR:<br>UI线程尽量只做跟UI相关的工作<br>耗时的工作()比如数据库操作，I/O，网络操作)，采用单独的工作线程处理<br>用Handler来处理UIthread和工作thread的交互<br>UI线程，例如：</p>
+<p>Activity:onCreate(), onResume(), onDestroy(), onKeyDown(), onClick(),etc<br>AsyncTask: onPreExecute(), onProgressUpdate(), onPostExecute(), onCancel,etc<br>Mainthread handler: handleMessage(), post*(runnable r), etc<br>…<br>ANR分析：需要关注CPU/IO，trace死锁等数据。</p>
+<p>五、遇到ANR怎么分析<br>导出trace文件</p>
+<p>如果ANR发生，对应的应用会收到SIGQUIT异常终止信号，dalvik虚拟机就会自动在/data/anr/目录下生成trace.txt文件，这个文件记录了在发生ANR时刻系统各个线程的执行状态，获取这个文件是不需要root权限的，因此首先需要做的就是通过adb pull命令将这个文件导出并等待分析。</p>
+<p>trace文件格式解析<br>导出trace文件后，可以看到类似于如下的文件内容：</p>
+<p>—– pid 901 at 2015-11-28 14:38:34 —–<br>Cmd line: system_server</p>
+<p>JNI: CheckJNI is off; workarounds are off; pins=6; globals=2154 (plus 409 weak)</p>
+<p>DALVIK THREADS:<br>(mutexes: tll=0 tsl=0 tscl=0 ghl=0)</p>
+<p>“main” prio=5 tid=1 NATIVE<br>  | group=”main” sCount=1 dsCount=0 obj=0x415a4e88 self=0x414c48d8<br>  | sysTid=901 nice=-2 sched=0/0 cgrp=apps handle=1073926484<br>  | state=S schedstat=( 303590361913 618664734427 651535 ) utm=19466 stm=10893 core=0<br>  #00  pc 00021914  /system/lib/libc.so (epoll_wait+12)<br>  #01  pc 0001065f  /system/lib/libutils.so (android::Looper::pollInner(int)+98)<br>  #02  pc 00010889  /system/lib/libutils.so (android::Looper::pollOnce(int, int<em>, int</em>, void<em>*)+92)<br>  #03  pc 0006b771  /system/lib/libandroid_runtime.so (android::NativeMessageQueue::pollOnce(_JNIEnv</em>, int)+22)<br>  #04  pc 0002034c  /system/lib/libdvm.so (dvmPlatformInvoke+112)<br>  #05  pc 00050fcf  /system/lib/libdvm.so (dvmCallJNIMethod(unsigned int const<em>, JValue</em>, Method const<em>, Thread</em>)+398)<br>  #06  pc 00000214  /dev/ashmem/dalvik-jit-code-cache (deleted)<br>  at android.os.MessageQueue.nativePollOnce(Native Method)<br>  at android.os.MessageQueue.next(MessageQueue.java:138)<br>  at android.os.Looper.loop(Looper.java:196)<br>  at com.android.server.ServerThread.initAndLoop(SystemServer.java:1174)<br>  at com.android.server.SystemServer.main(SystemServer.java:1271)<br>  at java.lang.reflect.Method.invokeNative(Native Method)<br>  at java.lang.reflect.Method.invoke(Method.java:515)<br>  at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:878)<br>  at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:694)<br>  at dalvik.system.NativeStart.main(Native Method)<br>首先需要了解这些参数表示的意义，我们挑其中关键的几个说明：</p>
+<p>第一二行</p>
+<p>—– pid 901 at 2015-11-28 14:38:34 —–<br>Cmd line: system_server<br>说明了发生ANR的进程id、时间和进程名称。</p>
+<p>后面三行是线程的基本信息</p>
+<p>JNI: CheckJNI is off; workarounds are off; pins=6; globals=2154 (plus 409 weak)</p>
+<p>DALVIK THREADS:<br>(mutexes: tll=0 tsl=0 tscl=0 ghl=0)<br>其中tll、tsl、tscl、ghl、hwl、hwll分别对应：thread list lock, thread suspend lock, thread suspend count lock, gc heap lock, heap worker lock和heap worker list lock。</p>
+<p>main prio=5 tid=1 NATIVE说明了线程名称、线程的优先级、线程锁id和线程状态。线程名称是启动线程的时候手动指明的，这里的main标识是主线程，是Android自动设定的一个线程名称，如果是自己手动创建的线程，一般会被命名成“Thread-xx”的格式，其中xx是线程id，它只增不减不会被复用；注意这其中的tid不是线程的id,它是一个在Java虚拟机中用来实现线程锁的变量，随着线程的增减，这个变量的值是可能被复用的；最后线程的状态还分为如下几种</p>
+<p>状态    值    说明<br>THREAD_ZOMBIE    0    TERMINATED<br>THREAD_RUNNING    1    RUNNABLE or running now<br>THREAD_TIMED_WAIT    2    TIMED_WAITING in Object.wait()<br>THREAD_MONITOR    3    BLOCKED on a monitor<br>THREAD_INITIALIZING    5    allocated not yet running<br>THREAD_STARTING    6    started not yet on thread list<br>THREAD_NATIVE    7    off in a JNI native method<br>THREAD_VMWAIT    8    waiting on a VM resource<br>THREAD_SUSPENDED    9    suspended usually by GC or debugger<br>特别说明一下MONITOR状态和SUSPEND状态，MONITOR状态一般是类的同步块或者同步方法造成的，SUSPENDED状态在debugger的时候会出现，可以用来区别是不是真的是用户正常操作跑出了ANR。</p>
+<p>后面一行</p>
+<p>| group=”main” sCount=1 dsCount=0 obj=0x415a4e88 self=0x414c48d8<br>group是线程组名称。sCount是此线程被挂起的次数，dsCount是线程被调试器挂起的次数，当一个进程被调试后，sCount会重置为0，调试完毕后sCount会根据是否被正常挂起增长，但是dsCount不会被重置为0，所以dsCount也可以用来判断这个线程是否被调试过。obj表示这个线程的Java对象的地址，self表示这个线程本身的地址。</p>
+<p>此后是线程的调度信息</p>
+<p>sysTid=901 nice=-2 sched=0/0 cgrp=apps handle=1073926484<br>sysTid是Linux下的内核线程id，nice是线程的调度优先级，sched分别标志了线程的调度策略和优先级，cgrp是调度属组，handle是线程的处理函数地址。</p>
+<p>然后是线程当前上下文信息</p>
+<p>state=S schedstat=( 303590361913 618664734427 651535 ) utm=19466 stm=10893 core=0<br>state是调度状态；schedstat从 /proc/[pid]/task/[tid]/schedstat读出，三个值分别表示线程在cpu上执行的时间、线程的等待时间和线程执行的时间片长度，有的android内核版本不支持这项信息，得到的三个值都是0；utm是线程用户态下使用的时间值(单位是jiffies）;stm是内核态下的调度时间值；core是最后执行这个线程的cpu核的序号。</p>
+<p>最后就是这个线程的调用栈信息。<br>通过分析trace文件得到ANR信息<br>通过上面分析，可以看到trace文件的头部就包含了很多与该线程相关的信息，但是并不是每个信息我们都必须弄懂，排查ANR的时候只需要找到其中关键的几个信息即可。一般可以通过以下几个简单的方法来判断。</p>
+<p>trace文件顶部的线程一般是ANR的元凶<br>这是一个简单的方法，但是大部分情况下都适用，可以通过这个方法来快速判断是否是自己的应用造成了本次ANR。说明以下，并不是trace文件包含的应用就一定是造成ANR的帮凶，应用出现在trace文件中，只能说明出现ANR的时候这个应用进程还活着，trace文件的顶部则是触发ANR的应用信息。因此，如果你的应用出现在了trace文件的顶部，那么很有可能是因为你的应用造成了ANR，否则是你的应用造成ANR的可能性不大，但是具体是不是还需要进一步分析。例如：</p>
+<pre><code>----- pid 1182 at 2015-11-26 01:53:34 -----
+Cmd line: system_server
+
+JNI: CheckJNI is off; workarounds are off; pins=5; globals=2982 (plus 135 weak)
+
+DALVIK THREADS:
+(mutexes: tll=0 tsl=0 tscl=0 ghl=0)
+
+&quot;main&quot; prio=5 tid=1 NATIVE
+  | group=&quot;main&quot; sCount=1 dsCount=0 obj=0x420a0e58 self=0x4208f918
+  | sysTid=1182 nice=-2 sched=0/0 cgrp=apps handle=1074594132
+  | state=S schedstat=( 211672310629 149959255867 472114 ) utm=13047 stm=8120 core=1
+  #00  pc 000218b8  /system/lib/libc.so (epoll_wait+12)
+  ...
+ at android.os.MessageQueue.nativePollOnce(Native Method)
+  at android.os.MessageQueue.next(MessageQueue.java:138)
+  at android.os.Looper.loop(Looper.java:123)
+  at com.android.server.ServerThread.initAndLoop(SystemServer.java:1213)
+  at com.android.server.SystemServer.main(SystemServer.java:1317)
+  at java.lang.reflect.Method.invokeNative(Native Method)
+  at java.lang.reflect.Method.invoke(Method.java:515)
+  at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:793)
+  at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:609)
+  at dalvik.system.NativeStart.main(Native Method)
+
+  ...
+
+----- end 1182 -----
+
+ ----- pid 18927 at 2015-11-26 01:53:34 -----
+Cmd line: com.android.example
+
+JNI: CheckJNI is off; workarounds are off; pins=0; globals=465 (plus 984 weak)
+
+DALVIK THREADS:
+(mutexes: tll=0 tsl=0 tscl=0 ghl=0)
+
+&quot;main&quot; prio=5 tid=1 NATIVE
+  | group=&quot;main&quot; sCount=1 dsCount=0 obj=0x420a0e58 self=0x4208f918
+  | sysTid=18927 nice=-6 sched=0/0 cgrp=apps handle=1074594132
+  | state=S schedstat=( 7748840431407 1615931922290 9994018 ) utm=712375 stm=62509 core=1
+  #00  pc 00020704  /system/lib/libc.so (__ioctl+8)
+  #01  pc 0002cfa3  /system/lib/libc.so (ioctl+14)
+  #02  pc 0001d3ed  /system/lib/libbinder.so (android::IPCThreadState::talkWithDriver(bool)+140)
+  #03  pc 0001d8d7  /system/lib/libbinder.so (android::IPCThreadState::waitForResponse(android::Parcel*, int*)+42)
+  #04  pc 0001dadf  /system/lib/libbinder.so (android::IPCThreadState::transact(int, unsigned int, android::Parcel const&amp;, android::Parcel*, unsigned int)+118)
+  #05  pc 00019791  /system/lib/libbinder.so (android::BpBinder::transact(unsigned int, android::Parcel const&amp;, android::Parcel*, unsigned int)+30)
+  ...
+  #23  pc 00000d80  /system/bin/app_process
+  at android.os.BinderProxy.transact(Native Method)
+  at android.app.IAlarmManager$Stub$Proxy.set(IAlarmManager.java:154)
+  at android.app.AlarmManager.setImpl(AlarmManager.java:369)
+  at android.app.AlarmManager.setRepeating(AlarmManager.java:258)
+  at android.os.Handler.handleCallback(Handler.java:733)
+  at android.os.Handler.dispatchMessage(Handler.java:95)
+  at android.os.Looper.loop(Looper.java:136)
+  at android.app.ActivityThread.main(ActivityThread.java:5072)
+  at java.lang.reflect.Method.invokeNative(Native Method)
+  at java.lang.reflect.Method.invoke(Method.java:515)
+  at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:793)
+  at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:609)
+  at dalvik.system.NativeStart.main(Native Method)</code></pre><p>虽然应用com.android.example出现在了trace文件中，但是在ANR的时候它在通过IPCThread在进行进程间通信，而此次ANR发生于system_server获取用户事件的native方法里面，并不是我们的应用造成了ANR。又例如下面的trace文件顶部内容为：</p>
+<pre><code>----- pid 13406 at 2015-11-27 11:46:14 -----
+Cmd line: com.android.example
+
+JNI: CheckJNI is off; workarounds are off; pins=0; globals=536 (plus 102 weak)
+
+DALVIK THREADS:
+(mutexes: tll=0 tsl=0 tscl=0 ghl=0)
+
+&quot;main&quot; prio=5 tid=1 SUSPENDED
+  | group=&quot;main&quot; sCount=1 dsCount=0 obj=0x41795e58 self=0x416b58b0
+  | sysTid=13406 nice=-6 sched=0/0 cgrp=apps handle=1074557268
+  | state=S schedstat=( 2352435524847 736727917292 2633566 ) utm=213075 stm=22168 core=1
+  at java.lang.String.&lt;init&gt;(String.java:~261)
+  at java.util.zip.ZipEntry.&lt;init&gt;(ZipEntry.java:392)
+  at java.util.zip.ZipFile.readCentralDir(ZipFile.java:414)
+  at java.util.zip.ZipFile.&lt;init&gt;(ZipFile.java:151)
+  at java.util.zip.ZipFile.&lt;init&gt;(ZipFile.java:123)
+  at com.android.example.Utility.isValideFile(Utility.java:2700)
+  at com.android.example.Test.getPath(Test.java:243)
+  at com.android.example.Test$1.run(Test.java:531)
+  at android.os.Handler.handleCallback(Handler.java:733)
+  at android.os.Handler.dispatchMessage(Handler.java:95)
+  at android.os.Looper.loop(Looper.java:136)
+  at android.app.ActivityThread.main(ActivityThread.java:5050)
+  at java.lang.reflect.Method.invokeNative(Native Method)
+  at java.lang.reflect.Method.invoke(Method.java:515)
+  at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:807)
+  at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:623)
+  at dalvik.system.NativeStart.main(Native Method)
+  ...</code></pre><p>这种情况说明ANR发生于com.android.example应用中，而且指明了ANR发生时代码的执行位置，这种情况十有八九就是我们应用程序的问题，之后就需要通过这个trace文件指明的路径来对代码进行排查。</p>
+<p>注意死锁和等待<br>虽然说ANR一般情况是由于让主线程做了很多耗时的操作，但是死锁或者主线程等待也是ANR高发的原因，例如如下的trace:</p>
+<p>—– pid 9436 at 2015-11-28 21:30:41 —–<br>Cmd line: com.example.yxz.myapplication</p>
+<p>JNI: CheckJNI is off; workarounds are off; pins=0; globals=277</p>
+<p>DALVIK THREADS:<br>(mutexes: tll=0 tsl=0 tscl=0 ghl=0)</p>
+<p>“main” prio=5 tid=1 MONITOR<br>  | group=”main” sCount=1 dsCount=0 obj=0x415a4e88 self=0x414c48d8<br>  | sysTid=9436 nice=0 sched=0/0 cgrp=apps handle=1073926484<br>  | state=S schedstat=( 671264662 337280259 1005 ) utm=53 stm=14 core=0<br>  at com.example.yxz.myapplication.performancetest.WaitANR$InnerMonitorClass.TimeConsumeFunc(WaitANR.java:~48)</p>
+<ul>
+<li>waiting to lock &lt;0x447a5670&gt;  held by tid=11 (Thread-14208)<br>at com.example.yxz.myapplication.performancetest.WaitANR$2.run(WaitANR.java:32)<br>at android.os.Handler.handleCallback(Handler.java:733)<br>at android.os.Handler.dispatchMessage(Handler.java:95)<br>at android.os.Looper.loop(Looper.java:212)<br>at android.app.ActivityThread.main(ActivityThread.java:5135)<br>at java.lang.reflect.Method.invokeNative(Native Method)<br>at java.lang.reflect.Method.invoke(Method.java:515)<br>at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:878)<br>at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:694)<br>at dalvik.system.NativeStart.main(Native Method)</li>
+</ul>
+<p>….</p>
+<p>“Thread-14208” prio=10 tid=11 TIMED_WAIT<br>  | group=”main” sCount=1 dsCount=0 obj=0x447a4b98 self=0x78296bb8<br>  | sysTid=9955 nice=-8 sched=0/0 cgrp=apps handle=2015978016<br>  | state=S schedstat=( 946045 640869 1 ) utm=0 stm=0 core=2<br>  at java.lang.VMThread.sleep(Native Method)<br>  at java.lang.Thread.sleep(Thread.java:1013)<br>  at java.util.concurrent.TimeUnit.sleep(TimeUnit.java:331)<br>  at com.example.yxz.myapplication.performancetest.WaitANR$InnerMonitorClass.TimeConsumeFunc(WaitANR.java:48)<br>  at com.example.yxz.myapplication.performancetest.WaitANR$1.run(WaitANR.java:20)<br>  at java.lang.Thread.run(Thread.java:841)<br>从trace文件可以看出，发生ANR的主线程正处于monitor状态，也就是它在等待一个synchronized块或者方法，但是目前这个monitor正在被tid=11的线程持有，所以造成了主线程被阻塞，从而发生了ANR。死锁的分析也是类似，发生死锁的线程一般处于MONITOR状态或者WAIT状态，等待其他进程的锁或者monitor，而其他进程又在等待另外线程的锁或者monitor，一直这样依赖下去，直到形成一个环。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/15/VirtualAPK%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/" rel="prev" title="VirtualAPK 原理剖析">
+      <i class="fa fa-chevron-left"></i> VirtualAPK 原理剖析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/16/%E6%8F%92%E4%BB%B6%E5%8C%96%E6%A1%86%E6%9E%B6%E5%8E%86%E5%8F%B2/" rel="next" title="插件化框架历史">
+      插件化框架历史 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

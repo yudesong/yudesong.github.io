@@ -20,17 +20,17 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="1.什么是线程基本概念 我们先从线程的基本概念开始，给大家复习一下，不知道有多少同学是基础不太好，说什么是线程都不知道的，如果这样的话，花时间去补初级内容的课。  什么是叫一个进程？ 什么叫一个线程？   Program app -&gt;QQ.exe 进程：做一个简单的解释，你的硬盘上有一个简单的程序，这个程序叫QQ.exe，这是一个程序，这个程序是一个静态的概念，它被扔在硬盘上也没人理他，但是">
+  <meta name="description" content="1.什么是线程基本概念 我们先从线程的基本概念开始，给大家复习一下，不知道有多少同学是基础不太好，说什么是线程都不知道的，如果这样的话，花时间去补初级内容的课。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="多线程">
 <meta property="og:url" content="http://yoursite.com/2020/06/03/%E5%A4%9A%E7%BA%BF%E7%A8%8B/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="1.什么是线程基本概念 我们先从线程的基本概念开始，给大家复习一下，不知道有多少同学是基础不太好，说什么是线程都不知道的，如果这样的话，花时间去补初级内容的课。  什么是叫一个进程？ 什么叫一个线程？   Program app -&gt;QQ.exe 进程：做一个简单的解释，你的硬盘上有一个简单的程序，这个程序叫QQ.exe，这是一个程序，这个程序是一个静态的概念，它被扔在硬盘上也没人理他，但是">
+<meta property="og:description" content="1.什么是线程基本概念 我们先从线程的基本概念开始，给大家复习一下，不知道有多少同学是基础不太好，说什么是线程都不知道的，如果这样的话，花时间去补初级内容的课。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://yoursite.com/2020/06/03/%E5%A4%9A%E7%BA%BF%E7%A8%8B/img/01_02.jpg">
 <meta property="og:image" content="http://yoursite.com/2020/06/03/%E5%A4%9A%E7%BA%BF%E7%A8%8B/img/01_04.jpg">
 <meta property="article:published_time" content="2020-06-03T04:56:07.818Z">
-<meta property="article:modified_time" content="2020-06-03T04:53:22.652Z">
+<meta property="article:modified_time" content="2020-06-21T08:49:38.735Z">
 <meta property="article:author" content="yudesong">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://yoursite.com/2020/06/03/%E5%A4%9A%E7%BA%BF%E7%A8%8B/img/01_02.jpg">
@@ -190,9 +190,8 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2020-06-03 12:56:07 / 修改时间：12:53:22" itemprop="dateCreated datePublished" datetime="2020-06-03T12:56:07+08:00">2020-06-03</time>
+              <time title="创建时间：2020-06-03 12:56:07" itemprop="dateCreated datePublished" datetime="2020-06-03T12:56:07+08:00">2020-06-03</time>
             </span>
 
           
@@ -208,6 +207,8 @@
       
         <h2 id="1-什么是线程"><a href="#1-什么是线程" class="headerlink" title="1.什么是线程"></a>1.什么是线程</h2><p><strong>基本概念</strong></p>
 <p>我们先从线程的基本概念开始，给大家复习一下，不知道有多少同学是基础不太好，说什么是线程都不知道的，如果这样的话，花时间去补初级内容的课。</p>
+<a id="more"></a>
+
 <p><img src="img/01_02.jpg" alt="01_02"></p>
 <p>什么是叫一个进程？ 什么叫一个线程？ </p>
 <ul>
@@ -306,8 +307,8 @@
       <i class="fa fa-chevron-left"></i> 啃碎并发（11）：内存模型之重排序
     </a></div>
       <div class="post-nav-item">
-    <a href="/2020/06/03/Hexo%E4%BD%BF%E7%94%A8next.Pisces%E4%B8%BB%E9%A2%98/" rel="next" title="Hexo使用next.Pisces主题">
-      Hexo使用next.Pisces主题 <i class="fa fa-chevron-right"></i>
+    <a href="/2020/06/03/Java%E5%9F%BA%E7%A1%80%E4%B9%8B%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%8E%9F%E7%90%86/" rel="next" title="Java基础之线程池原理">
+      Java基础之线程池原理 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -381,20 +382,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">10</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -421,7 +422,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

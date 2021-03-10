@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Smail简介Smali简介Dalvik虚拟机和Jvm一样，也有自己的一套指令集，类似汇编语言, smali文件就是Dalvik的寄存器语言. Smali文件结构解smali文件是由Dalvik指令组成的，它有自己的一套规则，它的指令都是以“.”开头，常用的指令如下：    指令 说明    .class 包名+类名   .super 父类类名   .source 源文件名称   .impleme">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Smail简介">
+<meta property="og:url" content="http://yoursite.com/2020/11/23/Smail%E7%AE%80%E4%BB%8B/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Smail简介Smali简介Dalvik虚拟机和Jvm一样，也有自己的一套指令集，类似汇编语言, smali文件就是Dalvik的寄存器语言. Smali文件结构解smali文件是由Dalvik指令组成的，它有自己的一套规则，它的指令都是以“.”开头，常用的指令如下：    指令 说明    .class 包名+类名   .super 父类类名   .source 源文件名称   .impleme">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-11-23T06:56:12.557Z">
+<meta property="article:modified_time" content="2020-11-23T07:10:09.340Z">
+<meta property="article:author" content="yudesong">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/11/23/Smail%E7%AE%80%E4%BB%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Smail简介 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/11/23/Smail%E7%AE%80%E4%BB%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Smail简介
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-11-23 14:56:12 / 修改时间：15:10:09" itemprop="dateCreated datePublished" datetime="2020-11-23T14:56:12+08:00">2020-11-23</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Smail简介"><a href="#Smail简介" class="headerlink" title="Smail简介"></a>Smail简介</h2><h3 id="Smali简介"><a href="#Smali简介" class="headerlink" title="Smali简介"></a>Smali简介</h3><p>Dalvik虚拟机和Jvm一样，也有自己的一套指令集，类似汇编语言, smali文件就是Dalvik的寄存器语言.</p>
+<h3 id="Smali文件结构解"><a href="#Smali文件结构解" class="headerlink" title="Smali文件结构解"></a>Smali文件结构解</h3><p>smali文件是由Dalvik指令组成的，它有自己的一套规则，它的指令都是以“.”开头，常用的指令如下：</p>
+<table>
+<thead>
+<tr>
+<th align="left">指令</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">.class</td>
+<td align="left">包名+类名</td>
+</tr>
+<tr>
+<td align="left">.super</td>
+<td align="left">父类类名</td>
+</tr>
+<tr>
+<td align="left">.source</td>
+<td align="left">源文件名称</td>
+</tr>
+<tr>
+<td align="left">.implements</td>
+<td align="left">接口实现</td>
+</tr>
+<tr>
+<td align="left">.field</td>
+<td align="left">定义字段</td>
+</tr>
+<tr>
+<td align="left">.method/.end method</td>
+<td align="left">方法的开始与结束</td>
+</tr>
+<tr>
+<td align="left">.locals</td>
+<td align="left">方法内使用的v开口的寄存器个数</td>
+</tr>
+<tr>
+<td align="left">.prologue</td>
+<td align="left">表示方法中代码的开始处</td>
+</tr>
+<tr>
+<td align="left">.line</td>
+<td align="left">对应java中的行数</td>
+</tr>
+<tr>
+<td align="left">.param</td>
+<td align="left">指定了方法的参数</td>
+</tr>
+<tr>
+<td align="left">.paramter</td>
+<td align="left">和.paramter含义相同</td>
+</tr>
+<tr>
+<td align="left">.param</td>
+<td align="left">指定了方法的参数</td>
+</tr>
+<tr>
+<td align="left">.annotation/.end annotation</td>
+<td align="left">注解的开始和结束</td>
+</tr>
+</tbody></table>
+<p>现在来看下smali文件的结构：</p>
+<h4 id="1-头文件"><a href="#1-头文件" class="headerlink" title="1.头文件"></a>1.头文件</h4><p>格式如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.class &lt;访问权限修饰符&gt; [非权限修饰符] &lt;类名&gt;</span><br><span class="line">.super &lt;父类名&gt;</span><br><span class="line">.source &lt;源文件名称&gt;</span><br></pre></td></tr></table></figure>
+
+<p>访问权限修饰符即所谓的public,protected,private，而非权限修饰符则指的是final,abstract,static，两者都可以为空。<br>举例如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.class public final Llutey&#x2F;FTPServer&#x2F;preferences&#x2F;PreferencesFactory;</span><br><span class="line">.super Ljava&#x2F;lang&#x2F;Object;</span><br><span class="line">.source &quot;PreferencesFactory.java&quot;</span><br></pre></td></tr></table></figure>
+
+<p>如果原java代码有经过混淆，那一般.class里面的类名和.source的源文件名会不一样，以下是经过混淆的(类名正常是xxx/PreferencesFactory，混淆以后变成xxx/d)：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.class public final Llutey&#x2F;FTPServer&#x2F;preferences&#x2F;d;</span><br><span class="line">.super Ljava&#x2F;lang&#x2F;Object;</span><br><span class="line">.source &quot;PreferencesFactor</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-接口实现"><a href="#2-接口实现" class="headerlink" title="2.接口实现"></a>2.接口实现</h4><p>格式如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">#interfaces</span><br><span class="line">.implements &lt;接口名称&gt;</span><br></pre></td></tr></table></figure>
+
+<p>举例如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># interfaces</span><br><span class="line">.implements Landroid&#x2F;view&#x2F;View$OnClickListener;</span><br></pre></td></tr></table></figure>
+
+<p>其中# interfaces为注释</p>
+<h4 id="3-注解"><a href="#3-注解" class="headerlink" title="3.注解"></a>3.注解</h4><p>如果一个类中使用了注解，就会出现.annotation，格式如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#annotations</span><br><span class="line">.annotation [注解的属性] &lt;注解类名&gt;</span><br><span class="line">    [注解字段&#x3D;值]</span><br><span class="line">    ...</span><br><span class="line">.end annotation</span><br></pre></td></tr></table></figure>
+
+<p>举例如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># annotations</span><br><span class="line">.annotation build Landroid&#x2F;annotation&#x2F;TargetApi;</span><br><span class="line">    value &#x3D; 0xb</span><br><span class="line">.end annotation</span><br></pre></td></tr></table></figure>
+<p>其中# annotations为注释</p>
+<h4 id="4-变量定义"><a href="#4-变量定义" class="headerlink" title="4.变量定义"></a>4.变量定义</h4><p>使用.field描述字段的定义，分为静态变量和普通变量两种：</p>
+<p>静态变量<br>格式如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">#static fields</span><br><span class="line">.field &lt;访问权限&gt; static [修饰词] &lt;字段名&gt;:&lt;变量类型&gt;</span><br></pre></td></tr></table></figure>
+<p>使用# static fields注释，并加了static修饰符，</p>
+<p>举例说明：<br>smali:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># static fields</span><br><span class="line">.field public static mStr:Ljava&#x2F;lang&#x2F;String;</span><br></pre></td></tr></table></figure>
+<p>java:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public static final String mStr;</span><br></pre></td></tr></table></figure>
+<p>普通变量<br>格式如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">#instance fields</span><br><span class="line">.field &lt;访问权限修饰符&gt; [非权限修饰符] &lt;变量名&gt;:&lt;变量类型&gt;</span><br></pre></td></tr></table></figure>
+<p>使用# instance fields注释，</p>
+<p>举例说明：<br>smali:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.field private bool:Z</span><br></pre></td></tr></table></figure>
+<p>java:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">private boolean bool;</span><br></pre></td></tr></table></figure>
+
+<h4 id="5-方法描述"><a href="#5-方法描述" class="headerlink" title="5.方法描述"></a>5.方法描述</h4><p>smali中的方法以.method/.end method进行描述，有分两种方法，一种是直接方法，一种是虚方法，<br>什么事直接方法和虚方法呢？直接方法就是不能被覆写的方法，包括用static，private修饰的方法，虚方法表示可以被覆写的方法，包括public，protected修饰的方法。<br>两者在smali中的注释分别是直接方法(#direct methods)，虚方法(#virtual methods),一般直接方法在smali文件的前半部分，虚方法在后半部分。<br>方法的格式如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">#direct methods&#x2F;#virtual methods</span><br><span class="line">.method &lt;访问权限修饰符&gt; [非访问权限修饰符] &lt;方法原型&gt;</span><br><span class="line">      &lt;.locals&gt;</span><br><span class="line">      [.parameter]</span><br><span class="line">      [.prologue]</span><br><span class="line">      [.line]</span><br><span class="line">      &lt;代码逻辑&gt;</span><br><span class="line">.end</span><br></pre></td></tr></table></figure>
+<p>其中.parameter,.prologue,.line是可选的。<br>举例说明：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"># virtual methods</span><br><span class="line">.method public final onClick(Landroid&#x2F;view&#x2F;View;)V</span><br><span class="line">    .locals 1</span><br><span class="line"></span><br><span class="line">    .prologue</span><br><span class="line">    .line 71</span><br><span class="line">    iget-object v0, p0, Llutey&#x2F;FTPServer&#x2F;preferences&#x2F;sdk11&#x2F;pre&#x2F;a;-&gt;a:Llutey&#x2F;FTPServer&#x2F;preferences&#x2F;sdk11&#x2F;pre&#x2F;FTPServerPreferences;</span><br><span class="line"></span><br><span class="line">    invoke-static &#123;v0&#125;, Llutey&#x2F;FTPServer&#x2F;preferences&#x2F;sdk11&#x2F;pre&#x2F;FTPServerPreferences;-&gt;a(Llutey&#x2F;FTPServer&#x2F;preferences&#x2F;sdk11&#x2F;pre&#x2F;FTPServerPreferences;)V</span><br><span class="line"></span><br><span class="line">    .line 72</span><br><span class="line">    return-void</span><br><span class="line">.end method</span><br></pre></td></tr></table></figure>
+<p>注意几个特殊的方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.method xxx constructor &lt;clinit&gt;()V  &#x2F;&#x2F;类中final变量的初始化</span><br><span class="line">.method xxx constructor &lt;init&gt;()V   &#x2F;&#x2F;类中的构造行数</span><br><span class="line">.method static synthetic methodName(xxxx)V &#x2F;&#x2F;加synthetic修饰符的方法，synthetic是合成的意思，即这个方法在原java代码里面是没有的，是在java编译成Dalvik字节码的时候合成的，后续会详细分析这类方法</span><br></pre></td></tr></table></figure>
+<p>方法中具体的语法在文章的后半部分详细说明。</p>
+<h4 id="smali数据类型"><a href="#smali数据类型" class="headerlink" title="smali数据类型"></a>smali数据类型</h4><p>Dalvik字节码和Java一样，都只有两种数据类型：基本类型和引用类型，8中基本数据类型，对象和数组是引用类型，Dalvik字节码和Jvm中对数据类型的描述是一致的，对于基本类型和无返回类型用一个大写字母表示，对象类型用一个大写字母L加对象的全限定名表示，如Ljava/lang/String表示字符串对象类型，一维数组用一个”[“加数据类型或对象类型表示.</p>
+<p>java数据类型和Dalvik字节码的数据类型一一对应，对应关系如下表：</p>
+<table>
+<thead>
+<tr>
+<th>java类型</th>
+<th>smali描述符</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>boolean</td>
+<td>Z</td>
+</tr>
+<tr>
+<td>byte</td>
+<td>B</td>
+</tr>
+<tr>
+<td>short</td>
+<td>S</td>
+</tr>
+<tr>
+<td>char</td>
+<td>C</td>
+</tr>
+<tr>
+<td>int</td>
+<td>I</td>
+</tr>
+<tr>
+<td>long</td>
+<td>L</td>
+</tr>
+<tr>
+<td>float</td>
+<td>F</td>
+</tr>
+<tr>
+<td>double</td>
+<td>D</td>
+</tr>
+<tr>
+<td>void</td>
+<td>V</td>
+</tr>
+<tr>
+<td>对象类型</td>
+<td>L</td>
+</tr>
+<tr>
+<td>数组类型</td>
+<td>[</td>
+</tr>
+<tr>
+<td>基本数据类型</td>
+<td>Z,B,S,C,I,L,F,D为基本数据类型，从上表可以看出，Dalvik字节码基本类型的描述符基本上是java基本类型的首字母，除了boolean对应为Z外</td>
+</tr>
+</tbody></table>
+<ul>
+<li><p>对象类型<br>L加上类或者接口的全称表示对象类型，即Lpackage/objectName，如String类型描述符为Ljava/lang/String，包com.biyou下面的test类的类型描述符为Lcom/biyou/test</p>
+</li>
+<li><p>数组类型<br>基本类型的数组为”[“加上基本类型描述符来表示，一维数组前面是一个”[“,多一个维度前面多加一个”[“,比如int类型，一维是:[I,二维是:[[I,依次类推。<br>对象类型的数组为”[“加上对象类型表示符来表示，如String类型表示为:[Ljava/lang/String。</p>
+</li>
+</ul>
+<h3 id="smali语法"><a href="#smali语法" class="headerlink" title="smali语法"></a>smali语法</h3><p>smali的语法跟汇编语言有点类似，但没有汇编那么复杂，可以很轻松的看懂，推荐使用source insight来看。</p>
+<p>变量的描述<br>格式为：</p>
+<p>对象类型描述符-&gt;变量名:类型描述符;<br>举例说明：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Lcom&#x2F;biyou&#x2F;test;-&gt;count:I  &#x2F;&#x2F;基本类型</span><br><span class="line">Lcom&#x2F;biyou&#x2F;test;-&gt;str:Ljava&#x2F;lang&#x2F;String  &#x2F;&#x2F;对象类型</span><br></pre></td></tr></table></figure>
+<p>Dalvik对变量的描述都会指明变量定义的和变量的类型，如例子中的count变量的描述，说明它定义在com.biyou.test类，是int类型的变量</p>
+<p>方法的描述<br>格式为:</p>
+<p>对象类型描述符-&gt;方法名(参数类型描述符)返回值类型描述符;</p>
+<p>下面我们通过几个例子来说明,以java.lang.String为例:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">java方法:public char charAt(int index)&#123;...&#125;</span><br><span class="line">Davilk描述:Ljava&#x2F;lang&#x2F;String;-&gt;charAt(I)C</span><br><span class="line"></span><br><span class="line">java方法:public void getChars(int srcBegin,int srcEnd,char dst[],int dstBegin)&#123;...&#125;</span><br><span class="line">Davilk描述:Ljava&#x2F;lang&#x2F;String;-&gt;getChars(II[CI)V</span><br><span class="line"></span><br><span class="line">java方法:public boolean equals(Object anObject)&#123;...&#125;</span><br><span class="line">Davilk描述:Ljava&#x2F;lang&#x2F;String;-&gt;equals(Ljava&#x2F;lang&#x2F;Object)Z</span><br></pre></td></tr></table></figure>
+
+<h3 id="Dalvik指令集"><a href="#Dalvik指令集" class="headerlink" title="Dalvik指令集"></a>Dalvik指令集</h3><p>掌握以上的字段和方法的描述,只能说我们懂了如何描述一个字段和方法,而关于方法中具体的逻辑则需要了解Dalvik中的指令集.因为Dalvik是基于寄存器的架构的,因此指令集和JVM中的指令集区别较大,反而更类似x86的中的汇编指令。</p>
+<p>1.空操作指令<br>空操作指令的助记符为nop，它的值为00，通常nop指令被用来作对齐代码之用，无实际操作。</p>
+<p>2.数据定义指令<br>数据定义指令用于定义代码中使用的常量,字符串，类等数据,基础字节码是const</p>
+<table>
+<thead>
+<tr>
+<th>指令</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>const/4 vA,#+B</td>
+<td>将数值符号扩展为32后赋值给寄存器vA</td>
+</tr>
+<tr>
+<td>const/16 vAA, #+BBBB</td>
+<td>将数据符号扩展为32位后赋给寄存器vAA</td>
+</tr>
+<tr>
+<td>const vAA, #+BBBBBBBB</td>
+<td>将数值赋给寄存器vAA</td>
+</tr>
+<tr>
+<td>const/high16 vAA, #+BBBB0000</td>
+<td>将数值右边零扩展为32位后赋给寄存器vAA</td>
+</tr>
+<tr>
+<td>const-wide/16 vAA,#+BBBB</td>
+<td>将数值符号扩展为64位后赋值个寄存器对vAA</td>
+</tr>
+<tr>
+<td>const-wide/32 vAA,#+BBBB</td>
+<td>将数值符号扩展为64位后赋值个寄存器对vAA</td>
+</tr>
+<tr>
+<td>const-wide vAA, #+BBBBBBBBBBBBBBBB</td>
+<td>将数值赋给寄存器对vAA</td>
+</tr>
+<tr>
+<td>const-wide/high16 vAA, #+BBBB000000000000</td>
+<td>将数值右边零扩展为64位后赋给寄存器对vAA</td>
+</tr>
+<tr>
+<td>const-string vAA,string@BBBB</td>
+<td>通过字符串索引高走字符串赋值给寄存器vAA</td>
+</tr>
+<tr>
+<td>const-string/jumbo vAA, string@BBBBBBBB</td>
+<td>通过字符串索引（较大）构造一个字符串并赋给寄存器vAA</td>
+</tr>
+<tr>
+<td>const-class vAA,type@BBBB</td>
+<td>通过类型索引获取一个类的引用赋值给寄存器vAA</td>
+</tr>
+<tr>
+<td>const-class/jumbo vAAAA, type@BBBBBBBB</td>
+<td>通过给定的类型索引获取一个类引用并赋给寄存器vAAAA。这条指令占用两个字节，值为0xooff(Android4.0中新增的指令)</td>
+</tr>
+</tbody></table>
+<p>3.锁指令<br>锁指令多用在多线程程序中对同一对象的操作。Dalvik指令集中有两条锁指令:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">monitor-enter vAA：为指定的对象获取锁。</span><br><span class="line">monitor-exit vAA：释放指定的对象的锁。</span><br></pre></td></tr></table></figure>
+
+<p>如java的com.biyou.test类需要需要加锁：<br>java为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">synchronized (test.class)</span><br><span class="line">&#123;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>smali为:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">const-class v0, Lcom&#x2F;biyou&#x2F;test;</span><br><span class="line">monitor-enter v0</span><br><span class="line">...</span><br><span class="line">monitor-exit v0</span><br></pre></td></tr></table></figure>
+
+<p>4.变量操作指令<br>字段操作指令表示对对象字段进行设值和取值操作,就像是你在代码中长些的set和get方法.基本指令是iput-type,iget-type,sput-type,sget-type.type表示数据类型.</p>
+<p>普通字段读写操作<br>前缀是i的iput-type和iget-type指令用于字段的读写操作.</p>
+<table>
+<thead>
+<tr>
+<th>指令</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>iget-object vAA,vBB,filed_id</td>
+<td>读取vAA寄存器中的对象中的filed_id对象的引用值给vBB寄存器</td>
+</tr>
+<tr>
+<td>iget-boolean vAA,vBB,filed_id</td>
+<td>读取vAA寄存器中的对象中的filed_id的值给vBB寄存器</td>
+</tr>
+<tr>
+<td>iget-wide vAA,vBB,filed_id</td>
+<td>读取vAA寄存器中的对象中的filed_id的值给vBB寄存器</td>
+</tr>
+<tr>
+<td>iget vAA,vBB,filed_id</td>
+<td>读取vAA寄存器中的对象中的filed_id的值给vBB寄存器</td>
+</tr>
+<tr>
+<td>iput-object vAA,vBB,filed_id</td>
+<td>把vAA寄存器指向的对象的引用赋值给vBB寄存器中的filed_id对象</td>
+</tr>
+<tr>
+<td>iput-boolean vAA,vBB,filed_id</td>
+<td>把vAA寄存器的值给vBB寄存器中的boolean类型</td>
+</tr>
+<tr>
+<td>iput-wide vAA,vBB,filed_id</td>
+<td>把vAA寄存器的值给vBB寄存器中的wide类型</td>
+</tr>
+<tr>
+<td>iput vAA,vBB,filed_id</td>
+<td>把vAA寄存器的值给vBB寄存器中的int类型</td>
+</tr>
+</tbody></table>
+<p>静态字段读写操作<br>前缀是s的sput-type和sget-type指令用于静态字段的读写操作</p>
+<table>
+<thead>
+<tr>
+<th>指令</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>sget-object vAA,vBB,filed_id</td>
+<td>读取vAA寄存器中的对象中的filed_id对象的引用值给vBB寄存器</td>
+</tr>
+<tr>
+<td>sget-boolean vAA,vBB,filed_id</td>
+<td>读取vAA寄存器中的对象中的filed_id的值给vBB寄存器</td>
+</tr>
+<tr>
+<td>sget-wide vAA,vBB,filed_id</td>
+<td>读取vAA寄存器中的对象中的filed_id的值给vBB寄存器</td>
+</tr>
+<tr>
+<td>sget vAA,vBB,filed_id</td>
+<td>读取vAA寄存器中的对象中的filed_id的值给vBB寄存器</td>
+</tr>
+<tr>
+<td>sput-object vAA,vBB,filed_id</td>
+<td>把vAA寄存器指向的对象的引用赋值给vBB寄存器中的filed_id对象</td>
+</tr>
+<tr>
+<td>sput-boolean vAA,vBB,filed_id</td>
+<td>把vAA寄存器的值给vBB寄存器中的boolean类型</td>
+</tr>
+<tr>
+<td>sput-wide vAA,vBB,filed_id</td>
+<td>把vAA寄存器的值给vBB寄存器中的wide类型</td>
+</tr>
+<tr>
+<td>sput vAA,vBB,filed_id</td>
+<td>把vAA寄存器的值给vBB寄存器中的int类型</td>
+</tr>
+</tbody></table>
+<p>5.跳转指令<br>跳转指令用于从当前地址跳转到指定的偏移处。Dalvik指令集中有三种跳转指令：无条件跳转（goto），分支跳转（switch）与条件跳转（if）。</p>
+<p>goto +AA：无条件跳转到指定偏移处，偏移量AA不能为0。</p>
+<p>goto/16 +AAAA：无条件跳转到指定偏移处，偏量AAAA不能为0。</p>
+<p>goto/32 +AAAAAAAA：无条件跳转到指定偏移处。</p>
+<p>packed-switch vAA, +BBBBBBBB：分支跳转指令。vAA寄存器为switch分支中需要判断的值，BBBBBBBB指向一个packed-switch-payload格式的偏移表，表中的值是有规律递增的。</p>
+<p>sparse-switch vAA, +BBBBBBBB：分支跳转指令。vAA寄存器为switch分支中需要判断的值，BBBBBBBB指向一个sparse-switch-payload格式的偏移表，表中的值是无规律的偏移量。</p>
+<p>if-test vA, vB, +CCCC：条件跳转指令。比较vA寄存器与vB寄存器的值，如果比较结果满足就跳转到CCCC指定的偏移处。偏移量CCCC不能为0。if-test类型的指令有以下几条：</p>
+<p>if-eq：如果vA等于vB则跳转。Java语法表示为“if(vA == vB)”</p>
+<p>if-ne：如果vA不等于vB则跳转。Java语法表示为“if(vA != vB)”</p>
+<p>if-lt：如果vA小于vB则跳转。Java语法表示为“if(vA &lt; vB)”</p>
+<p>if-ge：如果vA大于等于vB则跳转。Java语法表示为“if(vA &gt;= vB)”</p>
+<p>if-gt：如果vA大于vB则跳转。Java语法表示为“if(vA &gt; vB)”</p>
+<p>if-le：如果vA小于等于vB则跳转。Java语法表示为“if(vA &lt;= vB)”</p>
+<p>if-testz vAA, +BBBB：条件跳转指令。拿vAA寄存器与0比较，如果比较结果满足或值为0时就跳转到BBBB指定的偏移处。偏移量BBBB不能为0。if-testz类型的指令有以下几条：</p>
+<p>if-eqz：如果vAA为0则跳转。Java语法表示为“if(vAA == 0)”</p>
+<p>if-nez：如果vAA不为0则跳转。Java语法表示为“if(vAA != 0)”</p>
+<p>if-ltz：如果vAA小于0则跳转。Java语法表示为“if(vAA &lt; 0)”</p>
+<p>if-gez：如果vAA大于等于0则跳转。Java语法表示为“if(vAA &gt;= 0)”</p>
+<p>if-gtz：如果vAA大于0则跳转。Java语法表示为“if(vAA &gt; 0)”</p>
+<p>if-lez：如果vAA小于等于0则跳转。Java语法表示为“if(vAA &lt;= 0)”</p>
+<p>6.比较指令<br>比较指令用于对两个寄存器的值（浮点型或长整型）进行比较。它的格式为“cmpkind vAA, vBB, vCC”，其中vBB寄存器与vCC寄存器是需要比较的两个寄存器或寄存器对，比较的结果放到vAA寄存器。Dalvik指令集中共有5条比较指令：</p>
+<p>cmpl-float vAA,vBB,vCC：比较两个单精度浮点数。如果vBB寄存器大于vCC寄存器，结果为-1，相等则结果为0，小于的话结果为1</p>
+<p>cmpg-float vAA,vBB,vCC：比较两个单精度浮点数。如果vBB寄存器大于vCC寄存器，则结果为1，相等则结果为0，小于的话结果为-1</p>
+<p>cmpl-double vAA,vBB,vCC：比较两个双精度浮点数。如果vBB寄存器对大于vCC寄存器对，则结果为-1，相等则结果为0，小于则结果为1</p>
+<p>cmpg-double vAA,vBB,vCC：比较两个双精度浮点数。如果vBB寄存器对大于vCC寄存器对，则结果为1，相等则结果为0，小于的话，则结果为-1</p>
+<p>cmp-long vAA,vBB,vCC：比较两个长整型数。如果vBB寄存器大于vCC寄存器，则结果为1，相等则结果为0，小则结果为-1</p>
+<p>7.数据转换指令<br>数据转换指令用于将一种类型的数值转换成另一种类型。它的格式为“unop vA, vB”，vB寄存器或vB寄存器对存放需要转换的数据，转换后的结果保存在vA寄存器或vA寄存器对中。</p>
+<p>•“neg-int”：对整型数求补。</p>
+<p>•“not-int”：对整型数求反。</p>
+<p>•“neg-long”：对长整型数求补。</p>
+<p>•“not-long”：对长整型数求反。</p>
+<p>•“neg-float”：对单精度浮点型数求补。</p>
+<p>•“neg-double”：对双精度浮点型数求补。</p>
+<p>•“int-to-long”：将整型数转换为长整型。</p>
+<p>•“int-to-float”：将整型数转换为单精度浮点型数。</p>
+<p>•“int-to-dobule”：将整型数转换为双精度浮点数。</p>
+<p>•“long-to-int”：将长整型数转换为整型。</p>
+<p>•“long-to-float”：将长整型数转换为单精度浮点型。</p>
+<p>•“long-to-double”：将长整型数转换为双精度浮点型。</p>
+<p>•“float-to-int”：将单精度浮点数转换为整型。</p>
+<p>•“float-to-long”：将单精度浮点数转换为长整型数。</p>
+<p>•“float-to-double”：将单精度浮点数转换为双精度浮点型数。</p>
+<p>•“double-to-int”：将双精度浮点数转换为整型。</p>
+<p>•“double-to-long”：将双精度浮点数转换为长整型。</p>
+<p>•“double-to-float”：将双精度浮点数转换为单精度浮点型。</p>
+<p>•“int-to-byte”：将整型转换为字节型。</p>
+<p>•“int-to-char”：将整型转换为字符型。</p>
+<p>•“int-to-short”：将整型转换为短整型。</p>
+<p>8.数据运行指令<br>数据运算指令包括算术运算指令与逻辑运算指令。算术运算指令主要进行数值间如加，减，乘，除，模，移位等运算。逻辑运算指令主要进行数值间与，或，非，抑或等运算。数据运算指令有如下四类（数据运算时可能是在寄存器或寄存器对间进行，下面的指令作用讲解时使用寄存器来描述）：</p>
+<p>•“binop vAA, vBB, vCC”：将vBB寄存器与vCC寄存器进行运算，结果保存到vAA寄存器。</p>
+<p>•“binop/2addr vA, vB”：将vA寄存器与vB寄存器进行运算，结果保存到vA寄存器。</p>
+<p>•“binop/lit16 vA, vB, #+CCCC”：将vB寄存器与常量 CCCC进行运算，结果保存到vA寄存器。</p>
+<p>•“binop/lit8 vAA, vBB, #+CC”：将vBB寄存器与常量CC进行运算，结果保存到vAA寄存器。</p>
+<p>后面3类指令比第1类指令分别多出了2addr，lit16，lit8等指令后缀。四类指令中基础字节码相同的指令执行的运算操作是类似的，第1类指令中，根据数据的类型不同会在基础字节码后面加上数据类型后缀，如 -int 或 -long 分别表示操作的数据类型为整型与长整型。第1类指令可归类如下：</p>
+<p>•“add-type”：vBB寄存器与vCC寄存器值进行加法运算（vBB + vCC）</p>
+<p>•”sub-type”：vBB寄存器与vCC寄存器值进行减法运算（vBB - vCC）</p>
+<p>•”mul-type”：vBB寄存器与vCC寄存器值进行乘法运算（vBB * vCC）</p>
+<p>•”div-type”：vBB寄存器与vCC寄存器值进行除法运算（vBB / vCC）</p>
+<p>•”rem-type”：vBB寄存器与vCC寄存器值进行模运算（vBB % vCC）</p>
+<p>•”and-type”：vBB寄存器与vCC寄存器值进行与运算（vBB &amp; vCC）</p>
+<p>•”or-type”：vBB寄存器与vCC寄存器值进行或运算（vBB | vCC）</p>
+<p>•”xor-type”：vBB寄存器与vCC寄存器值进行异或运算（vBB ^ vCC）</p>
+<p>•”shl-type”：vBB寄存器值（有符号数）左移vCC位（vBB &lt;&lt; vCC ）</p>
+<p>•”shr-type”：vBB寄存器值（有符号）右移vCC位（vBB &gt;&gt; vCC）</p>
+<p>•”ushr-type”：vBB寄存器值（无符号数）右移vCC位（vBB &gt;&gt;&gt; vCC）</p>
+<p>其中基础字节码后面的-type可以是-int，-long， -float，-double。后面3类指令与之类似。</p>
+<p>9.方法调用指令<br>方法调用指令负责调用类实例的方法。它的基础指令为 invoke，方法调用指令有“invoke-kind {vC, vD, vE, vF, vG},meth@BBBB”与“invoke-kind/range {vCCCC .. vNNNN},meth@BBBB”两类，两类指令在作用上并无不同，只是后者在设置参数寄存器时使用了range来指定寄存器的范围。根据方法类型的不同，共有如下五条方法调用指令：<br>•invoke-virtual或 invoke-virtual/range调用实例的虚方法。<br>•invoke-super或”invoke-super/range调用实例的父类方法。<br>•invoke-direct或“invoke-direct/range调用实例的直接方法。<br>•invoke-static或invoke-static/range调用实例的静态方法。<br>•invoke-interface或invoke-interface/range调用实例的接口方法。</p>
+<p>在Android4.0系统中，Dalvik指令集中增加了“invoke-kind/jumbo {vCCCC .. vNNNN},meth@BBBBBBBB”这类指令，它与上面介绍的两类指令作用相同，只是在指令中增加了jumbo字节码后缀，且寄存器值与指令的索引取值范围更大。</p>
+<p>方法调用指令的返回值必须使用move-result*指令来获取。如下面两条指令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">invoke-static &#123;&#125;, Landroid&#x2F;os&#x2F;Parcel;-&gt;obtain() Landroid&#x2F;os&#x2F;Parcel;</span><br><span class="line">move-result-object v0</span><br></pre></td></tr></table></figure>
+
+<p>10.异常处理指令<br>  Dalvik指令集中有一条指令用来抛出异常。</p>
+<p>•throw vAA：抛出vAA寄存器中指定类型的异常。</p>
+<p>11.实例操作指令<br>与实例相关的操作包括实例的类型转换，检查及新建等：</p>
+<p>•check-cast vAA, type@BBBB：将vAA寄存器中的对象引用转换成指定的类型，如果失败会抛出ClassCastException异常。如果类型B指定的是基本类型，对于非基本类型的A来说，运行时始终会失败。</p>
+<p>•instance-of vA, vB, type@CCCC：判断vB寄存器中的对象引用是否可以转换成指定的类型，如果可以vA寄存器赋值为1，否则vA寄存器赋值为0。</p>
+<p>•new-instance vAA, type@BBBB：构造一个指定类型对象的新实例，并将对象引用赋值给vAA寄存器，类型符type指定的类型不能是数组类。</p>
+<p>•check-cast/jumbo vAAAA, type@BBBBBBBB：指令功能与“check-cast vAA, type@BBBB”相同，只是寄存器值与指令的索引取值范围更大（Android4.0中新增的指令）。</p>
+<p>•instance-of/jumbo vAAAA, vBBBB, type@CCCCCCCC：指令功能与“instance-of vA, vB, type@CCCC”相同，只是寄存器值与指令的索引取值范围更大（Android4.0中新增的指令）。</p>
+<p>•new-instance/jumbo vAAAA, type@BBBBBBBB：指令功能与“new-instance vAA, type@BBBB”相同，只是寄存器值与指令的索引取值范围更大（Android4.0中新增的指令）。</p>
+<p>12.返回指令<br>  返回指令指的是函数结尾时运行的最后一条指令。它的基础字节码为teturn，共有以下四条返回指令：</p>
+<p>•return-void：表示函数从一个void方法返回。<br>•return vAA：表示函数返回一个32位非对象类型的值，返回值寄存器为8位的寄存器vAA。<br>•return-wide vAA：表示函数返回一个64位非对象类型的值，返回值为8位的寄存器对vAA。<br>•return-object vAA：表示函数返回一个对象类型的值。返回值为8位的寄存器vAA。</p>
+<p>13.数据操作指令<br>数据操作指令为move。move指令的原型为“move destination,source”，move指令根据字节码的大小与类型不同，后面会跟上不同的后缀。</p>
+<p>•move vA, vB：将vB寄存器的值赋给vA寄存器，A源寄存器与目的寄存器都为4位。<br>•move/from16 vAA, vBBBB：将vBBBB寄存器的值赋给vAA寄存器，源寄存器为16位，目的寄存器为8位。<br>•move/16 vAAAA, vBBBB：将vBBBB寄存器的值赋给vAAAA寄存器，源寄存器与目的寄存器都为16位。<br>•move-wide vA, vB：为4位的寄存器对赋值。源寄存器与目的寄存器都为4位。<br>•move-wide/from16 vAA, vBBBB 与“move-wide/16 vAAAA, vBBBB”实现与“move-wide”相同。<br>•move-object vA, vB：为对象赋值。源寄存器与目的寄存器都为4位。<br>•move-object/from16 vAA, vBBBB：为对象赋值。源寄存器为16位，目的寄存器为8位。<br>•move-object/16 vAA, vBBBB：为对象赋值。源寄存器与目的寄存器都为16位。<br>•move-result vAA：将上一个invoke类型指令操作的单字非对象结果赋给vAA寄存器。<br>•move-result-wide vAA：将上一个invoke类型指令操作的双字非对象结果赋给vAA寄存器。<br>•move-result-object vAA：将上一个invoke类型指令操作的对象结果赋给vAA寄存器。<br>•move-exception vAA：保存一个运行时发生的异常到vAA寄存器，这条指令必须是异常发生时的异常处理器的一条指令。否则的话，指令无效。</p>
+<p>14.对象操作指令<br>与对象实例相关的操作,比如对象创建,对象检查等.</p>
+<p>15.数组操作指令<br>数组操作包括获取数组长度，新建数组，数组赋值，数组元素取值与赋值等操作。</p>
+<p>•array-length vA, vB：获取给定vB寄存器中数组的长度并将值赋给vA寄存器，数组长度指的是数组的条目个数。</p>
+<p>•new-array vA, vB, type@CCCC：构造指定类型（type@CCCC）与大小（vB）的数组，并将值赋给vA寄存器。</p>
+<p>•filled-new-array {vC, vD, vE, vF, vG},type@BBBB：构造指定类型（type@BBBB）与大小（vA）的数组并填充数组内容。vA寄存器是隐含使用的，除了指定数组的大小外还指定了参数的个数，vC~vG是使用到的参数寄存序列。</p>
+<p>•filled-new-array/range {vCCCC ..vNNNN}, type@BBBB：指令功能与“filled-new-array {vC, vD, vE, vF, vG},type@BBBB”相同，只是参数寄存器使用range字节码后缀指定了取值范围 ，vC是第一个参数寄存器，N = A +C -1。</p>
+<p>•fill-array-data vAA, +BBBBBBBB：用指定的数据来填充数组，vAA寄存器为数组引用，引用必须为基础类型的数组，在指令后面会紧跟一个数据表。</p>
+<p>•new-array/jumbo vAAAA, vBBBB,type@CCCCCCCC：指令功能与“new-</p>
+<p>array vA,vB,type@CCCC”相同，只是寄存器值与指令的索引取值范围更大（Android4.0中新增的指令）。</p>
+<p>•filled-new-array/jumbo {vCCCC ..vNNNN},type@BBBBBBBB：指令功能与“filled-new-array/range {vCCCC ..vNNNN},type@BBBB”相同，只是索引取值范围更大（Android4.0中新增的指令）。</p>
+<p>•arrayop vAA, vBB, vCC：对vBB寄存器指定的数组元素进入取值与赋值。vCC寄存器指定数组元素索引，vAA寄存器用来存放读取的或需要设置的数组元素的值。读取元素使用aget类指令，元素赋值使用aput类指定，根据数组中存储的类型指令后面会紧跟不同的指令后缀，指令列表有 aget, aget-wide, aget-object, aget-boolean, aget-byte,aget-char, aget-short, aput, aput-wide, aput-object, aput-boolean, aput-byte, aput-char, aput-short。</p>
+<h2 id="转载"><a href="#转载" class="headerlink" title="转载"></a>转载</h2><p><a href="https://blog.csdn.net/lixpjita39/article/details/75193833" target="_blank" rel="noopener">Android逆向世界之一:smali文件</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/10/20/Utils%E6%A1%86%E6%9E%B6%E8%A7%A3%E6%9E%90/" rel="prev" title="Utils框架解析">
+      <i class="fa fa-chevron-left"></i> Utils框架解析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/02/04/BlockCanary-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="next" title="BlockCanary 源码解析">
+      BlockCanary 源码解析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Smail简介"><span class="nav-number">1.</span> <span class="nav-text">Smail简介</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Smali简介"><span class="nav-number">1.1.</span> <span class="nav-text">Smali简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Smali文件结构解"><span class="nav-number">1.2.</span> <span class="nav-text">Smali文件结构解</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-头文件"><span class="nav-number">1.2.1.</span> <span class="nav-text">1.头文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-接口实现"><span class="nav-number">1.2.2.</span> <span class="nav-text">2.接口实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-注解"><span class="nav-number">1.2.3.</span> <span class="nav-text">3.注解</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-变量定义"><span class="nav-number">1.2.4.</span> <span class="nav-text">4.变量定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-方法描述"><span class="nav-number">1.2.5.</span> <span class="nav-text">5.方法描述</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#smali数据类型"><span class="nav-number">1.2.6.</span> <span class="nav-text">smali数据类型</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#smali语法"><span class="nav-number">1.3.</span> <span class="nav-text">smali语法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Dalvik指令集"><span class="nav-number">1.4.</span> <span class="nav-text">Dalvik指令集</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#转载"><span class="nav-number">2.</span> <span class="nav-text">转载</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

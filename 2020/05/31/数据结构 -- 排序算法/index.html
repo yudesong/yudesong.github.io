@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://yoursite.com/2020/05/31/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%20--%20%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/2062729-6906429ed882a5b0.png">
 <meta property="article:published_time" content="2020-05-31T11:01:45.288Z">
-<meta property="article:modified_time" content="2020-06-14T13:18:59.198Z">
+<meta property="article:modified_time" content="2020-06-22T05:25:16.461Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="算法">
 <meta name="twitter:card" content="summary">
@@ -209,6 +209,10 @@
 
 <h4 id="1-冒泡排序"><a href="#1-冒泡排序" class="headerlink" title="1. 冒泡排序"></a>1. 冒泡排序</h4><p>冒泡排序算法的基本流程是：每一轮从头开始两两比较，将较大的项放在较小项的右边，这样每轮下来保证该轮最大的数在最右边。 （稳定排序算法）</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public static void bubbleSort(int[] num) &#123;</span><br><span class="line">    for (int i &#x3D; 1; i &lt; num.length - 1; i++)</span><br><span class="line">        for (int j &#x3D; 0; j &lt; num.length - i; j++) &#123;</span><br><span class="line">            if (num[j] &gt; num[j+1]) &#123;</span><br><span class="line">                swap(num, j, j+1);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>时间复杂度:最好O(n^2), 最坏O(n^2), 平均时间复杂度O(n^2), 空间复杂度O(1)</p>
+<p>有很多人说冒泡排序的最优的时间复杂度为：O(n)；其实这是在代码中使用一个标志位来判断是否已经排序好的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public static void bubbleSort(int[] num) &#123;</span><br><span class="line">    int flag &#x3D; 1;</span><br><span class="line">    for (int i &#x3D; 1; i &lt; num.length - 1; i++, flag &#x3D; 1) &#123;</span><br><span class="line">        for (int j &#x3D; 0; j &lt; num.length - i; j++) &#123;</span><br><span class="line">            if (num[j] &gt; num[j+1]) &#123;</span><br><span class="line">                swap(num, j, j+1);</span><br><span class="line">                flag &#x3D; 0;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        if (flag) break;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 
 <h4 id="2-选择排序"><a href="#2-选择排序" class="headerlink" title="2. 选择排序"></a>2. 选择排序</h4><p>选择排序是将一轮比较完后，把最小的放到最前的位置（或者把最大的放到最后） （不稳定排序算法）</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public static void selectSort(int[] num) &#123;</span><br><span class="line">    for (int i &#x3D; 0; i &lt; num.length; i++) &#123;</span><br><span class="line">        int max &#x3D; 0;</span><br><span class="line">        for (int j &#x3D; 0; j &lt; num.length - i; j++) &#123;</span><br><span class="line">                if (num[max] &lt; num[j]) max &#x3D; j;</span><br><span class="line">        &#125;</span><br><span class="line">        swap(num, max, num.length - i - 1);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -341,20 +345,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">10</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -381,7 +385,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

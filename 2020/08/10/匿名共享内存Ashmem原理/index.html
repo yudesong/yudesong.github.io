@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="匿名共享内存Ashmem原理Android可以使用Linux的一切IPC通信方式，包括共享内存，不过Android主要使用的方式是匿名共享内存Ashmem（Anonymous Shared Memory），跟原生的不太一样，比如它在自己的驱动中添加了互斥锁，另外通过fd的传递来实现共享内存的传递。MemoryFile是Android为匿名共享内存而封装的一个对象，这里通过使用MemoryFile来">
+<meta property="og:type" content="article">
+<meta property="og:title" content="匿名共享内存Ashmem原理">
+<meta property="og:url" content="http://yoursite.com/2020/08/10/%E5%8C%BF%E5%90%8D%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98Ashmem%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="匿名共享内存Ashmem原理Android可以使用Linux的一切IPC通信方式，包括共享内存，不过Android主要使用的方式是匿名共享内存Ashmem（Anonymous Shared Memory），跟原生的不太一样，比如它在自己的驱动中添加了互斥锁，另外通过fd的传递来实现共享内存的传递。MemoryFile是Android为匿名共享内存而封装的一个对象，这里通过使用MemoryFile来">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-08-10T03:17:27.465Z">
+<meta property="article:modified_time" content="2020-10-12T02:20:12.154Z">
+<meta property="article:author" content="yudesong">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/08/10/%E5%8C%BF%E5%90%8D%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98Ashmem%E5%8E%9F%E7%90%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>匿名共享内存Ashmem原理 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/08/10/%E5%8C%BF%E5%90%8D%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98Ashmem%E5%8E%9F%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          匿名共享内存Ashmem原理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-10 11:17:27" itemprop="dateCreated datePublished" datetime="2020-08-10T11:17:27+08:00">2020-08-10</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="匿名共享内存Ashmem原理"><a href="#匿名共享内存Ashmem原理" class="headerlink" title="匿名共享内存Ashmem原理"></a>匿名共享内存Ashmem原理</h3><p>Android可以使用Linux的一切IPC通信方式，包括共享内存，不过Android主要使用的方式是匿名共享内存Ashmem（Anonymous Shared Memory），跟原生的不太一样，比如它在自己的驱动中添加了互斥锁，另外通过fd的传递来实现共享内存的传递。MemoryFile是Android为匿名共享内存而封装的一个对象，这里通过使用MemoryFile来分析，Android中如何利用共享内存来实现大数据传递，同时MemoryFile也是进程间大数据传递的一个手段，开发的时候可以使用：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">interface IMemoryAidlInterface &#123;</span><br><span class="line">    ParcelFileDescriptor getParcelFileDescriptor();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">public class MemoryFetchService extends Service &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public IBinder onBind(Intent intent) &#123;</span><br><span class="line">        return new MemoryFetchStub();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    static class MemoryFetchStub extends IMemoryAidlInterface.Stub &#123;</span><br><span class="line">        @Override</span><br><span class="line">        public ParcelFileDescriptor getParcelFileDescriptor() throws RemoteException &#123;</span><br><span class="line">            MemoryFile memoryFile &#x3D; null;</span><br><span class="line">            try &#123;</span><br><span class="line">                memoryFile &#x3D; new MemoryFile(&quot;test_memory&quot;, 1024);</span><br><span class="line">                memoryFile.getOutputStream().write(new byte[]&#123;1, 2, 3, 4, 5&#125;);</span><br><span class="line">                Method method &#x3D; MemoryFile.class.getDeclaredMethod(&quot;getFileDescriptor&quot;);</span><br><span class="line">                FileDescriptor des &#x3D; (FileDescriptor) method.invoke(memoryFile);</span><br><span class="line">                return ParcelFileDescriptor.dup(des);</span><br><span class="line">            &#125; catch (Exception e) &#123;&#125;</span><br><span class="line">            return null;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Intent intent &#x3D; new Intent(MainActivity.this, MemoryFetchService.class);</span><br><span class="line">bindService(intent, new ServiceConnection() &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void onServiceConnected(ComponentName name, IBinder service) &#123;</span><br><span class="line">        byte[] content &#x3D; new byte[10];</span><br><span class="line">        IMemoryAidlInterface iMemoryAidlInterface</span><br><span class="line">                        &#x3D; IMemoryAidlInterface.Stub.asInterface(service);</span><br><span class="line">                try &#123;</span><br><span class="line">                    ParcelFileDescriptor parcelFileDescriptor &#x3D; iMemoryAidlInterface.getParcelFileDescriptor();</span><br><span class="line">                    FileDescriptor descriptor &#x3D; parcelFileDescriptor.getFileDescriptor();</span><br><span class="line">                    FileInputStream fileInputStream &#x3D; new FileInputStream(descriptor);</span><br><span class="line">                    fileInputStream.read(content);</span><br><span class="line">                &#125; catch (Exception e) &#123;</span><br><span class="line">                &#125;&#125;</span><br><span class="line"></span><br><span class="line">            @Override</span><br><span class="line">            public void onServiceDisconnected(ComponentName name) &#123;</span><br><span class="line"></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;, Service.BIND_AUTO_CREATE);</span><br></pre></td></tr></table></figure>
+<p>以上是应用层使用匿名共享内存的方法，关键点就是文件描述符（FileDescriptor）的传递，文件描述符是Linux系统中访问与更新文件的主要方式。从MemoryFile字面上看出，共享内存被抽象成了文件，不过本质也是如此，就是在tmpfs临时文件系统中创建一个临时文件，（只是创建了节点，而没有看到实际的文件） 该文件与Ashmem驱动程序创建的匿名共享内存对应，可以直接去proc/pid下查看：</p>
+<p>下面就基于MemoryFile主要分析两点，共享内存的分配与传递，先看下MemoryFile的构造函数</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public MemoryFile(String name, int length) throws IOException &#123;</span><br><span class="line">    mLength &#x3D; length;</span><br><span class="line">    mFD &#x3D; native_open(name, length);</span><br><span class="line">    if (length &gt; 0) &#123;</span><br><span class="line">        mAddress &#x3D; native_mmap(mFD, length, PROT_READ | PROT_WRITE);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        mAddress &#x3D; 0;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到 Java层只是简单的封装，具体实现在native层 ，首先是通过native_open调用ashmem_create_region创建共享内存，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">static jobject android_os_MemoryFile_open(JNIEnv* env, jobject clazz, jstring name, jint length) &#123;</span><br><span class="line">    const char* namestr &#x3D; (name ? env-&gt;GetStringUTFChars(name, NULL) : NULL);</span><br><span class="line">    int result &#x3D; ashmem_create_region(namestr, length);</span><br><span class="line">    if (name) env-&gt;ReleaseStringUTFChars(name, namestr);</span><br><span class="line">    if (result &lt; 0) &#123;</span><br><span class="line">        jniThrowException(env, &quot;java&#x2F;io&#x2F;IOException&quot;, &quot;ashmem_create_region failed&quot;);</span><br><span class="line">        return NULL;</span><br><span class="line">    &#125;</span><br><span class="line">    return jniCreateFileDescriptor(env, result);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接着通过native_mmap调用mmap将共享内存映射到当前进程空间，之后Java层就能利用FileDescriptor，像访问文件一样访问共享内存。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">static jint android_os_MemoryFile_mmap(JNIEnv* env, jobject clazz, jobject fileDescriptor,</span><br><span class="line">        jint length, jint prot) &#123;</span><br><span class="line">    int fd &#x3D; jniGetFDFromFileDescriptor(env, fileDescriptor);</span><br><span class="line">    &lt;!--系统调用mmap，分配内存--&gt;</span><br><span class="line">    jint result &#x3D; (jint)mmap(NULL, length, prot, MAP_SHARED, fd, 0);</span><br><span class="line">    if (!result) jniThrowException(env, &quot;java&#x2F;io&#x2F;IOException&quot;, &quot;mmap failed&quot;);</span><br><span class="line">    return result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ashmem_create_region这个函数是如何向Linux申请一块共享内存的呢？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">int ashmem_create_region(const char *name, size_t size) &#123;</span><br><span class="line">    int fd, ret;</span><br><span class="line">    fd &#x3D; open(ASHMEM_DEVICE, O_RDWR);</span><br><span class="line">    if (fd &lt; 0) return fd;</span><br><span class="line">    if (name) &#123;</span><br><span class="line">        char buf[ASHMEM_NAME_LEN];</span><br><span class="line">        strlcpy(buf, name, sizeof(buf));</span><br><span class="line">        ret &#x3D; ioctl(fd, ASHMEM_SET_NAME, buf);</span><br><span class="line">        if (ret &lt; 0) goto error;</span><br><span class="line">    &#125;</span><br><span class="line">    ret &#x3D; ioctl(fd, ASHMEM_SET_SIZE, size);</span><br><span class="line">    if (ret &lt; 0) goto error;</span><br><span class="line">    return fd;</span><br><span class="line">error:</span><br><span class="line">    close(fd);</span><br><span class="line">    return ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>ASHMEM_DEVICE其实就是抽象的共享内存设备，它是一个杂项设备（字符设备的一种），在驱动加载之后，就会在/dev下创建ashem文件，之后用户就能够访问该设备文件，同一般的设备文件不同，它仅仅是通过内存抽象的，同普通的磁盘设备文件、串行端口字段设备文件不一样：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">#define ASHMEM_DEVICE   &quot;&#x2F;dev&#x2F;ashmem&quot;   </span><br><span class="line">static struct miscdevice ashmem_misc &#x3D; &#123;</span><br><span class="line">    .minor &#x3D; MISC_DYNAMIC_MINOR,</span><br><span class="line">    .name &#x3D; &quot;ashmem&quot;,</span><br><span class="line">    .fops &#x3D; &amp;ashmem_fops,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>接着进入驱动看一下，如何申请共享内存，open函数很普通，主要是创建一个ashmem_area对象</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">static int ashmem_open(struct inode *inode, struct file *file) &#123;</span><br><span class="line">    struct ashmem_area *asma;</span><br><span class="line">    int ret;</span><br><span class="line">    ret &#x3D; nonseekable_open(inode, file);</span><br><span class="line">    if (unlikely(ret)) return ret;</span><br><span class="line">    asma &#x3D; kmem_cache_zalloc(ashmem_area_cachep, GFP_KERNEL);</span><br><span class="line">    if (unlikely(!asma)) return -ENOMEM;</span><br><span class="line">    INIT_LIST_HEAD(&amp;asma-&gt;unpinned_list);</span><br><span class="line">    memcpy(asma-&gt;name, ASHMEM_NAME_PREFIX, ASHMEM_NAME_PREFIX_LEN);</span><br><span class="line">    asma-&gt;prot_mask &#x3D; PROT_MASK;</span><br><span class="line">    file-&gt;private_data &#x3D; asma;</span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接着利用ashmem_ioctl设置共享内存的大小，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">static long ashmem_ioctl(struct file *file, unsigned int cmd, unsigned long arg) &#123;</span><br><span class="line">    struct ashmem_area *asma &#x3D; file-&gt;private_data;</span><br><span class="line">    long ret &#x3D; -ENOTTY;</span><br><span class="line">    switch (cmd) &#123;</span><br><span class="line">        ...</span><br><span class="line">        case ASHMEM_SET_SIZE:</span><br><span class="line">            ret &#x3D; -EINVAL;</span><br><span class="line">            if (!asma-&gt;file) &#123;</span><br><span class="line">                ret &#x3D; 0;</span><br><span class="line">                asma-&gt;size &#x3D; (size_t) arg;</span><br><span class="line">            &#125;</span><br><span class="line">            break;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">   return ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，其实并未真正的分配内存，这也符合Linux的风格，只有等到真正的使用的时候，才会通过缺页中断分配内存，接着mmap函数，它会分配内存吗？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">static int ashmem_mmap(struct file *file, struct vm_area_struct *vma) &#123;</span><br><span class="line">    struct ashmem_area *asma &#x3D; file-&gt;private_data;</span><br><span class="line">    int ret &#x3D; 0;</span><br><span class="line">    mutex_lock(&amp;ashmem_mutex);</span><br><span class="line">    ...</span><br><span class="line">    if (!asma-&gt;file) &#123;</span><br><span class="line">        char *name &#x3D; ASHMEM_NAME_DEF;</span><br><span class="line">        struct file *vmfile;</span><br><span class="line"></span><br><span class="line">        if (asma-&gt;name[ASHMEM_NAME_PREFIX_LEN] !&#x3D; &#39;\0&#39;)</span><br><span class="line">            name &#x3D; asma-&gt;name;</span><br><span class="line">        &#x2F;&#x2F; 这里创建的临时文件其实是备份用的临时文件，之类的临时文件有文章说只对内核态可见，用户态不可见，我们也没有办法通过命令查询到 ，可以看做是个隐藏文件，用户空间看不到！！</span><br><span class="line">        &lt;!--校准真正操作的文件--&gt;</span><br><span class="line">        vmfile &#x3D; shmem_file_setup(name, asma-&gt;size, vma-&gt;vm_flags);</span><br><span class="line">        asma-&gt;file &#x3D; vmfile;</span><br><span class="line">    &#125;</span><br><span class="line">    get_file(asma-&gt;file);</span><br><span class="line">    if (vma-&gt;vm_flags &amp; VM_SHARED)</span><br><span class="line">        shmem_set_file(vma, asma-&gt;file);</span><br><span class="line">    else &#123;</span><br><span class="line">        if (vma-&gt;vm_file)</span><br><span class="line">            fput(vma-&gt;vm_file);</span><br><span class="line">        vma-&gt;vm_file &#x3D; asma-&gt;file;</span><br><span class="line">    &#125;</span><br><span class="line">    vma-&gt;vm_flags |&#x3D; VM_CAN_NONLINEAR;</span><br><span class="line">out:</span><br><span class="line">    mutex_unlock(&amp;ashmem_mutex);</span><br><span class="line">    return ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其实这里就复用了Linux的共享内存机制，虽然说是匿名共享内存，但底层其实还是给共享内存设置了名称（前缀ASHMEM_NAME_PREFIX+名字），如果名字未设置，那就默认使用ASHMEM_NAME_PREFIX作为名称。不过，在这里没直接看到内存分配的函数。但是，有两个函数shmem_file_setup与shmem_set_file很重要，也是共享内存比较不好理解的地方，shmem_file_setup是原生linux的共享内存机制，不过Android也修改Linux共享内存的驱动代码，匿名共享内存其实就是在Linux共享内存的基础上做了改进，</p>
+<p>struct file <em>shmem_file_setup(char *name, loff_t size, unsigned long flags) {<br>    int error;<br>    struct file *file;<br>    struct inode *inode;<br>    struct dentry *dentry, *root;<br>    struct qstr this;<br>    error = -ENOMEM;<br>    this.name = name;<br>    this.len = strlen(name);<br>    this.hash = 0; /</em> will go <em>/<br>    root = shm_mnt-&gt;mnt_root;<br>    dentry = d_alloc(root, &amp;this);//分配dentry cat/proc/pid/maps可以查到<br>    error = -ENFILE;<br>    file = get_empty_filp();      //分配file<br>    error = -ENOSPC;<br>    inode = shmem_get_inode(root-&gt;d_sb, S_IFREG | S_IRWXUGO, 0, flags);//分配inode，分配成功就好比建立了文件，也许并未存在真实文件映射<br>    d_instantiate(dentry, inode);//绑定<br>    inode-&gt;i_size = size;<br>    inode-&gt;i_nlink = 0; /</em> It is unlinked */<br>        // 文件操作符，这里似乎真的是不在内存里面创建什么东西？？？<br>    init_file(file, shm_mnt, dentry, FMODE_WRITE | FMODE_READ,<br>          &amp;shmem_file_operations);//绑定，并指定该文件操作指针为shmem_file_operations<br>    …<br>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">通过shmem_file_setup在tmpfs临时文件系统中创建一个临时文件（也许只是内核中的一个inode节点），该文件与Ashmem驱动程序创建的匿名共享内存对应，不过用户态并不能看到该临时文件，之后就能够使用该临时文件了，注意共享内存机制真正使用map的对象其实是这个临时文件，而不是ashmem设备文件，这里之所以是一次mmap，主要是通过vma-&gt;vm_file &#x3D; asma-&gt;file完成map对象的替换，当映射的内存引起缺页中断的时候，就会调用shmem_file_setup创建的对象的函数，而不是ashmem的，看下临时文件的对应的hook函数，</span><br></pre></td></tr></table></figure>
+<p>void shmem_set_file(struct vm_area_struct *vma, struct file *file) {<br>    if (vma-&gt;vm_file)<br>        fput(vma-&gt;vm_file);<br>    vma-&gt;vm_file = file;<br>    vma-&gt;vm_ops = &shmem_vm_ops;<br>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">到这里回到之前的MemoryFile，看一下写操作：</span><br></pre></td></tr></table></figure>
+<p>public void writeBytes(byte[] buffer, int srcOffset, int destOffset, int count)<br>        throws IOException {<br>    if (isDeactivated()) {<br>        throw new IOException(“Can’t write to deactivated memory file.”);<br>    }<br>    if (srcOffset &lt; 0 || srcOffset &gt; buffer.length || count &lt; 0<br>            || count &gt; buffer.length - srcOffset<br>            || destOffset &lt; 0 || destOffset &gt; mLength<br>            || count &gt; mLength - destOffset) {<br>        throw new IndexOutOfBoundsException();<br>    }<br>    native_write(mFD, mAddress, buffer, srcOffset, destOffset, count, mAllowPurging);<br>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line">进入native代码</span><br><span class="line"></span><br><span class="line">static jint android_os_MemoryFile_write(JNIEnv* env, jobject clazz,</span><br><span class="line">        jobject fileDescriptor, jint address, jbyteArray buffer, jint srcOffset, jint destOffset,</span><br><span class="line">        jint count, jboolean unpinned)</span><br><span class="line">&#123;</span><br><span class="line">    int fd &#x3D; jniGetFDFromFileDescriptor(env, fileDescriptor);</span><br><span class="line">    if (unpinned &amp;&amp; ashmem_pin_region(fd, 0, 0) &#x3D;&#x3D; ASHMEM_WAS_PURGED) &#123;</span><br><span class="line">        ashmem_unpin_region(fd, 0, 0);</span><br><span class="line">        return -1;</span><br><span class="line">    &#125;</span><br><span class="line">    env-&gt;GetByteArrayRegion(buffer, srcOffset, count, (jbyte *)address + destOffset);</span><br><span class="line">    if (unpinned) &#123;</span><br><span class="line">        ashmem_unpin_region(fd, 0, 0);</span><br><span class="line">    &#125;</span><br><span class="line">    return count;</span><br><span class="line">&#125;</span><br><span class="line">在内核中，一块内存对应的数据结构是ashmem_area：</span><br><span class="line"></span><br><span class="line">struct ashmem_area &#123;</span><br><span class="line">    char name[ASHMEM_FULL_NAME_LEN];&#x2F;* optional name for &#x2F;proc&#x2F;pid&#x2F;maps *&#x2F;</span><br><span class="line">    struct list_head unpinned_list; &#x2F;* list of all ashmem areas *&#x2F;</span><br><span class="line">    struct file *file;      &#x2F;* the shmem-based backing file *&#x2F;</span><br><span class="line">    size_t size;            &#x2F;* size of the mapping, in bytes *&#x2F;</span><br><span class="line">    unsigned long prot_mask;    &#x2F;* allowed prot bits, as vm_flags *&#x2F;</span><br><span class="line">&#125;;</span><br><span class="line">当使用Ashmem分配了一块内存，部分不被使用时，就可以将这块内存unpin掉，内核可以将unpin对应的物理页面回收,回收后的内存还可以再次被获得(通过缺页handler)，因为unpin操作并不会改变已经mmap的地址空间，不过，MemoryFile只会操作整个共享内存，而不会分块访问，所以pin与unpin对于它没多大意义，可以看做整个区域都是pin或者unpin的，首次通过env-&gt;GetByteArrayRegion访问会引发缺页中断，进而调用tmpfs 文件的相应操作，分配物理页，在Android现在的内核中，缺页中断对应的vm_operations_struct中的函数是fault，在共享内存实现中，对应的是shmem_fault如下，</span><br><span class="line"></span><br><span class="line">static struct vm_operations_struct shmem_vm_ops &#x3D; &#123;</span><br><span class="line">    .fault      &#x3D; shmem_fault,</span><br><span class="line">    </span><br><span class="line">#ifdef CONFIG_NUMA</span><br><span class="line">    .set_policy     &#x3D; shmem_set_policy,</span><br><span class="line">    .get_policy     &#x3D; shmem_get_policy,</span><br><span class="line">#endif</span><br><span class="line">&#125;;</span><br><span class="line">当mmap的tmpfs文件引发缺页中断时， 就会调用shmem_fault函数，</span><br><span class="line"></span><br><span class="line">static int shmem_fault(struct vm_area_struct *vma, struct vm_fault *vmf)</span><br><span class="line">&#123;</span><br><span class="line">    struct inode *inode &#x3D; vma-&gt;vm_file-&gt;f_path.dentry-&gt;d_inode;</span><br><span class="line">    int error;</span><br><span class="line">    int ret;</span><br><span class="line"></span><br><span class="line">    if (((loff_t)vmf-&gt;pgoff &lt;&lt; PAGE_CACHE_SHIFT) &gt;&#x3D; i_size_read(inode))</span><br><span class="line">        return VM_FAULT_SIGBUS;</span><br><span class="line"></span><br><span class="line">    error &#x3D; shmem_getpage(inode, vmf-&gt;pgoff, &amp;vmf-&gt;page, SGP_CACHE, &amp;ret);</span><br><span class="line">    if (error)</span><br><span class="line">        return ((error &#x3D;&#x3D; -ENOMEM) ? VM_FAULT_OOM : VM_FAULT_SIGBUS);</span><br><span class="line"></span><br><span class="line">    return ret | VM_FAULT_LOCKED;</span><br><span class="line">&#125;</span><br><span class="line">到这里，就可以看到会调用shmem_getpage函数分配真实的物理页，具体的分配策略比较复杂，不在分析。</span><br><span class="line"></span><br><span class="line">Android匿名共享内存的pin与unpin</span><br><span class="line">pin本身的意思是压住，定住，ashmem_pin_region和ashmem_unpin_region这两个函数从字面上来说，就是用来对匿名共享内存锁定和解锁，标识哪些内存正在使用需要锁定，哪些内存是不使用的，这样，ashmem驱动程序可以一定程度上辅助内存管理，提供一定的内存优化能力。匿名共享内存创建之初时，所有的内存都是pinned状态，只有用户主动申请，才会unpin一块内存，只有对于unpinned状态的内存块，用户才可以重新pin。现在仔细梳理一下驱动，看下pin与unpin的实现</span><br><span class="line"></span><br><span class="line"> static int __init ashmem_init(void)</span><br><span class="line">&#123;</span><br><span class="line">    int ret;</span><br><span class="line">    &lt;!--创建 ahemem_area 高速缓存--&gt;</span><br><span class="line">    ashmem_area_cachep &#x3D; kmem_cache_create(&quot;ashmem_area_cache&quot;,</span><br><span class="line">                      sizeof(struct ashmem_area),</span><br><span class="line">                      0, 0, NULL);</span><br><span class="line">    ...</span><br><span class="line">    &lt;!--创建 ahemem_range高速缓存--&gt;</span><br><span class="line">    ashmem_range_cachep &#x3D; kmem_cache_create(&quot;ashmem_range_cache&quot;,</span><br><span class="line">                      sizeof(struct ashmem_range),</span><br><span class="line">                      0, 0, NULL);</span><br><span class="line">    ...</span><br><span class="line">    &lt;!--注册杂项设备去送--&gt;               </span><br><span class="line">    ret &#x3D; misc_register(&amp;ashmem_misc);</span><br><span class="line">    ...</span><br><span class="line">    register_shrinker(&amp;ashmem_shrinker);</span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br><span class="line">打开ashem的时候 ，会利用ashmem_area_cachep告诉缓存新建ashmem_area对象，并初始化unpinned_list，开始肯定为null</span><br></pre></td></tr></table></figure>
+<p>static int ashmem_open(struct inode *inode, struct file *file) {<br>    struct ashmem_area *asma;<br>    int ret;</p>
+<pre><code>ret = nonseekable_open(inode, file);
+asma = kmem_cache_zalloc(ashmem_area_cachep, GFP_KERNEL);
+&lt;!--关键是初始化unpinned_list列表--&gt;
+INIT_LIST_HEAD(&amp;asma-&gt;unpinned_list);
+memcpy(asma-&gt;name, ASHMEM_NAME_PREFIX, ASHMEM_NAME_PREFIX_LEN);
+asma-&gt;prot_mask = PROT_MASK;
+file-&gt;private_data = asma;
+return 0;</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">一开始都是pin的，看一下pin与unpin的调用范例：</span><br></pre></td></tr></table></figure>
+<p>int ashmem_pin_region(int fd, size_t offset, size_t len) {<br>    struct ashmem_pin pin = { offset, len };<br>    return ioctl(fd, ASHMEM_PIN, &amp;pin);<br>}</p>
+<p>int ashmem_unpin_region(int fd, size_t offset, size_t len) {<br>    struct ashmem_pin pin = { offset, len };<br>    return ioctl(fd, ASHMEM_UNPIN, &amp;pin);<br>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">接着看ashmem_unpin</span><br></pre></td></tr></table></figure>
+<p>static int ashmem_unpin(struct ashmem_area *asma, size_t pgstart, size_t pgend) {<br>    struct ashmem_range *range, *next;<br>    unsigned int purged = ASHMEM_NOT_PURGED;<br>    restart:<br>    list_for_each_entry_safe(range, next, &amp;asma-&gt;unpinned_list, unpinned) {</p>
+<pre><code>    if (range_before_page(range, pgstart))
+        break;
+
+    if (page_range_subsumed_by_range(range, pgstart, pgend))
+        return 0;
+    if (page_range_in_range(range, pgstart, pgend)) {
+        pgstart = min_t(size_t, range-&gt;pgstart, pgstart),
+        pgend = max_t(size_t, range-&gt;pgend, pgend);
+        purged |= range-&gt;purged;
+        range_del(range);
+        goto restart;
+    }
+}
+return range_alloc(asma, range, purged, pgstart, pgend);</code></pre><p>}<br>这个函数主要作用是创建一个ashmem_range ，并插入ashmem_area的unpinned_list，在插入的时候可能会有合并为，这个时候要首先删除原来的unpin ashmem_range，之后新建一个合并后的ashmem_range插入unpinned_list。</p>
+<p>下面来看一下pin函数的实现，先理解了unpin，pin就很好理解了，其实就是将一块共享内存投入使用，如果它位于unpinedlist，就将它摘下来：</p>
+<p>static int ashmem_pin(struct ashmem_area *asma, size_t pgstart, size_t pgend)<br>{<br>    struct ashmem_range *range, *next;<br>    int ret = ASHMEM_NOT_PURGED;</p>
+<pre><code>list_for_each_entry_safe(range, next, &amp;asma-&gt;unpinned_list, unpinned) {
+    /* moved past last applicable page; we can short circuit */
+
+    if (range_before_page(range, pgstart))
+        break;
+    if (page_range_in_range(range, pgstart, pgend)) {
+        ret |= range-&gt;purged;
+
+        if (page_range_subsumes_range(range, pgstart, pgend)) {
+            range_del(range);
+            continue;
+        }
+
+        if (range-&gt;pgstart &gt;= pgstart) {
+            range_shrink(range, pgend + 1, range-&gt;pgend);
+            continue;
+        }
+        if (range-&gt;pgend &lt;= pgend) {
+            range_shrink(range, range-&gt;pgstart, pgstart-1);
+            continue;
+        }
+
+        range_alloc(asma, range, range-&gt;purged,
+                pgend + 1, range-&gt;pgend);
+        range_shrink(range, range-&gt;pgstart, pgstart - 1);
+        break;
+    }
+}
+return ret;</code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">Android进程共享内存的传递-fd文件描述符的传递</span><br><span class="line">原生Linux共享内存是通过传递已知的key来处理的，但是Android中不存在这种机制，Android是怎么处理的呢？那就是通过Binder传递文件描述符来处理，Android的Binder对于fd的传递也做了适配，原理其实就是在内核层为要传递的目标进程转换fd，因为在linux中fd只是对本进程是有效、且唯一，进程A打开一个文件得到一个fd，不能直接为进程B使用，因为B中那个fd可能压根无效、或者对应其他文件，不过，虽然同一个文件可以有多个文件描述符，但是文件只有一个，在内核层也只会对应一个inode节点与file对象，这也是内核层可以传递fd的基础，Binder驱动通过当前进程的fd找到对应的文件，然后为目标进程新建fd，并传递给目标进程，核心就是把进程A中的fd转化成进程B中的fd，看一下Android中binder的实现：</span><br></pre></td></tr></table></figure>
+<p>void binder_transaction() {<br>   …<br>        case BINDER_TYPE_FD: {<br>        int target_fd;<br>        struct file *file;<br>        <!--关键点1 可以根据fd在当前进程获取到file ，多个进程打开同一文件，在内核中对应的file是一样--><br>        file = fget(fp-&gt;handle);<br>        <!--关键点2,为目标进程获取空闲fd--><br>        target_fd = task_get_unused_fd_flags(target_proc, O_CLOEXEC);<br>        <!--关键点3将目标进程的空闲fd与file绑定--><br>        task_fd_install(target_proc, target_fd, file);<br>        fp-&gt;handle = target_fd;<br>    } break;<br>    …<br> }</p>
+<!--从当前进程打开的files中找到file在内核中的实例-->
+<p>struct file *fget(unsigned int fd)<br>{<br>    struct file *file;<br>    struct files_struct *files = current-&gt;files;<br>    rcu_read_lock();<br>    file = fcheck_files(files, fd);<br>    rcu_read_unlock();<br>    return file;<br>}</p>
+<p>static void task_fd_install(<br>    struct binder_proc *proc, unsigned int fd, struct file *file)<br>{<br>    struct files_struct *files = proc-&gt;files;<br>    struct fdtable *fdt;<br>    if (files == NULL)<br>        return;<br>    spin_lock(&amp;files-&gt;file_lock);<br>    fdt = files_fdtable(files);<br>    rcu_assign_pointer(fdt-&gt;fd[fd], file);<br>    spin_unlock(&amp;files-&gt;file_lock);<br>}<br>fd传递.jpg<br>为什么看不到匿名共享内存对应的文件呢<br>为什么Android用户看不到共享内存对应的文件，Google到的说法是：在内核没有定义defined(CONFIG_TMPFS) 情况下，tmpfs对用户不可见：</p>
+<p>If CONFIG_TMPFS is not set, the user visible part of tmpfs is not build. But the internal mechanisms are always present.</p>
+<p>而在Android的shmem.c驱动中确实没有defined(CONFIG_TMPFS) ，这里只是猜测，也许还有其他解释，如有了解，望能指导。</p>
+<ul>
+<li><p>匿名共享内存的优点也是BUG: 匿名共享内存不会占用Dalvik Heap与Native Heap，不会导致OOM，这是优点，同时也是缺点，因为如果肆意使用，会导致系统资源不足，性能下降，</p>
+</li>
+<li><p>匿名共享内存不占用: 另外共享存占用空间的计算，只会计算到第一个创建它的进程中，其他进程不将ashmem计算在内。</p>
+</li>
+</ul>
+<p>总结<br>Android匿名共享内存是基于Linux共享内存的，都是在tmpfs文件系统上新建文件，并将其映射到不同的进程空间，从而达到共享内存的目的，只是，Android在Linux的基础上进行了改造，并借助Binder+fd文件描述符实现了共享内存的传递。</p>
+<p><a href="https://www.jianshu.com/p/d9bc9c668ba6" target="_blank" rel="noopener"></a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/08/10/Service%E7%9A%84%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B/" rel="prev" title="Service的启动过程">
+      <i class="fa fa-chevron-left"></i> Service的启动过程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/08/10/HashMap%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" rel="next" title="HashMap源码剖析">
+      HashMap源码剖析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#匿名共享内存Ashmem原理"><span class="nav-number">1.</span> <span class="nav-text">匿名共享内存Ashmem原理</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

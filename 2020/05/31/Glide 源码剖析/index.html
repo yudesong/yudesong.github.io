@@ -20,16 +20,16 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="Glide 源码剖析Glide是Google出品的一款性能优异的图片加载框架。 依赖库导入 123456789repositories &amp;#123;  mavenCentral()  google()&amp;#125;dependencies &amp;#123;  implementation &#39;com.github.bumptech.glide:glide:4.11.0&#39;  annotati">
+  <meta name="description" content="简介Glide是一个快速高效的Android图片加载库，注重于平滑的滚动。Glide提供了易用的API，高性能、可扩展的图片解码管道（decode pipeline），以及自动的资源池技术。 Glide 支持拉取，解码和展示视频快照，图片，和GIF动画。Glide的Api是如此的灵活，开发者甚至可以插入和替换成自己喜爱的任何网络栈。默认情况下，Glide使用的是一个定制化的基于HttpUrlCon">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Glide 源码剖析">
 <meta property="og:url" content="http://yoursite.com/2020/05/31/Glide%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="Glide 源码剖析Glide是Google出品的一款性能优异的图片加载框架。 依赖库导入 123456789repositories &amp;#123;  mavenCentral()  google()&amp;#125;dependencies &amp;#123;  implementation &#39;com.github.bumptech.glide:glide:4.11.0&#39;  annotati">
+<meta property="og:description" content="简介Glide是一个快速高效的Android图片加载库，注重于平滑的滚动。Glide提供了易用的API，高性能、可扩展的图片解码管道（decode pipeline），以及自动的资源池技术。 Glide 支持拉取，解码和展示视频快照，图片，和GIF动画。Glide的Api是如此的灵活，开发者甚至可以插入和替换成自己喜爱的任何网络栈。默认情况下，Glide使用的是一个定制化的基于HttpUrlCon">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://img-blog.csdn.net/20170515074139121?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvRXRoYW5Dbw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
 <meta property="article:published_time" content="2020-05-31T03:17:43.174Z">
-<meta property="article:modified_time" content="2020-06-03T09:52:19.397Z">
+<meta property="article:modified_time" content="2020-08-26T05:25:47.570Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="Android开源框架源码分析">
 <meta name="twitter:card" content="summary">
@@ -205,27 +205,33 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h4 id="Glide-源码剖析"><a href="#Glide-源码剖析" class="headerlink" title="Glide 源码剖析"></a>Glide 源码剖析</h4><p><a href="https://github.com/bumptech/glide" target="_blank" rel="noopener">Glide</a>是Google出品的一款性能优异的图片加载框架。</p>
+        <h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>Glide是一个快速高效的Android图片加载库，注重于平滑的滚动。Glide提供了易用的API，高性能、可扩展的图片解码管道（decode pipeline），以及自动的资源池技术。</p>
+<p>Glide 支持拉取，解码和展示视频快照，图片，和GIF动画。Glide的Api是如此的灵活，开发者甚至可以插入和替换成自己喜爱的任何网络栈。默认情况下，Glide使用的是一个定制化的基于HttpUrlConnection的栈，但同时也提供了与Google Volley和Square OkHttp快速集成的工具库。</p>
+<h3 id="Glide-源码剖析"><a href="#Glide-源码剖析" class="headerlink" title="Glide 源码剖析"></a>Glide 源码剖析</h3><p><a href="https://github.com/bumptech/glide" target="_blank" rel="noopener">Glide</a>是Google出品的一款性能优异的图片加载框架。</p>
 <p>依赖库导入</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">repositories &#123;</span><br><span class="line">  mavenCentral()</span><br><span class="line">  google()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencies &#123;</span><br><span class="line">  implementation &#39;com.github.bumptech.glide:glide:4.11.0&#39;</span><br><span class="line">  annotationProcessor &#39;com.github.bumptech.glide:compiler:4.11.0&#39;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>使用</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Glide.with(myFragment)</span><br><span class="line">    .load(url)</span><br><span class="line">    .centerCrop()</span><br><span class="line">    .placeholder(R.drawable.loading_spinner)</span><br><span class="line">    .into(myImageView);</span><br></pre></td></tr></table></figure>
 
-<h5 id="对比图片加载框架"><a href="#对比图片加载框架" class="headerlink" title="对比图片加载框架"></a>对比图片加载框架</h5><p>下面我们将会带着以下一些问题深入的剖析源码，去寻找答案。</p>
+<p>下面我们将会带着以下一些问题深入的剖析源码，去寻找答案。</p>
 <ul>
 <li>Glide的with方法是如何绑定Activity/Fragment生命周期的？</li>
 <li>Glide的网络请求是怎样发出的？</li>
 <li>Glide请求完成之后，图片是如何展示的？</li>
 <li>Glide的缓存策略是什么样的？</li>
+<li>Glide编解码逻辑是怎么样的？</li>
 <li>Glide的OOM解决办法？</li>
-<li>Glide自定义BitmapTransformation</li>
 </ul>
-<h6 id="1-with-Context-方法，返回RequestManager"><a href="#1-with-Context-方法，返回RequestManager" class="headerlink" title="1. with(Context)方法，返回RequestManager"></a>1. with(Context)方法，返回RequestManager</h6><p>Glide.java</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">public class Glide &#123;</span><br><span class="line"></span><br><span class="line">  public static RequestManager with(Context context) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(context);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(Activity activity) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(activity);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(FragmentActivity activity) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(activity);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(android.app.Fragment fragment) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(fragment);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(Fragment fragment) &#123;</span><br><span class="line">        RequestManagerRetriever retriever &#x3D; RequestManagerRetriever.get();</span><br><span class="line">        return retriever.get(fragment);</span><br><span class="line">    &#125;    </span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line">&#96;&#96;&#96;    </span><br><span class="line">**with()**方法重载了5个方法</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">RequestManagerRetriever.java</span><br></pre></td></tr></table></figure>
-<p>public class RequestManagerRetriever implements Handler.Callback {<br>    private static final RequestManagerRetriever INSTANCE = new RequestManagerRetriever();</p>
-<pre><code>public static RequestManagerRetriever get() {
-    return INSTANCE;
+<h5 id="1-with-Context-方法，返回RequestManager"><a href="#1-with-Context-方法，返回RequestManager" class="headerlink" title="1. with(Context)方法，返回RequestManager"></a>1. with(Context)方法，返回RequestManager</h5><p><strong>Glide.java</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br></pre></td><td class="code"><pre><span class="line">public class Glide implements ComponentCallbacks2 &#123;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 各种注册器集合(modelLoaderRegistry、encoderRegistry、decoderRegistry、transcoderRegistry)</span><br><span class="line">    private final Registry registry;</span><br><span class="line">    private final RequestManagerRetriever requestManagerRetriever;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 构造函数</span><br><span class="line">    Glide(...) &#123;</span><br><span class="line">        registry &#x3D; new Registry();</span><br><span class="line">        &#x2F;&#x2F; ModelLoader</span><br><span class="line">        registry.append(String.class, InputStream.class, new DataUrlLoader.StreamFactory&lt;String&gt;())</span><br><span class="line">        registry.append(String.class, InputStream.class, new StringLoader.StreamFactory())</span><br><span class="line">        registry.append(String.class, ParcelFileDescriptor.class, new StringLoader.FileDescriptorFactory())</span><br><span class="line">        registry.append(String.class, AssetFileDescriptor.class, new StringLoader.AssetFileDescriptorFactory())</span><br><span class="line">        ...</span><br><span class="line">        registry.append(Uri.class, InputStream.class, new DataUrlLoader.StreamFactory&lt;Uri&gt;())</span><br><span class="line">        registry.append(Uri.class, InputStream.class, new HttpUriLoader.Factory()) &#x2F;&#x2F; -&gt; HttpUriLoader</span><br><span class="line">        registry.append(Uri.class, InputStream.class, new AssetUriLoader.StreamFactory(context.getAssets()))</span><br><span class="line">        registry.append(Uri.class, InputStream.class, new MediaStoreImageThumbLoader.Factory(context))</span><br><span class="line">        registry.append(Uri.class, InputStream.class, new MediaStoreVideoThumbLoader.Factory(context));</span><br><span class="line">        registry.append(Uri.class, InputStream.class, new UrlUriLoader.StreamFactory()) &#x2F;&#x2F; 1</span><br><span class="line">        registry.append(Uri.class, InputStream.class, new UriLoader.StreamFactory(contentResolver)) &#x2F;&#x2F; 2</span><br><span class="line">        </span><br><span class="line">        .append(GlideUrl.class, InputStream.class, new HttpGlideUrlLoader.Factory()) &#x2F;&#x2F;最终</span><br><span class="line">        &#x2F;&#x2F;</span><br><span class="line">        </span><br><span class="line">        .append(Registry.BUCKET_BITMAP, ByteBuffer.class, Bitmap.class, byteBufferBitmapDecoder)</span><br><span class="line">        .append(Registry.BUCKET_BITMAP, InputStream.class, Bitmap.class, streamBitmapDecoder);</span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">        &#x2F;* Transcoders *&#x2F;</span><br><span class="line">        .register(Bitmap.class, BitmapDrawable.class, new BitmapDrawableTranscoder(resources))</span><br><span class="line">        .register(Bitmap.class, byte[].class, bitmapBytesTranscoder)</span><br><span class="line">        .register(</span><br><span class="line">            Drawable.class,</span><br><span class="line">            byte[].class,</span><br><span class="line">            new DrawableBytesTranscoder(</span><br><span class="line">                bitmapPool, bitmapBytesTranscoder, gifDrawableBytesTranscoder))</span><br><span class="line">        .register(GifDrawable.class, byte[].class, gifDrawableBytesTranscoder);</span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static RequestManager with(@NonNull Context context) &#123;</span><br><span class="line">        return getRetriever(context).get(context);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static RequestManager with(@NonNull Activity activity) &#123;</span><br><span class="line">        return getRetriever(activity).get(activity);</span><br><span class="line">    &#125;</span><br><span class="line">   </span><br><span class="line">    public static RequestManager with(@NonNull FragmentActivity activity) &#123;</span><br><span class="line">        return getRetriever(activity).get(activity);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static RequestManager with(@NonNull Fragment fragment) &#123;</span><br><span class="line">        return getRetriever(fragment.getContext()).get(fragment);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static RequestManager with(@NonNull android.app.Fragment fragment) &#123;</span><br><span class="line">        return getRetriever(fragment.getActivity()).get(fragment);</span><br><span class="line">    &#125;    </span><br><span class="line">    </span><br><span class="line">    private static RequestManagerRetriever getRetriever(@Nullable Context context) &#123;</span><br><span class="line">        return Glide.get(context).getRequestManagerRetriever();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static Glide get(@NonNull Context context) &#123;</span><br><span class="line">        if (glide &#x3D;&#x3D; null) &#123;</span><br><span class="line">        &#x2F;&#x2F; 注解自定义GlideModule</span><br><span class="line">        &#x2F;&#x2F; 反射newInstance生成com.bumptech.glide.GeneratedAppGlideModuleImpl</span><br><span class="line">        GeneratedAppGlideModule annotationGeneratedModule &#x3D;</span><br><span class="line">          getAnnotationGeneratedGlideModules(context.getApplicationContext());</span><br><span class="line">        synchronized (Glide.class) &#123;</span><br><span class="line">            if (glide &#x3D;&#x3D; null) &#123;</span><br><span class="line">                &#x2F;&#x2F; 初始化Glide</span><br><span class="line">                &#x2F;&#x2F; 0. 处理Manifest方式生成的GlideModule(ApplicationInfo.metaData解析，反射生成GlideModule)</span><br><span class="line">                &#x2F;&#x2F; 1. excluded某些GlideModule</span><br><span class="line">                &#x2F;&#x2F; 2. GlideBuilder.build构建Glide(初始化diskCacheExecutor、sourceExecutor、bitmapPool、memoryCache、engine)</span><br><span class="line">                checkAndInitializeGlide(context, annotationGeneratedModule);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return glide;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">&#96;&#96;&#96;   </span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">**with()**方法重载了5个方法</span><br><span class="line"></span><br><span class="line">RequestManagerRetriever.java</span><br></pre></td></tr></table></figure>
+<p>public class RequestManagerRetriever implements Handler.Callback {</p>
+<pre><code>// Application相关联RequestManager
+private volatile RequestManager applicationManager;
+
+public RequestManagerRetriever(@Nullable RequestManagerFactory factory) {
+    this.factory = factory != null ? factory : DEFAULT_FACTORY;
+    handler = new Handler(Looper.getMainLooper(), this /* Callback */);
 }
 
 public RequestManager get(Context context) {
@@ -249,8 +255,9 @@ private RequestManager getApplicationManager(Context context) {
     if (applicationManager == null) {
         synchronized (this) {
             if (applicationManager == null) {
-                applicationManager = new RequestManager(context.getApplicationContext(),
-                        new ApplicationLifecycle(), new EmptyRequestManagerTreeNode());
+                Glide glide = Glide.get(context.getApplicationContext());
+                applicationManager = factory.build(glide, new ApplicationLifecycle(), 
+                    new EmptyRequestManagerTreeNode(), context.getApplicationContext());
             }
         }
     }
@@ -274,8 +281,9 @@ RequestManager supportFragmentGet(Context context, FragmentManager fm) {
     RequestManager requestManager = current.getRequestManager();
     if (requestManager == null) {
         // 将SupportRequestManagerFragment的LifeCycle注入到RequestManager
-        requestManager = new RequestManager(context, current.getLifecycle(), current.getRequestManagerTreeNode());
-     // 将current.getLifecycle()与 requestManager进行了绑定
+        Glide glide = Glide.get(context);
+        requestManager = factory.build(glide, current.getGlideLifecycle(), current.getRequestManagerTreeNode(), context); 
+        // 将current.getLifecycle()与 requestManager进行了绑定
         current.setRequestManager(requestManager);
     }
     return requestManager;
@@ -312,7 +320,9 @@ RequestManager fragmentGet(Context context, android.app.FragmentManager fm) {
     RequestManagerFragment current = getRequestManagerFragment(fm);
     RequestManager requestManager = current.getRequestManager();
     if (requestManager == null) {
-        requestManager = new RequestManager(context, current.getLifecycle(), current.getRequestManagerTreeNode());
+        Glide glide = Glide.get(context);
+        requestManager = factory.build(glide, current.getGlideLifecycle(), 
+            current.getRequestManagerTreeNode(), context);
         current.setRequestManager(requestManager);
     }
     return requestManager;
@@ -322,20 +332,28 @@ RequestManager fragmentGet(Context context, android.app.FragmentManager fm) {
 RequestManagerFragment getRequestManagerFragment(final android.app.FragmentManager fm) {
     RequestManagerFragment current = (RequestManagerFragment) fm.findFragmentByTag(FRAGMENT_TAG);
     if (current == null) {
+        // 思考一下，为什么要使用pendingRequestManagerFragments缓存？
         current = pendingRequestManagerFragments.get(fm);
         if (current == null) {
             current = new RequestManagerFragment();
             pendingRequestManagerFragments.put(fm, current);
+            // commit之前缓存fragment
             fm.beginTransaction().add(current, FRAGMENT_TAG).commitAllowingStateLoss();
+            // 发送Handler消息清除缓存
             handler.obtainMessage(ID_REMOVE_FRAGMENT_MANAGER, fm).sendToTarget();
         }
     }
     return current;
 }</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">判断如果是Application则创建RequestManager绑定Application，否则创建SupportRequestManagerFragment、RequestManagerFragment并将RequestManager与之绑定</span><br><span class="line"></span><br><span class="line">SupportRequestManagerFragment.java</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">根据Context如果是Application，则创建全局applicationManager,其生命周期为ApplicationLifecycle,只有addListener</span><br><span class="line">否则创建SupportRequestManagerFragment或者RequestManagerFragment将其GlideLifecycle和requestManager绑定</span><br><span class="line"></span><br><span class="line">SupportRequestManagerFragment.java</span><br></pre></td></tr></table></figure>
 <p>public class SupportRequestManagerFragment extends Fragment {<br>    private RequestManager requestManager;<br>    private final ActivityFragmentLifecycle lifecycle;</p>
-<p>  @Override<br>    public void onStart() {<br>        super.onStart();<br>        lifecycle.onStart();<br>    }</p>
 <pre><code>@Override
+public void onStart() {
+    super.onStart();
+    lifecycle.onStart();
+}
+
+@Override
 public void onStop() {
     super.onStop();
     lifecycle.onStop();
@@ -346,50 +364,29 @@ public void onDestroy() {
     super.onDestroy();
     lifecycle.onDestroy();
 }</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">这样SupportRequestManagerFragment就和ActivityFragmentLifecycle进行了绑定管理者Fragment的生命周期</span><br><span class="line">在RequestManager的构造函数中会调用lifecycle.addListener(RequestManager.this);进行绑定。至此整个生命周期的传递过程就形成了。</span><br><span class="line">SupportRequestManagerFragment -&gt; ActivityFragmentLifecycle -&gt; RequestManager -&gt; requestTracker</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">###### 2. load()方法,返回DrawableTypeRequest</span><br><span class="line"></span><br><span class="line">RequestManager.java</span><br></pre></td></tr></table></figure>
-<p>public class RequestManager implements LifecycleListener {<br>  private final Lifecycle lifecycle;<br>  private final RequestTracker requestTracker;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">这样SupportRequestManagerFragment就和ActivityFragmentLifecycle进行了绑定管理者Fragment的生命周期</span><br><span class="line">在RequestManager的构造函数中会调用lifecycle.addListener(RequestManager.this);进行绑定。至此整个生命周期的传递过程就形成了。</span><br><span class="line">SupportRequestManagerFragment -&gt; ActivityFragmentLifecycle -&gt; RequestManager -&gt; requestTracker</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">###### 2. load()方法,返回RequestBuilder&lt;TranscodeType&gt;</span><br><span class="line"></span><br><span class="line">RequestManager.java</span><br></pre></td></tr></table></figure>
+<p>public class RequestManager implements LifecycleListener {<br>    private final Lifecycle lifecycle;<br>    private final RequestTracker requestTracker;<br>    private final Handler mainHandler = new Handler(Looper.getMainLooper());<br>    private final Runnable addSelfToLifecycle =<br>        new Runnable() {<br>            @Override<br>            public void run() {<br>                lifecycle.addListener(RequestManager.this);<br>            }<br>        };</p>
 <pre><code>RequestManager(Context context, final Lifecycle lifecycle, ...) {
     ...
     if (Util.isOnBackgroundThread()) {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                lifecycle.addListener(RequestManager.this);
-            }
-        });
+        mainHandler.post(addSelfToLifecycle);
     } else {
         lifecycle.addListener(this);
     }
     ...
 }
 
-public DrawableTypeRequest&lt;String&gt; load(String string) {
-    return (DrawableTypeRequest&lt;String&gt;) fromString().load(string);
+public RequestBuilder&lt;Drawable&gt; load(@Nullable String string) {
+    return asDrawable().load(string);
 }
 
-public DrawableTypeRequest&lt;String&gt; fromString() {
-    return loadGeneric(String.class);
+public RequestBuilder&lt;Drawable&gt; asDrawable() {
+    return as(Drawable.class);
 }
 
-private &lt;T&gt; DrawableTypeRequest&lt;T&gt; loadGeneric(Class&lt;T&gt; modelClass) {
-    ModelLoader&lt;T, InputStream&gt; streamModelLoader = Glide.buildStreamModelLoader(modelClass, context);
-    ModelLoader&lt;T, ParcelFileDescriptor&gt; fileDescriptorModelLoader =
-            Glide.buildFileDescriptorModelLoader(modelClass, context);
-    if (modelClass != null &amp;&amp; streamModelLoader == null &amp;&amp; fileDescriptorModelLoader == null) {
-        throw new IllegalArgumentException(&quot;Unknown type &quot; + modelClass + &quot;. You must provide a Model of a type for&quot;
-                + &quot; which there is a registered ModelLoader, if you are using a custom model, you must first call&quot;
-                + &quot; Glide#register with a ModelLoaderFactory for your custom model class&quot;);
-    }
-
-    return optionsApplier.apply(
-            new DrawableTypeRequest&lt;T&gt;(modelClass, streamModelLoader, fileDescriptorModelLoader, context,
-                    glide, requestTracker, lifecycle, optionsApplier));
-}
-
-@Override
-public DrawableRequestBuilder&lt;ModelType&gt; load(ModelType model) {
-    super.load(model);
-    return this;
+public &lt;ResourceType&gt; RequestBuilder&lt;ResourceType&gt; as(
+    @NonNull Class&lt;ResourceType&gt; resourceClass) {
+    return new RequestBuilder&lt;&gt;(glide, this, resourceClass, context);
 }
 
 @Override
@@ -406,205 +403,94 @@ public void onStop() {
 public void onDestroy() {
     requestTracker.clearRequests();
 }</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">DrawableTypeRequest.java</span><br></pre></td></tr></table></figure>
-<p>public class DrawableTypeRequest<ModelType> extends DrawableRequestBuilder<ModelType> implements DownloadOptions {<br>    private final ModelLoader&lt;ModelType, InputStream&gt; streamModelLoader;<br>    private final ModelLoader&lt;ModelType, ParcelFileDescriptor&gt; fileDescriptorModelLoader;<br>    private final RequestManager.OptionsApplier optionsApplier;</p>
-<pre><code>private static &lt;A, Z, R&gt; FixedLoadProvider&lt;A, ImageVideoWrapper, Z, R&gt; buildProvider(Glide glide,
-        ModelLoader&lt;A, InputStream&gt; streamModelLoader,
-        ModelLoader&lt;A, ParcelFileDescriptor&gt; fileDescriptorModelLoader, Class&lt;Z&gt; resourceClass,
-        Class&lt;R&gt; transcodedClass,
-        ResourceTranscoder&lt;Z, R&gt; transcoder) {
-    if (streamModelLoader == null &amp;&amp; fileDescriptorModelLoader == null) {
-        return null;
-    }
-
-    if (transcoder == null) {
-        transcoder = glide.buildTranscoder(resourceClass, transcodedClass);
-    }
-    DataLoadProvider&lt;ImageVideoWrapper, Z&gt; dataLoadProvider = glide.buildDataProvider(ImageVideoWrapper.class,
-            resourceClass);
-    ImageVideoModelLoader&lt;A&gt; modelLoader = new ImageVideoModelLoader&lt;A&gt;(streamModelLoader,
-            fileDescriptorModelLoader);
-    return new FixedLoadProvider&lt;A, ImageVideoWrapper, Z, R&gt;(modelLoader, transcoder, dataLoadProvider);
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">RequestManager初始化的时候，将自己注册到Fragment.lifecycle监听器集合中。待Fragment的生命周期发生变化的时候，会回调onStart、onStop、onDestroy。</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">** RequestBuilder.java**</span><br></pre></td></tr></table></figure>
+<p>public class RequestBuilder<TranscodeType> extends BaseRequestOptions&lt;RequestBuilder<TranscodeType>&gt;<br>    implements Cloneable, ModelTypes&lt;RequestBuilder<TranscodeType>&gt; {</p>
+<pre><code>public RequestBuilder&lt;TranscodeType&gt; load(@Nullable String string) {
+    return loadGeneric(string);
 }
 
-DrawableTypeRequest(Class&lt;ModelType&gt; modelClass, ModelLoader&lt;ModelType, InputStream&gt; streamModelLoader,
-        ModelLoader&lt;ModelType, ParcelFileDescriptor&gt; fileDescriptorModelLoader, Context context, Glide glide,
-        RequestTracker requestTracker, Lifecycle lifecycle, RequestManager.OptionsApplier optionsApplier) {
-    super(context, modelClass,
-            buildProvider(glide, streamModelLoader, fileDescriptorModelLoader, GifBitmapWrapper.class,
-                    GlideDrawable.class, null),
-            glide, requestTracker, lifecycle);
-    this.streamModelLoader = streamModelLoader;
-    this.fileDescriptorModelLoader = fileDescriptorModelLoader;
-    this.optionsApplier = optionsApplier;
-}
-
-public BitmapTypeRequest&lt;ModelType&gt; asBitmap() {
-    return optionsApplier.apply(new BitmapTypeRequest&lt;ModelType&gt;(this, streamModelLoader,
-            fileDescriptorModelLoader, optionsApplier));
-}
-
-public GifTypeRequest&lt;ModelType&gt; asGif() {
-    return optionsApplier.apply(new GifTypeRequest&lt;ModelType&gt;(this, streamModelLoader, optionsApplier));
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">DrawableRequestBuilder.java</span><br></pre></td></tr></table></figure>
-<p>public class DrawableRequestBuilder<ModelType><br>        extends GenericRequestBuilder&lt;ModelType, ImageVideoWrapper, GifBitmapWrapper, GlideDrawable&gt;<br>        implements BitmapOptions, DrawableOptions {</p>
-<pre><code>@Override
-public DrawableRequestBuilder&lt;ModelType&gt; load(ModelType model) {
-    super.load(model); //调用其父类GenericRequestBuilder的load函数赋值model变量
+private RequestBuilder&lt;TranscodeType&gt; loadGeneric(@Nullable Object model) {
+    this.model = model; // url、file、uri等类型
+    isModelSet = true;
     return this;
 }
 
-@Override
-public Target&lt;GlideDrawable&gt; into(ImageView view) {
-    return super.into(view);
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">into()方法,返回Target对象</span><br><span class="line"></span><br><span class="line">GenericRequestBuilder.java</span><br></pre></td></tr></table></figure>
-<p>public class GenericRequestBuilder&lt;ModelType, DataType, ResourceType, TranscodeType&gt; implements Cloneable {<br>    protected final Glide glide;<br>    protected final Class<TranscodeType> transcodeClass;<br>    protected final RequestTracker requestTracker;<br>    protected final Lifecycle lifecycle;<br>    private GenericRequestBuilder&lt;?, ?, ?, TranscodeType&gt; thumbnailRequestBuilder;</p>
-<pre><code>@Override
-public Target&lt;GlideDrawable&gt; into(ImageView view) {
-    return super.into(view);
+public ViewTarget&lt;ImageView, TranscodeType&gt; into(@NonNull ImageView view) {
+    Util.assertMainThread();
+    Preconditions.checkNotNull(view);
+
+    BaseRequestOptions&lt;?&gt; requestOptions = this;
+    if (!requestOptions.isTransformationSet()
+        &amp;&amp; requestOptions.isTransformationAllowed()
+        &amp;&amp; view.getScaleType() != null) {
+      switch (view.getScaleType()) {
+        case CENTER_CROP:
+          requestOptions = requestOptions.clone().optionalCenterCrop();
+          break;
+        case CENTER_INSIDE:
+          requestOptions = requestOptions.clone().optionalCenterInside();
+          break;
+        case FIT_CENTER:
+        case FIT_START:
+        case FIT_END:
+          requestOptions = requestOptions.clone().optionalFitCenter();
+          break;
+        case FIT_XY:
+          requestOptions = requestOptions.clone().optionalCenterInside();
+          break;
+        case CENTER:
+        case MATRIX:
+        default:
+          // Do nothing.
+      }
+    }
+
+    // transcodeClass 标识Bitmap、Drawable
+    return into(
+        glideContext.buildImageViewTarget(view, transcodeClass), // 绑定Target,最终生成BitmapImageViewTarget、DrawableImageViewTarget
+        /*targetListener=*/ null,
+        requestOptions,
+        Executors.mainThreadExecutor());
 }
 
-/**
- * into ImageView 之后，才会去从缓存LruCache&lt;Key, Resource&lt;?&gt;&gt;、弱引用Map&lt;Key, WeakReference&lt;EngineResource&lt;?&gt;&gt;&gt;、磁盘缓存diskCacheService、
- */
-
-public Target&lt;TranscodeType&gt; into(ImageView view) {
-    Util.assertMainThread();
-    if (view == null) {
-        throw new IllegalArgumentException(&quot;You must pass in a non null View&quot;);
-    }
-
-    if (!isTransformationSet &amp;&amp; view.getScaleType() != null) {
-        switch (view.getScaleType()) {
-            case CENTER_CROP:
-                applyCenterCrop();
-                break;
-            case FIT_CENTER:
-            case FIT_START:
-            case FIT_END:
-                applyFitCenter();
-                break;
-            //$CASES-OMITTED$
-            default:
-                // Do nothing.
-        }
-    }
-
-    return into(glide.buildImageViewTarget(view, transcodeClass));
-}    
-
-public &lt;Y extends Target&lt;TranscodeType&gt;&gt; Y into(Y target) {
-    Util.assertMainThread();
-    if (target == null) {
-        throw new IllegalArgumentException(&quot;You must pass in a non null Target&quot;);
-    }
+private &lt;Y extends Target&lt;TranscodeType&gt;&gt; Y into(
+      @NonNull Y target,
+      @Nullable RequestListener&lt;TranscodeType&gt; targetListener,
+      BaseRequestOptions&lt;?&gt; options,
+      Executor callbackExecutor) {
+    Preconditions.checkNotNull(target);
     if (!isModelSet) {
-        throw new IllegalArgumentException(&quot;You must first set a model (try #load())&quot;);
+      throw new IllegalArgumentException(&quot;You must call #load() before calling #into()&quot;);
     }
 
-    Request previous = target.getRequest();
+    // 最终返回SingleRequest
+    Request request = buildRequest(target, targetListener, options, callbackExecutor);
 
-    if (previous != null) {
-        previous.clear();
-        requestTracker.removeRequest(previous);
-        previous.recycle();
+    Request previous = target.getRequest(); // 原理就是获取View.getTag、setTag将Requet保存起来
+    if (request.isEquivalentTo(previous)
+        &amp;&amp; !isSkipMemoryCacheWithCompletePreviousRequest(options, previous)) {
+      // 如果请求已经完成，则重新进行请求，确保重新得到请求结果
+      if (!Preconditions.checkNotNull(previous).isRunning()) {
+        // 复用之前的Request
+        previous.begin();
+      }
+      return target;
     }
 
-    Request request = buildRequest(target);
+    requestManager.clear(target);
     target.setRequest(request);
-    lifecycle.addListener(target);
-    requestTracker.runRequest(request);
+    requestManager.track(target, request);
 
     return target;
-}
-
-// 根据是缩略图划分，返回ThumbnailRequestCoordinator、GenericRequest
-private Request buildRequest(Target&lt;TranscodeType&gt; target) {
-    if (priority == null) {
-        priority = Priority.NORMAL;
-    }
-    return buildRequestRecursive(target, null);
-}
-
-private Request buildRequestRecursive(Target&lt;TranscodeType&gt; target, ThumbnailRequestCoordinator parentCoordinator) {
-    if (thumbnailRequestBuilder != null) {
-        if (isThumbnailBuilt) {
-            throw new IllegalStateException(&quot;You cannot use a request as both the main request and a thumbnail, &quot;
-                    + &quot;consider using clone() on the request(s) passed to thumbnail()&quot;);
-        }
-        // Recursive case: contains a potentially recursive thumbnail request builder.
-        if (thumbnailRequestBuilder.animationFactory.equals(NoAnimation.getFactory())) {
-            thumbnailRequestBuilder.animationFactory = animationFactory;
-        }
-
-        if (thumbnailRequestBuilder.priority == null) {
-            thumbnailRequestBuilder.priority = getThumbnailPriority();
-        }
-
-        if (Util.isValidDimensions(overrideWidth, overrideHeight)
-                &amp;&amp; !Util.isValidDimensions(thumbnailRequestBuilder.overrideWidth,
-                        thumbnailRequestBuilder.overrideHeight)) {
-          thumbnailRequestBuilder.override(overrideWidth, overrideHeight);
-        }
-
-        ThumbnailRequestCoordinator coordinator = new ThumbnailRequestCoordinator(parentCoordinator);
-        Request fullRequest = obtainRequest(target, sizeMultiplier, priority, coordinator);
-        // Guard against infinite recursion.
-        isThumbnailBuilt = true;
-        // Recursively generate thumbnail requests.
-        Request thumbRequest = thumbnailRequestBuilder.buildRequestRecursive(target, coordinator);
-        isThumbnailBuilt = false;
-        coordinator.setRequests(fullRequest, thumbRequest);
-        return coordinator;
-    } else if (thumbSizeMultiplier != null) {
-        // Base case: thumbnail multiplier generates a thumbnail request, but cannot recurse.
-        ThumbnailRequestCoordinator coordinator = new ThumbnailRequestCoordinator(parentCoordinator);
-        Request fullRequest = obtainRequest(target, sizeMultiplier, priority, coordinator);
-        Request thumbnailRequest = obtainRequest(target, thumbSizeMultiplier, getThumbnailPriority(), coordinator);
-        coordinator.setRequests(fullRequest, thumbnailRequest);
-        return coordinator;
-    } else {
-        // Base case: no thumbnail.
-        return obtainRequest(target, sizeMultiplier, priority, parentCoordinator);
-    }
-}
-
-private Request obtainRequest(Target&lt;TranscodeType&gt; target, float sizeMultiplier, Priority priority,
-        RequestCoordinator requestCoordinator) {
-    return GenericRequest.obtain(
-            loadProvider,
-            model,
-            signature,
-            context,
-            priority,
-            target,
-            sizeMultiplier,
-            placeholderDrawable,
-            placeholderId,
-            errorPlaceholder,
-            errorId,
-            fallbackDrawable,
-            fallbackResource,
-            requestListener,
-            requestCoordinator,
-            glide.getEngine(),
-            transformation,
-            transcodeClass,
-            isCacheable,
-            animationFactory,
-            overrideWidth,
-            overrideHeight,
-            diskCacheStrategy);
 }</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">网络请求</span><br><span class="line"></span><br><span class="line">RequestTracker.java (Request集合, 负责Request的执行，暂停，取消等等关于图片请求的操作)</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">into()返回Target对象且创建SingleRequest通过View.setTag绑定。最后交给requestManager的track方法： requestTracker.runRequest(request)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">### 资源请求(三级缓存)</span><br><span class="line"></span><br><span class="line">RequestTracker.java (Request集合, 负责Request的执行，暂停，取消等等关于图片请求的操作)</span><br></pre></td></tr></table></figure>
 <p>public class RequestTracker {<br>    private final Set<Request> requests = Collections.newSetFromMap(new WeakHashMap&lt;Request, Boolean&gt;());<br>    private final List<Request> pendingRequests = new ArrayList<Request>();<br>    private boolean isPaused;</p>
 <pre><code>public void runRequest(Request request) {
     requests.add(request);
     if (!isPaused) {
         request.begin();
     } else {
+        request.clear();
         pendingRequests.add(request);
     }
 }
@@ -642,207 +528,312 @@ public void restartRequests() {
         }
     }
 }</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GenericRequest.java</span><br></pre></td></tr></table></figure>
-<p>public final class GenericRequest&lt;A, T, Z, R&gt; implements Request, SizeReadyCallback,<br>        ResourceCallback {</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">SingleRequest.java</span><br></pre></td></tr></table></figure>
+<p>public final class SingleRequest<R> implements Request, SizeReadyCallback,<br>        ResourceCallback {</p>
 <pre><code>@Override
 public void begin() {
-    startTime = LogTime.getLogTime();
-    if (model == null) {
-        onException(null);
-        return;
-    }
-
-    status = Status.WAITING_FOR_SIZE;
-    if (Util.isValidDimensions(overrideWidth, overrideHeight)) {
-        onSizeReady(overrideWidth, overrideHeight);
-    } else {
-        target.getSize(this);
-    }
-
-    if (!isComplete() &amp;&amp; !isFailed() &amp;&amp; canNotifyStatusChanged()) {
-        // 设置Placeholder图片
-        target.onLoadStarted(getPlaceholderDrawable());
-        // 最终调用view.setImageDrawable(Drawable drawable)
-    }
-    if (Log.isLoggable(TAG, Log.VERBOSE)) {
-        logV(&quot;finished run method in &quot; + LogTime.getElapsedMillis(startTime));
+    synchronized (requestLock) {
+        .. // 校验model!=null
+        status = Status.WAITING_FOR_SIZE;
+        if (Util.isValidDimensions(overrideWidth, overrideHeight)) {
+            onSizeReady(overrideWidth, overrideHeight);
+        } else {
+            target.getSize(this); // 获取target的width、height
+        }
+        if ((status == Status.RUNNING || status == Status.WAITING_FOR_SIZE)
+                &amp;&amp; canNotifyStatusChanged()) {
+           // 设置placeholder
+           target.onLoadStarted(getPlaceholderDrawable());
+        }
     }
 }    
 
 @Override
 public void onSizeReady(int width, int height) {
-    if (Log.isLoggable(TAG, Log.VERBOSE)) {
-        logV(&quot;Got onSizeReady in &quot; + LogTime.getElapsedMillis(startTime));
-    }
-    if (status != Status.WAITING_FOR_SIZE) {
-        return;
-    }
-    status = Status.RUNNING;
+    synchronized (requestLock) {
+        if (status != Status.WAITING_FOR_SIZE) {
+            return;
+        }
+        status = Status.RUNNING;
 
-    width = Math.round(sizeMultiplier * width);
-    height = Math.round(sizeMultiplier * height);
+        float sizeMultiplier = requestOptions.getSizeMultiplier(); // 默认1f
+        this.width = maybeApplySizeMultiplier(width, sizeMultiplier);
+        this.height = maybeApplySizeMultiplier(height, sizeMultiplier);
+        loadStatus =
+          engine.load(
+              glideContext,
+              model,
+              requestOptions.getSignature(),
+              this.width,
+              this.height,
+              requestOptions.getResourceClass(),
+              transcodeClass,
+              priority,
+              requestOptions.getDiskCacheStrategy(),
+              requestOptions.getTransformations(),
+              requestOptions.isTransformationRequired(),
+              requestOptions.isScaleOnlyOrNoTransform(),
+              requestOptions.getOptions(),
+              requestOptions.isMemoryCacheable(),
+              requestOptions.getUseUnlimitedSourceGeneratorsPool(),
+              requestOptions.getUseAnimationPool(),
+              requestOptions.getOnlyRetrieveFromCache(),
+              this,
+              callbackExecutor);
 
-    ModelLoader&lt;A, T&gt; modelLoader = loadProvider.getModelLoader();
-    final DataFetcher&lt;T&gt; dataFetcher = modelLoader.getResourceFetcher(model, width, height);
+            if (status != Status.RUNNING) {
+                loadStatus = null;
+            }  
+    }
+}
 
-    if (dataFetcher == null) {
-        onException(new Exception(&quot;Failed to load model: \&apos;&quot; + model + &quot;\&apos;&quot;));
-        return;
-    }
-    ResourceTranscoder&lt;Z, R&gt; transcoder = loadProvider.getTranscoder();
-    if (Log.isLoggable(TAG, Log.VERBOSE)) {
-        logV(&quot;finished setup for calling load in &quot; + LogTime.getElapsedMillis(startTime));
-    }
-    loadedFromMemoryCache = true;
-    // 开始网络加载图片
-    loadStatus = engine.load(signature, width, height, dataFetcher, loadProvider, transformation, transcoder,
-            priority, isMemoryCacheable, diskCacheStrategy, this);
-    loadedFromMemoryCache = resource != null;
-    if (Log.isLoggable(TAG, Log.VERBOSE)) {
-        logV(&quot;finished onSizeReady in &quot; + LogTime.getElapsedMillis(startTime));
-    }
+private static int maybeApplySizeMultiplier(int size, float sizeMultiplier) {
+    return size == Target.SIZE_ORIGINAL ? size : Math.round(sizeMultiplier * size);
 }</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">Engine.java</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SingleRequest的begin方法首先需要获取到target的宽高，最终都会走到onSizeReady方法中，</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">**Engine.java**</span><br></pre></td></tr></table></figure>
 <p>public class Engine implements EngineJobListener,<br>        MemoryCache.ResourceRemovedListener,<br>        EngineResource.ResourceListener {</p>
-<pre><code>public &lt;T, Z, R&gt; LoadStatus load(Key signature, int width, int height, DataFetcher&lt;T&gt; fetcher,
-        DataLoadProvider&lt;T, Z&gt; loadProvider, Transformation&lt;Z&gt; transformation, ResourceTranscoder&lt;Z, R&gt; transcoder,
-        Priority priority, boolean isMemoryCacheable, DiskCacheStrategy diskCacheStrategy, ResourceCallback cb) {
-    Util.assertMainThread();
-    long startTime = LogTime.getLogTime();
+<pre><code>private final MemoryCache cache; // 对应LruResourceCache
+private final ActiveResources activeResources; // 内部采用WeakReference保存资源
 
-    final String id = fetcher.getId();
+public &lt;R&gt; LoadStatus load(GlideContext glideContext,
+  Object model,
+  Key signature,
+  int width,
+  int height,
+  Class&lt;?&gt; resourceClass,
+  Class&lt;R&gt; transcodeClass,
+  Priority priority,
+  DiskCacheStrategy diskCacheStrategy,
+  Map&lt;Class&lt;?&gt;, Transformation&lt;?&gt;&gt; transformations,
+  boolean isTransformationRequired,
+  boolean isScaleOnlyOrNoTransform,
+  Options options,
+  boolean isMemoryCacheable,
+  boolean useUnlimitedSourceExecutorPool,
+  boolean useAnimationPool,
+  boolean onlyRetrieveFromCache,
+  ResourceCallback cb,
+  Executor callbackExecutor) {
+
     // 根据请求key以及width、height一起构成了一个EngineKey, 如果width、height改变了，
     // 则会认为是一个新的Key，会重新缓存。
-    EngineKey key = keyFactory.buildKey(id, signature, width, height, loadProvider.getCacheDecoder(),
-            loadProvider.getSourceDecoder(), transformation, loadProvider.getEncoder(),
-            transcoder, loadProvider.getSourceEncoder());
+    EngineKey key = keyFactory.buildKey(
+        model,signature,width,height,transformations,
+        resourceClass,transcodeClass,options);
 
-    // 1.从内存中获取，isMemoryCacheable：是否允许内存缓存策略
-    EngineResource&lt;?&gt; cached = loadFromCache(key, isMemoryCacheable);
-    if (cached != null) {
-        cb.onResourceReady(cached);
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            logWithTimeAndKey(&quot;Loaded resource from cache&quot;, startTime, key);
+    EngineResource&lt;?&gt; memoryResource;
+    synchronized (this) {
+        memoryResource = loadFromMemory(key, isMemoryCacheable, startTime);
+        if (memoryResource == null) {
+            return waitForExistingOrStartNewJob(
+                    glideContext,
+                    model,
+                    signature,
+                    width,
+                    height,
+                    resourceClass,
+                    transcodeClass,
+                    priority,
+                    diskCacheStrategy,
+                    transformations,
+                    isTransformationRequired,
+                    isScaleOnlyOrNoTransform,
+                    options,
+                    isMemoryCacheable,
+                    useUnlimitedSourceExecutorPool,
+                    useAnimationPool,
+                    onlyRetrieveFromCache,
+                    cb,
+                    callbackExecutor,
+                    key,
+                    startTime);
         }
-        return null;
     }
 
-    //2.从activeResources中获取 isMemoryCacheable：是否允许内存缓存策略
-    EngineResource&lt;?&gt; active = loadFromActiveResources(key, isMemoryCacheable);
+    cb.onResourceReady(memoryResource, DataSource.MEMORY_CACHE);
+    return null;
+}
+
+private EngineResource&lt;?&gt; loadFromMemory(
+    EngineKey key, boolean isMemoryCacheable, long startTime) {
+    // 如果设置skipMemoryCache(true)内存缓存不可用，磁盘缓存可用
+    if (!isMemoryCacheable) {
+        return null;
+    }
+    // 1. ActiveResources缓存中获取
+    EngineResource&lt;?&gt; active = loadFromActiveResources(key);
     if (active != null) {
-        cb.onResourceReady(active);
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            logWithTimeAndKey(&quot;Loaded resource from active resources&quot;, startTime, key);
-        }
-        return null;
+      if (VERBOSE_IS_LOGGABLE) {
+        logWithTimeAndKey(&quot;Loaded resource from active resources&quot;, startTime, key);
+      }
+      return active;
+    }
+    // 2. MemoryCache缓存，采用LRU算法
+    EngineResource&lt;?&gt; cached = loadFromCache(key);
+    if (cached != null) {
+      if (VERBOSE_IS_LOGGABLE) {
+        logWithTimeAndKey(&quot;Loaded resource from cache&quot;, startTime, key);
+      }
+      return cached;
+    }
+    return null;
+}
+
+private EngineResource&lt;?&gt; loadFromActiveResources(Key key) {
+    EngineResource&lt;?&gt; active = activeResources.get(key);
+    if (active != null) {
+        active.acquire(); // 计数器+1
     }
 
+    return active;
+}
 
-    EngineJob current = jobs.get(key);
+private EngineResource&lt;?&gt; loadFromCache(Key key) {
+    EngineResource&lt;?&gt; cached = getEngineResourceFromCache(key);
+    if (cached != null) {
+        cached.acquire();
+        activeResources.activate(key, cached);
+    }
+    return cached;
+}
+
+private EngineResource&lt;?&gt; getEngineResourceFromCache(Key key) {
+    Resource&lt;?&gt; cached = cache.remove(key);
+    final EngineResource&lt;?&gt; result;
+    if (cached == null) {
+      result = null;
+    } else if (cached instanceof EngineResource) {
+      // Save an object allocation if we&apos;ve cached an EngineResource (the typical case).
+      result = (EngineResource&lt;?&gt;) cached;
+    } else {
+      result =
+          new EngineResource&lt;&gt;(
+              cached, /*isMemoryCacheable=*/ true, /*isRecyclable=*/ true, key, /*listener=*/ this);
+    }
+    return result;
+}
+
+private &lt;R&gt; LoadStatus waitForExistingOrStartNewJob()
+    EngineJob&lt;?&gt; current = jobs.get(key, onlyRetrieveFromCache);
     if (current != null) {
-        current.addCallback(cb);
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            logWithTimeAndKey(&quot;Added to existing load&quot;, startTime, key);
-        }
+        current.addCallback(cb, callbackExecutor);
         return new LoadStatus(cb, current);
     }
 
-    EngineJob engineJob = engineJobFactory.build(key, isMemoryCacheable);
-    DecodeJob&lt;T, Z, R&gt; decodeJob = new DecodeJob&lt;T, Z, R&gt;(key, width, height, fetcher, loadProvider, transformation,
-            transcoder, diskCacheProvider, diskCacheStrategy, priority);
-    EngineRunnable runnable = new EngineRunnable(engineJob, decodeJob, priority);
+    EngineJob&lt;R&gt; engineJob = engineJobFactory.build(
+        key,
+        isMemoryCacheable,
+        useUnlimitedSourceExecutorPool,
+        useAnimationPool,
+        onlyRetrieveFromCache);
+
+    DecodeJob&lt;R&gt; decodeJob = decodeJobFactory.build(
+        glideContext,
+        model,
+        key,
+        signature,
+        width,
+        height,
+        resourceClass,
+        transcodeClass,
+        priority,
+        diskCacheStrategy,
+        transformations,
+        isTransformationRequired,
+        isScaleOnlyOrNoTransform,
+        onlyRetrieveFromCache,
+        options,
+        engineJob);
+
     jobs.put(key, engineJob);
-    engineJob.addCallback(cb);
-    engineJob.start(runnable);
 
-    if (Log.isLoggable(TAG, Log.VERBOSE)) {
-        logWithTimeAndKey(&quot;Started new load&quot;, startTime, key);
-    }
+    engineJob.addCallback(cb, callbackExecutor);
+    engineJob.start(decodeJob); // 选择合适的线程池运行decodeJob
     return new LoadStatus(cb, engineJob);
-}    </code></pre><p>}            </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">EngineJob.java</span><br></pre></td></tr></table></figure>
-<p>class EngineJob implements EngineRunnable.EngineRunnableManager {</p>
-<pre><code>@Override
-public void run() {
-    if (isCancelled) {
+}</code></pre><p>}            </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br><span class="line">**DecodeJob.java**</span><br></pre></td></tr></table></figure>
+<p>class DecodeJob<R><br>    implements DataFetcherGenerator.FetcherReadyCallback,<br>        Runnable,<br>        Comparable&lt;DecodeJob&lt;?&gt;&gt;,<br>        Poolable {</p>
+<pre><code>public void run() {
+    runWrapped();
+}
+
+private void runWrapped() {
+    switch (runReason) {
+      case INITIALIZE:
+        stage = getNextStage(Stage.INITIALIZE);
+        currentGenerator = getNextGenerator();
+        runGenerators();
+        break;
+      case SWITCH_TO_SOURCE_SERVICE:
+        runGenerators();
+        break;
+      case DECODE_DATA:
+        decodeFromRetrievedData();
+        break;
+      default:
+        throw new IllegalStateException(&quot;Unrecognized run reason: &quot; + runReason);
+    }
+}
+
+private DataFetcherGenerator getNextGenerator() {
+    switch (stage) {
+      case RESOURCE_CACHE:
+        return new ResourceCacheGenerator(decodeHelper, this); //处理之后的数据缓存
+      case DATA_CACHE:
+        return new DataCacheGenerator(decodeHelper, this); //原始数据缓存
+      case SOURCE:
+        return new SourceGenerator(decodeHelper, this); // 网络缓存
+      case FINISHED:
+        return null;
+      default:
+        throw new IllegalStateException(&quot;Unrecognized stage: &quot; + stage);
+    }
+}
+
+private void runGenerators() {
+    currentThread = Thread.currentThread();
+    startFetchTime = LogTime.getLogTime();
+    boolean isStarted = false;
+    // 循环调用Generator的startNext方法，如果失败返回false则getNextGenerator下一个继续
+    while (!isCancelled
+        &amp;&amp; currentGenerator != null
+        &amp;&amp; !(isStarted = currentGenerator.startNext())) {
+      stage = getNextStage(stage);
+      currentGenerator = getNextGenerator();
+
+      if (stage == Stage.SOURCE) {
+        // 如果是SOURCE，则选择getActiveSourceExecutor线程池运行
+        reschedule();
         return;
+      }
     }
-
-    Exception exception = null;
-    Resource&lt;?&gt; resource = null;
-    try {
-        resource = decode();
-    } catch (OutOfMemoryError e) {
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            Log.v(TAG, &quot;Out Of Memory Error decoding&quot;, e);
-        }
-        exception = new ErrorWrappingGlideException(e);
-    } catch (Exception e) {
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            Log.v(TAG, &quot;Exception decoding&quot;, e);
-        }
-        exception = e;
-    }
-
-    if (isCancelled) {
-        if (resource != null) {
-            resource.recycle();
-        }
-        return;
-    }
-
-    if (resource == null) {
-        onLoadFailed(exception);
-    } else {
-        onLoadComplete(resource);
+    // We&apos;ve run out of stages and generators, give up.
+    if ((stage == Stage.FINISHED || isCancelled) &amp;&amp; !isStarted) {
+      notifyFailed();
     }
 }
 
-/**
- * 优先从磁盘缓存中寻找
- */
-private Resource&lt;?&gt; decode() throws Exception {
-    if (isDecodingFromCache()) {
-        return decodeFromCache();
-    } else {
-        return decodeFromSource();
+private Stage getNextStage(Stage current) {
+    switch (current) {
+      case INITIALIZE:
+        return diskCacheStrategy.decodeCachedResource()
+            ? Stage.RESOURCE_CACHE
+            : getNextStage(Stage.RESOURCE_CACHE);
+      case RESOURCE_CACHE:
+        return diskCacheStrategy.decodeCachedData()
+            ? Stage.DATA_CACHE
+            : getNextStage(Stage.DATA_CACHE);
+      case DATA_CACHE:
+        // Skip loading from source if the user opted to only retrieve the resource from cache.
+        return onlyRetrieveFromCache ? Stage.FINISHED : Stage.SOURCE;
+      case SOURCE:
+      case FINISHED:
+        return Stage.FINISHED;
+      default:
+        throw new IllegalArgumentException(&quot;Unrecognized stage: &quot; + current);
     }
-}
-
-// 进行网路请求
-private Resource&lt;?&gt; decodeFromSource() throws Exception {
-    return decodeJob.decodeFromSource();
 }</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">**DecodeJob.java**</span><br></pre></td></tr></table></figure>
-<p>class DecodeJob&lt;A, T, Z&gt; {</p>
-<pre><code>public Resource&lt;Z&gt; decodeFromSource() throws Exception {
-    // 网络请求
-    Resource&lt;T&gt; decoded = decodeSource();
-    // 对返回结果进行Encode编码
-    return transformEncodeAndTranscode(decoded);
-}
-
-private Resource&lt;T&gt; decodeSource() throws Exception {
-    Resource&lt;T&gt; decoded = null;
-    try {
-        // 最终会走到HttpUrlFetcher.loadData返回InputStream
-        final A data = fetcher.loadData(priority);
-        decoded = decodeFromSourceData(data);
-    } finally {
-        fetcher.cleanup();
-    }
-    return decoded;
-}
-
-// 此处最终会走到StreamBitmapDecoder的decode方法
-// 计算sampleSize、
-// Bitmap result = BitmapFactory.decodeStream(is, null, options);
-private Resource&lt;T&gt; decodeFromSourceData(A data) throws IOException {
-    final Resource&lt;T&gt; decoded;
-    decoded = loadProvider.getSourceDecoder().decode(data, width, height);
-    return decoded;
-}</code></pre><p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">**HttpUrlFetcher**</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">DecodeJob的run方法根据state状态依次选择ResourceCacheGenerator、DataCacheGenerator进行磁盘缓存查找，最后如果没找到SourceGenerator进行网络请求。（其中涉及到ModelLoad加载）</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">**HttpUrlFetcher**</span><br></pre></td></tr></table></figure>
 <p>public class HttpUrlFetcher implements DataFetcher<InputStream> {</p>
 <pre><code>private HttpURLConnection urlConnection;
 private InputStream stream;
@@ -888,6 +879,68 @@ private InputStream getStreamForSuccessfulRequest(HttpURLConnection urlConnectio
     stream = urlConnection.getInputStream();
     return stream;
 }    </code></pre><p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">至此Glide的整个网络数据请求流程就结束了，接下来看看Glide是如何编解码图片。</span><br></pre></td></tr></table></figure>
+<p>class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,<br>        Runnable,<br>        Comparable&lt;DecodeJob&lt;?&gt;&gt;,<br>        Poolable {</p>
+<pre><code>public void onDataFetcherReady(Key sourceKey, Object data, DataFetcher&lt;?&gt; fetcher, DataSource dataSource, Key attemptedKey) {
+    this.currentSourceKey = sourceKey;
+    this.currentData = data;
+    this.currentFetcher = fetcher;
+    this.currentDataSource = dataSource;
+    this.currentAttemptingKey = attemptedKey;
+    if (Thread.currentThread() != currentThread) {
+      runReason = RunReason.DECODE_DATA;
+      callback.reschedule(this);
+    } else {
+      GlideTrace.beginSection(&quot;DecodeJob.decodeFromRetrievedData&quot;);
+      try {
+        // 开始解码
+        decodeFromRetrievedData();
+      } finally {
+        GlideTrace.endSection();
+      }
+    }
+}
+
+private void decodeFromRetrievedData() {
+    Resource&lt;R&gt; resource = null;
+    try {
+      resource = decodeFromData(currentFetcher, currentData, currentDataSource);
+    } catch (GlideException e) {
+      throwables.add(e);
+    }
+    if (resource != null) {
+      // 向上回调
+      notifyEncodeAndRelease(resource, currentDataSource);
+    } else {
+      runGenerators();
+    }
+}</code></pre><p>  private <Data> Resource<R> decodeFromData(<br>      DataFetcher&lt;?&gt; fetcher, Data data, DataSource dataSource) throws GlideException {<br>    try {<br>      if (data == null) {<br>        return null;<br>      }<br>      long startTime = LogTime.getLogTime();<br>      Resource<R> result = decodeFromFetcher(data, dataSource);<br>      if (Log.isLoggable(TAG, Log.VERBOSE)) {<br>        logWithTimeAndKey(“Decoded result “ + result, startTime);<br>      }<br>      return result;<br>    } finally {<br>      fetcher.cleanup();<br>    }<br>  }</p>
+<p>  private <Data> Resource<R> decodeFromFetcher(Data data, DataSource dataSource)<br>      throws GlideException {<br>    LoadPath&lt;Data, ?, R&gt; path = decodeHelper.getLoadPath((Class<Data>) data.getClass());<br>    return runLoadPath(data, dataSource, path);<br>  }</p>
+<p>  private &lt;Data, ResourceType&gt; Resource<R> runLoadPath(<br>      Data data, DataSource dataSource, LoadPath&lt;Data, ResourceType, R&gt; path)<br>      throws GlideException {<br>    Options options = getOptionsWithHardwareConfig(dataSource);<br>    DataRewinder<Data> rewinder = glideContext.getRegistry().getRewinder(data);<br>    try {<br>      // ResourceType in DecodeCallback below is required for compilation to work with gradle.<br>      return path.load(<br>          rewinder, options, width, height, new DecodeCallback<ResourceType>(dataSource));<br>    } finally {<br>      rewinder.cleanup();<br>    }<br>  }  </p>
+<p>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<p>  public Resource<Transcode> load(<br>      DataRewinder<Data> rewinder,<br>      @NonNull Options options,<br>      int width,<br>      int height,<br>      DecodePath.DecodeCallback<ResourceType> decodeCallback)<br>      throws GlideException {<br>    List<Throwable> throwables = Preconditions.checkNotNull(listPool.acquire());<br>    try {<br>      return loadWithExceptionList(rewinder, options, width, height, decodeCallback, throwables);<br>    } finally {<br>      listPool.release(throwables);<br>    }<br>  }</p>
+<p>  private Resource<Transcode> loadWithExceptionList(<br>      DataRewinder<Data> rewinder,<br>      @NonNull Options options,<br>      int width,<br>      int height,<br>      DecodePath.DecodeCallback<ResourceType> decodeCallback,<br>      List<Throwable> exceptions)<br>      throws GlideException {<br>    Resource<Transcode> result = null;<br>    for (int i = 0, size = decodePaths.size(); i &lt; size; i++) {<br>      DecodePath&lt;Data, ResourceType, Transcode&gt; path = decodePaths.get(i);<br>      try {<br>        result = path.decode(rewinder, width, height, options, decodeCallback);<br>      } catch (GlideException e) {<br>        exceptions.add(e);<br>      }<br>      if (result != null) {<br>        break;<br>      }<br>    }</p>
+<pre><code>if (result == null) {
+  throw new GlideException(failureMessage, new ArrayList&lt;&gt;(exceptions));
+}
+
+return result;</code></pre><p>  }</p>
+<p>}  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>  public Resource<Transcode> decode(<br>      DataRewinder<DataType> rewinder,<br>      int width,<br>      int height,<br>      @NonNull Options options,<br>      DecodeCallback<ResourceType> callback)<br>      throws GlideException {<br>    Resource<ResourceType> decoded = decodeResource(rewinder, width, height, options);<br>    Resource<ResourceType> transformed = callback.onResourceDecoded(decoded);<br>    return transcoder.transcode(transformed, options);<br>  }</p>
+<p>  @NonNull<br>  private Resource<ResourceType> decodeResource(<br>      DataRewinder<DataType> rewinder, int width, int height, @NonNull Options options)<br>      throws GlideException {<br>    List<Throwable> exceptions = Preconditions.checkNotNull(listPool.acquire());<br>    try {<br>      return decodeResourceWithList(rewinder, width, height, options, exceptions);<br>    } finally {<br>      listPool.release(exceptions);<br>    }<br>  }</p>
+<p>  private Resource<ResourceType> decodeResourceWithList(<br>      DataRewinder<DataType> rewinder,<br>      int width,<br>      int height,<br>      @NonNull Options options,<br>      List<Throwable> exceptions)<br>      throws GlideException {<br>    Resource<ResourceType> result = null;<br>    //noinspection ForLoopReplaceableByForEach to improve perf<br>    for (int i = 0, size = decoders.size(); i &lt; size; i++) {<br>      ResourceDecoder&lt;DataType, ResourceType&gt; decoder = decoders.get(i);<br>      try {<br>        DataType data = rewinder.rewindAndGet();<br>        if (decoder.handles(data, options)) {<br>          data = rewinder.rewindAndGet();<br>          result = decoder.decode(data, width, height, options);<br>        }<br>        // Some decoders throw unexpectedly. If they do, we shouldn’t fail the entire load path, but<br>        // instead log and continue. See #2406 for an example.<br>      } catch (IOException | RuntimeException | OutOfMemoryError e) {<br>        if (Log.isLoggable(TAG, Log.VERBOSE)) {<br>          Log.v(TAG, “Failed to decode data for “ + decoder, e);<br>        }<br>        exceptions.add(e);<br>      }</p>
+<pre><code>  if (result != null) {
+    break;
+  }
+}
+
+return result;</code></pre><p>  }  </p>
 <p>```</p>
 <p><img src="https://img-blog.csdn.net/20170515074139121?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvRXRoYW5Dbw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="Glide 执行过程"></p>
 <h4 id="了解更多"><a href="#了解更多" class="headerlink" title="了解更多"></a>了解更多</h4><p><a href="https://blog.csdn.net/u011733020/article/details/52446902" target="_blank" rel="noopener">1. Glide（图片异步加载缓存库）发起request获取resource</a></p>
@@ -975,7 +1028,7 @@ private InputStream getStreamForSuccessfulRequest(HttpURLConnection urlConnectio
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#Glide-源码剖析"><span class="nav-number">1.</span> <span class="nav-text">Glide 源码剖析</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#对比图片加载框架"><span class="nav-number">1.1.</span> <span class="nav-text">对比图片加载框架</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-with-Context-方法，返回RequestManager"><span class="nav-number">1.1.1.</span> <span class="nav-text">1. with(Context)方法，返回RequestManager</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#了解更多"><span class="nav-number">2.</span> <span class="nav-text">了解更多</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#简介"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Glide-源码剖析"><span class="nav-number">2.</span> <span class="nav-text">Glide 源码剖析</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-with-Context-方法，返回RequestManager"><span class="nav-number">2.0.1.</span> <span class="nav-text">1. with(Context)方法，返回RequestManager</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#了解更多"><span class="nav-number">2.1.</span> <span class="nav-text">了解更多</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -989,20 +1042,20 @@ private InputStream getStreamForSuccessfulRequest(HttpURLConnection urlConnectio
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">10</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -1029,7 +1082,7 @@ private InputStream getStreamForSuccessfulRequest(HttpURLConnection urlConnectio
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

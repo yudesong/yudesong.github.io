@@ -20,16 +20,16 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="ReentrantLock 简介ReentrantLock是一个继承Lock接口并且是基于CAS操作来实现的Java锁，ReentrantLock还支持公平锁和非公平锁两种方式。    一般的用法1234567ReentrantLock mLock &#x3D; new ReentrantLock();mLock.lock();try &amp;#123;	&#x2F;&#x2F; 业务逻辑&amp;#125;">
+  <meta name="description" content="ReentrantLock 简介ReentrantLock是一个继承Lock接口并且是基于CAS操作来实现的Java锁，ReentrantLock还支持公平锁和非公平锁两种方式。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="啃碎并发（12）ReentrantLock原理">
 <meta property="og:url" content="http://yoursite.com/2020/06/05/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8812%EF%BC%89ReentrantLock%E5%8E%9F%E7%90%86/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="ReentrantLock 简介ReentrantLock是一个继承Lock接口并且是基于CAS操作来实现的Java锁，ReentrantLock还支持公平锁和非公平锁两种方式。    一般的用法1234567ReentrantLock mLock &#x3D; new ReentrantLock();mLock.lock();try &amp;#123;	&#x2F;&#x2F; 业务逻辑&amp;#125;">
+<meta property="og:description" content="ReentrantLock 简介ReentrantLock是一个继承Lock接口并且是基于CAS操作来实现的Java锁，ReentrantLock还支持公平锁和非公平锁两种方式。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://yoursite.com/2020/06/05/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8812%EF%BC%89ReentrantLock%E5%8E%9F%E7%90%86/32fe52d9f90b34b6082b3ce032d373c5.png">
 <meta property="article:published_time" content="2020-06-05T03:02:41.623Z">
-<meta property="article:modified_time" content="2020-06-21T07:19:06.406Z">
+<meta property="article:modified_time" content="2020-06-21T08:55:33.550Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="JAVA并发">
 <meta name="twitter:card" content="summary">
@@ -219,6 +219,8 @@
 
       
         <h5 id="ReentrantLock-简介"><a href="#ReentrantLock-简介" class="headerlink" title="ReentrantLock 简介"></a>ReentrantLock 简介</h5><p>ReentrantLock是一个继承Lock接口并且是基于CAS操作来实现的Java锁，ReentrantLock还支持公平锁和非公平锁两种方式。 </p>
+<a id="more"></a>
+
 <img src="/2020/06/05/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8812%EF%BC%89ReentrantLock%E5%8E%9F%E7%90%86/32fe52d9f90b34b6082b3ce032d373c5.png" class="" title="[啃碎并发（12）ReentrantLock原理]">
 
 <h5 id="一般的用法"><a href="#一般的用法" class="headerlink" title="一般的用法"></a>一般的用法</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ReentrantLock mLock &#x3D; new ReentrantLock();</span><br><span class="line">mLock.lock();</span><br><span class="line">try &#123;</span><br><span class="line">	&#x2F;&#x2F; 业务逻辑</span><br><span class="line">&#125; finaly &#123;</span><br><span class="line">	mLock.unlock();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -267,7 +269,7 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/06/04/Android%20Bitmap%20%E8%AF%A6%E8%A7%A3/" rel="prev" title="Android Bitmap 详解">
+    <a href="/2020/06/04/Android%E5%9F%BA%E7%A1%80%E4%B9%8BBitmap%20%E8%AF%A6%E8%A7%A3/" rel="prev" title="Android Bitmap 详解">
       <i class="fa fa-chevron-left"></i> Android Bitmap 详解
     </a></div>
       <div class="post-nav-item">
@@ -346,20 +348,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">10</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -386,7 +388,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

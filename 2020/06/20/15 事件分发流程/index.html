@@ -28,7 +28,7 @@
 <meta property="og:description" content="事件传递规则 public boolean dispatchTouchEvent(MotionEvent ev):用来进行事件的分发。如果事件能够传递给当前 View ，一定会调用此方法，返回结果受当前 View 的 onTouchEvent 和下级 View 的 dispatchTouchEvent 方法的影响，表示是否消费当前事件。 public boolean onInterceptTouc">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-06-20T13:51:51.583Z">
-<meta property="article:modified_time" content="2020-06-21T07:14:54.786Z">
+<meta property="article:modified_time" content="2020-06-21T08:45:45.071Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="Android系统层">
 <meta name="twitter:card" content="summary">
@@ -225,6 +225,8 @@
 <li>public boolean onInterceptTouchEvent(MotionEvent event):用来判断是否拦截某事件，如果当前 View 拦截了某事件，那么在同一事件序列当中，此方法不会被再次调用，返回结果表示是否拦截当前事件。</li>
 <li>public boolean onTouchEvent(MotionEvent event):在 dispatchTouchEvent 方法中调用，用来处理点击事件，返回结果表示是否消费当前事件，如果不消费，则在同一个事件序列中，当前 View 无法再次接收到事件。</li>
 </ul>
+<a id="more"></a>
+
 <h4 id="事件传递顺序"><a href="#事件传递顺序" class="headerlink" title="事件传递顺序"></a>事件传递顺序</h4><p>顺序： Activity –&gt; ViewGroup –&gt; View</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; [Activity.java]</span><br><span class="line">public boolean dispatchTouchEvent(MotionEvent ev) &#123;</span><br><span class="line">    if (ev.getAction() &#x3D;&#x3D; MotionEvent.ACTION_DOWN) &#123;</span><br><span class="line">        &#x2F;&#x2F; 空方法</span><br><span class="line">        onUserInteraction();</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; 事件交给 Activity 所属的 Window 进行分发，返回 true 事件结束</span><br><span class="line">    if (getWindow().superDispatchTouchEvent(ev)) &#123;</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; 如果没有 View 处理事件，调用 Activity 的 onTouchEvent</span><br><span class="line">    return onTouchEvent(ev);</span><br><span class="line">&#125;</span><br><span class="line">&#x2F;&#x2F; 空方法</span><br><span class="line">public void onUserInteraction() &#123;&#125;</span><br></pre></td></tr></table></figure>
 
@@ -371,20 +373,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">10</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -411,7 +413,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

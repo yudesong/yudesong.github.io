@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Gradle构建详解Grdale 简介1.1 Gradle是什么?Gradle是一款专注于灵活性和性能的开源构建自动化工具。Gradle构建脚本使用Groovy或Kotlin DSL 编写。DSL 的全称是 Domain Specific Language，即领域特定语言，或者直接翻译成”特定领域的语言”，算了，再直接点，其实就是这个语言不通用，只能用于特定的某个领域，俗称“小语言”。因此 DSL">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Gradle构建详解">
+<meta property="og:url" content="http://yoursite.com/2020/07/30/Gradle%E6%9E%84%E5%BB%BA%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Gradle构建详解Grdale 简介1.1 Gradle是什么?Gradle是一款专注于灵活性和性能的开源构建自动化工具。Gradle构建脚本使用Groovy或Kotlin DSL 编写。DSL 的全称是 Domain Specific Language，即领域特定语言，或者直接翻译成”特定领域的语言”，算了，再直接点，其实就是这个语言不通用，只能用于特定的某个领域，俗称“小语言”。因此 DSL">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/07/30/Gradle%E6%9E%84%E5%BB%BA%E8%AF%A6%E8%A7%A3/Gradle%E6%9E%84%E5%BB%BA%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.png">
+<meta property="og:image" content="http://yoursite.com/2020/07/30/Gradle%E6%9E%84%E5%BB%BA%E8%AF%A6%E8%A7%A3/Hook_Gradle%E5%90%84%E4%B8%AA%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.png">
+<meta property="og:image" content="http://yoursite.com/2020/07/30/Gradle%E6%9E%84%E5%BB%BA%E8%AF%A6%E8%A7%A3/%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84.png">
+<meta property="article:published_time" content="2020-07-30T06:15:41.709Z">
+<meta property="article:modified_time" content="2020-07-30T05:38:15.640Z">
+<meta property="article:author" content="yudesong">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/07/30/Gradle%E6%9E%84%E5%BB%BA%E8%AF%A6%E8%A7%A3/Gradle%E6%9E%84%E5%BB%BA%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/07/30/Gradle%E6%9E%84%E5%BB%BA%E8%AF%A6%E8%A7%A3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Gradle构建详解 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/30/Gradle%E6%9E%84%E5%BB%BA%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Gradle构建详解
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-07-30 14:15:41 / 修改时间：13:38:15" itemprop="dateCreated datePublished" datetime="2020-07-30T14:15:41+08:00">2020-07-30</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Gradle构建详解"><a href="#Gradle构建详解" class="headerlink" title="Gradle构建详解"></a>Gradle构建详解</h2><h3 id="Grdale-简介"><a href="#Grdale-简介" class="headerlink" title="Grdale 简介"></a>Grdale 简介</h3><h4 id="1-1-Gradle是什么"><a href="#1-1-Gradle是什么" class="headerlink" title="1.1 Gradle是什么?"></a>1.1 Gradle是什么?</h4><p>Gradle是一款专注于灵活性和性能的开源构建自动化工具。Gradle构建脚本使用Groovy或Kotlin DSL 编写。DSL 的全称是 Domain Specific Language，即领域特定语言，或者直接翻译成”特定领域的语言”，算了，再直接点，其实就是这个语言不通用，只能用于特定的某个领域，俗称“小语言”。因此 DSL 也是语言。Gradle 的组成可以细分为如下三个方面：</p>
+<p>1）、groovy 核心语法：包括 groovy 基本语法、闭包、数据结构、面向对象等等。<br>2）、Android DSL（build scrpit block）：Android 插件在 Gradle 所特有的东西，我们可以在不同的 build scrpit block 中去做不同的事情。<br>3）、Gradle API：包含 Project、Task、Setting 等等。</p>
+<h4 id="1-2-Gradle-构建生命周期"><a href="#1-2-Gradle-构建生命周期" class="headerlink" title="1.2 Gradle 构建生命周期"></a>1.2 Gradle 构建生命周期</h4><p>Gradle 的构建过程分为 三部分：初始化阶段、配置阶段和执行阶段。其构建流程如下图所示：</p>
+<img src="/2020/07/30/Gradle%E6%9E%84%E5%BB%BA%E8%AF%A6%E8%A7%A3/Gradle%E6%9E%84%E5%BB%BA%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.png" class="" title="[Gradle构建生命周期]">
+
+<p><strong>1、初始化阶段</strong></p>
+<p>初始化阶段会读取根工程中的<strong>setting.gradle</strong>中的include信息，确定有多少工程加入构建，然后，会为每一个项目（build.gradle 脚本文件）创建一个个与之对应的<strong>Project</strong>实例，最终形成一个项目的层次结构。<br>与初始化阶段相关的脚本文件是settings.gradle，而一个 settings.gradle 脚本对应一个 Settings 对象，我们最常用来声明项目的层次结构的 include 就是 Settings 对象下的一个方法，在 Gradle 初始化的时候会构造一个 Settings 实例对象，以执行各个 Project 的初始化配置。</p>
+<p>在 settings.gradle 文件中，我们可以 在 Gradle 的构建过程中添加各个生命周期节点监听，其代码如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">include &#39;:app&#39;</span><br><span class="line">rootProject.name &#x3D; &quot;WanGradle&quot;</span><br><span class="line">gradle.addBuildListener(new BuildListener() &#123;</span><br><span class="line">    @Override</span><br><span class="line">    void buildStarted(Gradle gradle) &#123;</span><br><span class="line">        println &#39;开始构建&#39;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    void settingsEvaluated(Settings settings) &#123;</span><br><span class="line">        println &#39;settings 评估完成（settings.gradle 中代码执行完毕）&#39;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    void projectsLoaded(Gradle gradle) &#123;</span><br><span class="line">        println &#39;项目结构加载完成（初始化阶段结束）&#39;</span><br><span class="line">        println &#39;初始化结束，可访问根项目：&#39; + var1.gradle.rootProject</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    void projectsEvaluated(Gradle gradle) &#123;</span><br><span class="line">        println &#39;所有项目评估完成（配置阶段结束）&#39;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    void buildFinished(BuildResult result) &#123;</span><br><span class="line">        println &#39;构建结束 &#39;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>此外，在 settings.gradle 文件中，我们可以指定其它 project 的位置，这样就可以将其它外部工程中的 moudle 导入到当前的工程之中了。示例代码如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">if (Boolean.parseBoolean(properties.get(&#39;switch_speech&#39;))) &#123;</span><br><span class="line">    include &quot;speech&quot;</span><br><span class="line">    project(&quot;:speech&quot;).projectDir &#x3D; new File(&quot;..&#x2F;OtherApp&#x2F;speech&quot;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>2、配置阶段</strong></p>
+<p>配置阶段的任务是 执行各项目下的 build.gradle 脚本，完成 Project 的配置，与此同时，会构造 Task 任务依赖关系图以便在执行阶段按照依赖关系执行 Task。而在配置阶段执行的代码通常来说都会包括以下三个部分的内容，如下所示：</p>
+<ul>
+<li>1)、build.gralde 中的各种语句。</li>
+<li>2)、闭包。</li>
+<li>3)、Task 中的配置段语句。</li>
+</ul>
+<p>需要注意的是，执行任何 Gradle 命令，在初始化阶段和配置阶段的代码都会被执行。</p>
+<p><strong>3、执行阶段</strong></p>
+<p>在配置阶段结束后，Gradle 会根据各个任务 Task 的依赖关系来创建一个有向无环图，我们可以通过 Gradle 对象的 getTaskGraph 方法来得到该有向无环图 =&gt; TaskExecutionGraph，并且，当有向无环图构建完成之后，所有 Task 执行之前，我们可以通过 whenReady(groovy.lang.Closure) 或者 addTaskExecutionGraphListener(TaskExecutionGraphListener) 来接收相应的通知，其代码如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">gradle.getTaskGraph().addTaskExecutionGraphListener(new TaskExecutionGraphListener() &#123;</span><br><span class="line">    @Override</span><br><span class="line">    void graphPopulated(TaskExecutionGraph graph) &#123;</span><br><span class="line">        println &#39;graphPopulated &#39; + graph</span><br><span class="line">    &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>然后，Gradle 构建系统会通过调用 gradle &lt;任务名&gt; 来执行相应的各个任务。</p>
+<h4 id="1-3-Hook-Gradle各个生命周期节点"><a href="#1-3-Hook-Gradle各个生命周期节点" class="headerlink" title="1.3 Hook Gradle各个生命周期节点"></a>1.3 Hook Gradle各个生命周期节点</h4><img src="/2020/07/30/Gradle%E6%9E%84%E5%BB%BA%E8%AF%A6%E8%A7%A3/Hook_Gradle%E5%90%84%E4%B8%AA%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.png" class="" title="[Hook_Gradle各个生命周期]">
+
+<p>注意事项<br>1）、每一个 Hook 点对应的监听器一定要在回调的生命周期之前添加。<br>2）、如果注册了多个 project.afterEvaluate 回调，那么执行顺序将与注册顺序保持一致。</p>
+<h4 id="1-4-实战【获取构建各个阶段、任务的耗时情况-】"><a href="#1-4-实战【获取构建各个阶段、任务的耗时情况-】" class="headerlink" title="1.4 实战【获取构建各个阶段、任务的耗时情况 】"></a>1.4 实战【获取构建各个阶段、任务的耗时情况 】</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">long beginOfSetting &#x3D; System.currentTimeMillis()</span><br><span class="line">def beginOfConfig</span><br><span class="line">def configHasBegin &#x3D; false</span><br><span class="line">def beginOfProjectConfig &#x3D; new HashMap&lt;&gt;()</span><br><span class="line">def beginOfProjectExcute</span><br><span class="line"></span><br><span class="line">gradle.projectsLoaded &#123;</span><br><span class="line">    println &#39;初始化阶段，耗时：&#39; + (System.currentTimeMillis() -</span><br><span class="line">            beginOfSetting) + &#39;ms&#39;</span><br><span class="line">&#125;</span><br><span class="line">gradle.beforeProject &#123; project -&gt;</span><br><span class="line">    if (!configHasBegin) &#123;</span><br><span class="line">        configHasBegin &#x3D; true</span><br><span class="line">        beginOfConfig &#x3D; System.currentTimeMillis()</span><br><span class="line">    &#125;</span><br><span class="line">    beginOfProjectConfig.put(project, System.currentTimeMillis())</span><br><span class="line">&#125;</span><br><span class="line">gradle.afterProject &#123; project -&gt;</span><br><span class="line">    def begin &#x3D; beginOfProjectConfig.get(project)</span><br><span class="line">    println &#39;配置阶段，&#39; + project + &#39;耗时：&#39; +</span><br><span class="line">            (System.currentTimeMillis() - begin) + &#39;ms&#39;</span><br><span class="line">&#125;</span><br><span class="line">gradle.taskGraph.whenReady &#123;</span><br><span class="line">    println &#39;配置阶段，总共耗时：&#39; + (System.currentTimeMillis() -</span><br><span class="line">            beginOfConfig) + &#39;ms&#39;</span><br><span class="line">    beginOfProjectExcute &#x3D; System.currentTimeMillis()</span><br><span class="line">&#125;</span><br><span class="line">gradle.taskGraph.beforeTask &#123; task -&gt;</span><br><span class="line">    task.doFirst &#123;</span><br><span class="line">        task.ext.beginOfTask &#x3D; System.currentTimeMillis()</span><br><span class="line">    &#125;</span><br><span class="line">    task.doLast &#123;</span><br><span class="line">        println &#39;执行阶段，&#39; + task + &#39;耗时：&#39; +</span><br><span class="line">                (System.currentTimeMillis() - task.beginOfTask) + &#39;ms&#39;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">gradle.buildFinished &#123;</span><br><span class="line">    println &#39;执行阶段，耗时：&#39; + (System.currentTimeMillis() -</span><br><span class="line">            beginOfProjectExcute) + &#39;ms&#39;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Project"><a href="#Project" class="headerlink" title="Project"></a>Project</h3><p>Project 是 Gradle 构建整个应用程序的入口。由前可知，每一个 build.gradle 都有一个与之对应的 Project 实例，而在 build.gradle 中，我们通常都会配置一系列的项目依赖，如下面这个依赖：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">implementation &#39;com.github.bumptech.glide:glide:4.8.0&#39;</span><br></pre></td></tr></table></figure>
+<p>类似于 implementation、api 这种依赖关键字，在本质上它就是一个方法调用，在上面，我们使用 implementation() 方法传入了一个 map 参数，参数里面有三对 key-value，完整写法如下所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">implementation group: &#39;com.github.bumptech.glide&#39; name:&#39;glide&#39; version:&#39;4.8.0&#39;</span><br></pre></td></tr></table></figure>
+<p>当我们使用 implementation、api 依赖对应的 aar 文件时，Gradle 会在 repository 仓库 里面找到与之对应的依赖文件，你的仓库中可能包含 jcenter、maven 等一系列仓库，而每一个仓库其实就是很多依赖文件的集合服务器, 而他们就是通过上述的 group、name、version 来进行归类存储的。</p>
+<h4 id="2-1-Project-核心-API"><a href="#2-1-Project-核心-API" class="headerlink" title="2.1 Project 核心 API"></a>2.1 Project 核心 API</h4><p>每一个 Groovy 脚本都会被编译器编译成 Script 字节码，而每一个 build.gradle 脚本都会被编译器编译成 Project 字节码，所以我们在 build.gradle 中所写的一切逻辑都是在 Project 类内进行书写的。下面，我们将按照由易到难的套路来介绍 Project 的一系列重要的 API。</p>
+<p>1、getAllprojects 表示 获取所有 project 的实例.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">def getProjects() &#123;</span><br><span class="line">    println &quot;&lt;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&gt;&quot;</span><br><span class="line">    println &quot; Root Project Start &quot;</span><br><span class="line">    println &quot;&lt;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&gt;&quot;</span><br><span class="line">    &#x2F;&#x2F; 1、getAllprojects 方法返回一个包含根 project 与其子 project 的 Set 集合</span><br><span class="line">    &#x2F;&#x2F; eachWithIndex 方法用于遍历集合、数组等可迭代的容器，</span><br><span class="line">    &#x2F;&#x2F; 并同时返回下标，不同于 each 方法仅返回 project</span><br><span class="line">    this.getAllprojects().eachWithIndex &#123; Project project, int index -&gt;</span><br><span class="line">        &#x2F;&#x2F; 2、下标为 0，表明当前遍历的是 rootProject</span><br><span class="line">        if (index &#x3D;&#x3D; 0) &#123;</span><br><span class="line">            println &quot;Root Project is $project&quot;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            println &quot;child Project is $project&quot;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2、getSubprojects 表示获取当前工程下所有子工程的实例</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">def getSubProjects() &#123;</span><br><span class="line">    println &quot;&lt;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&gt;&quot;</span><br><span class="line">    println &quot; Sub Project Start &quot;</span><br><span class="line">    println &quot;&lt;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&gt;&quot;</span><br><span class="line">    &#x2F;&#x2F; getSubprojects 方法返回一个包含子 project 的 Set 集合</span><br><span class="line">    this.getSubprojects().each &#123; Project project -&gt;</span><br><span class="line">        println &quot;child Project is $project&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>3、getParent 表示 获取当前 project 的父类，需要注意的是，如果我们在根工程中使用它，获取的父类会为 null，因为根工程没有父类</p>
+<p>4、如果我们想在根工程仅仅获取当前的 project 实例该怎么办呢？直接使用 getRootProject 即可在任意 build.gradle 文件获取当前根工程的 project 实例</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">def getRootPro() &#123;</span><br><span class="line">    def rootProjectName &#x3D; this.getRootProject().name</span><br><span class="line">    println &quot;root project is $rootProjectName&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>5、project 表示的是 指定工程的实例，然后在闭包中对其进行操作</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">project(&quot;app&quot;) &#123;</span><br><span class="line">    apply plugin: &#39;com.android.application&#39;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>6、allprojects 表示 用于配置当前 project 及其旗下的每一个子 project</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">allprojects &#123;</span><br><span class="line">    repositories &#123;</span><br><span class="line">        google()</span><br><span class="line">        jcenter()</span><br><span class="line">        mavenCentral()</span><br><span class="line">        maven &#123;</span><br><span class="line">            url &quot;https:&#x2F;&#x2F;jitpack.io&quot;</span><br><span class="line">        &#125;</span><br><span class="line">        maven &#123; url &quot;https:&#x2F;&#x2F;plugins.gradle.org&#x2F;m2&#x2F;&quot; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>7、subprojects 可以 统一配置当前 project 下的所有子 project</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">subprojects &#123;</span><br><span class="line">    if (project.plugins.hasPlugin(&quot;com.android.library&quot;)) &#123;</span><br><span class="line">        apply from: &#39;..&#x2F;publishToMaven.gradle&#39;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-2-Project-属性"><a href="#2-2-Project-属性" class="headerlink" title="2.2 Project 属性"></a>2.2 Project 属性</h4><p>在 project 接口里，仅仅预先定义了 七个 属性，其源码如下所示</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * 默认的工程构建文件名称</span><br><span class="line"> *&#x2F;</span><br><span class="line">String DEFAULT_BUILD_FILE &#x3D; &quot;build.gradle&quot;;</span><br><span class="line">&#x2F;**</span><br><span class="line"> * 区分开 project 名字与 task 名字的符号</span><br><span class="line"> *&#x2F;</span><br><span class="line">String PATH_SEPARATOR &#x3D; &quot;:&quot;;</span><br><span class="line">&#x2F;**</span><br><span class="line"> * 默认的构建目录名称</span><br><span class="line"> *&#x2F;</span><br><span class="line">String DEFAULT_BUILD_DIR_NAME &#x3D; &quot;build&quot;;</span><br><span class="line">String GRADLE_PROPERTIES &#x3D; &quot;gradle.properties&quot;;</span><br><span class="line">String SYSTEM_PROP_PREFIX &#x3D; &quot;systemProp&quot;;</span><br><span class="line">String DEFAULT_VERSION &#x3D; &quot;unspecified&quot;;</span><br><span class="line">String DEFAULT_STATUS &#x3D; &quot;release&quot;;</span><br></pre></td></tr></table></figure>
+<p>幸运的是，Gradle 提供了 ext 关键字让我们有能力去定义自身所需要的扩展属性。有了它便可以对我们工程中的依赖进行全局配置</p>
+<ul>
+<li>ext拓展属性定义</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">ext &#123;</span><br><span class="line">    android &#x3D; [</span><br><span class="line">        compileSdkVersion : 27,</span><br><span class="line">        buildToolsVersion : &quot;28.0.3&quot;</span><br><span class="line">    ]</span><br><span class="line">            </span><br><span class="line">    version &#x3D; [</span><br><span class="line">        supportLibraryVersion : &quot;28.0.0&quot;,</span><br><span class="line">        ...</span><br><span class="line">    ]</span><br><span class="line">    </span><br><span class="line">    dependencies &#x3D; [</span><br><span class="line">        &quot;appcompat-v7&quot; : &quot;com.android.support:appcompat-v7:$&#123;version[&quot;supportLibraryVersion&quot;]&#125;&quot;,</span><br><span class="line">        ...</span><br><span class="line">    ]</span><br><span class="line">            </span><br><span class="line">    annotationProcessor &#x3D; [</span><br><span class="line">        &quot;glide_compiler&quot; : &quot;com.github.bumptech.glide:compiler:$&#123;version[&quot;glideVersion&quot;]&#125;&quot;,</span><br><span class="line">        ...</span><br><span class="line">    ]</span><br><span class="line">            </span><br><span class="line">    apiFileDependencies &#x3D; [</span><br><span class="line">        &quot;launchstarter&quot; : &quot;libs&#x2F;launchstarter-release-1.0.0.aar&quot;,</span><br><span class="line">        ...</span><br><span class="line">    ]</span><br><span class="line">            </span><br><span class="line">    debugImplementationDependencies &#x3D; [</span><br><span class="line">        &quot;MethodTraceMan&quot; : &quot;com.github.zhengcx:MethodTraceMan:1.0.7&quot;</span><br><span class="line">    ]</span><br><span class="line"></span><br><span class="line">    releaseImplementationDependencies &#x3D; [</span><br><span class="line">        &quot;MethodTraceMan&quot; : &quot;com.github.zhengcx:MethodTraceMan:1.0.5-noop&quot;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>除了使用 ext 扩展属性定义额外的属性之外，我们也可以在 gradle.properties 下定义扩展属性</li>
+</ul>
+<h4 id="2-3-文件相关-API"><a href="#2-3-文件相关-API" class="headerlink" title="2.3 文件相关 API"></a>2.3 文件相关 API</h4><p>1）、路径获取 API<br>getRootDir()<br>getProjectDir()<br>getBuildDir()</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">println &quot;the root file path is:&quot; + getRootDir().absolutePath</span><br><span class="line">println &quot;this build file path is:&quot; + getBuildDir().absolutePath</span><br><span class="line">println &quot;this Project file path is:&quot; + getProjectDir().absolutePath</span><br></pre></td></tr></table></figure>
+
+<p>2）、文件操作相关 API<br>文件定位<br>文件拷贝<br>文件树遍历</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">def getContent(String path) &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        def mFile &#x3D; file(path)</span><br><span class="line">        println mFile.text</span><br><span class="line">    &#125; catch (GradleException e) &#123;</span><br><span class="line">        println e.toString()</span><br><span class="line">        return null</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">def getContent(String path1, String path2) &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        def mFiles &#x3D; files(path1, path2)</span><br><span class="line">        println mFiles[0].text + mFiles[1].text</span><br><span class="line">    &#125; catch (GradleException e) &#123;</span><br><span class="line">        println e.toString()</span><br><span class="line">        return null</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">task fileCopy() &#123;</span><br><span class="line">    delete &quot;build&quot;</span><br><span class="line">    copy &#123;</span><br><span class="line">        from file(&quot;build.gradle&quot;)</span><br><span class="line">        into getRootProject().getBuildDir().path</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">task fileList() &#123;</span><br><span class="line">    fileTree(&quot;build&#x2F;outputs&#x2F;apk&quot;) &#123; FileTree fileTree -&gt;</span><br><span class="line">        fileTree.visit &#123; FileTreeElement fileTreeElement -&gt;</span><br><span class="line">            println &quot;The file is $fileTreeElement.file.name&quot;</span><br><span class="line">            copy &#123;</span><br><span class="line">                from fileTreeElement.file</span><br><span class="line">                into getRootProject().getBuildDir().path + &quot;&#x2F;apkTree&#x2F;&quot;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-4-其它-API"><a href="#2-4-其它-API" class="headerlink" title="2.4 其它 API"></a>2.4 其它 API</h4><ul>
+<li>依赖相关 API</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">implementation(rootProject.ext.dependencies.glide) &#123;</span><br><span class="line">    &#x2F;&#x2F; 排除依赖：一般用于解决资源、代码冲突相关的问题</span><br><span class="line">    exclude module: &#39;support-v4&#39; </span><br><span class="line">    &#x2F;&#x2F; 传递依赖：A &#x3D;&gt; B &#x3D;&gt; C ，B 中使用到了 C 中的依赖，</span><br><span class="line">    &#x2F;&#x2F; 且 A 依赖于 B，如果打开传递依赖，则 A 能使用到 B </span><br><span class="line">    &#x2F;&#x2F; 中所使用的 C 中的依赖，默认都是不打开，即 false</span><br><span class="line">    transitive false </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>外部命令</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">task apkMove() &#123;</span><br><span class="line">    doLast &#123;</span><br><span class="line">        &#x2F;&#x2F; 在 gradle 的执行阶段去执行</span><br><span class="line">        def sourcePath &#x3D; this.buildDir.path + &quot;&#x2F;outputs&#x2F;apk&#x2F;speed&#x2F;release&#x2F;&quot;</span><br><span class="line">        def destinationPath &#x3D; &quot;&#x2F;Users&#x2F;quchao&#x2F;Downloads&#x2F;&quot;</span><br><span class="line">        def command &#x3D; &quot;mv -f $sourcePath $destinationPath&quot;</span><br><span class="line">        exec &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                executable &quot;bash&quot;</span><br><span class="line">                args &quot;-c&quot;, command</span><br><span class="line">                println &quot;The command execute is success&quot;</span><br><span class="line">            &#125; catch (GradleException e) &#123;</span><br><span class="line">                println &quot;The command execute is failed&quot;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Task"><a href="#Task" class="headerlink" title="Task"></a>Task</h3><ol>
+<li>Task定义</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">task JsonChao&#123;</span><br><span class="line">    &#x2F;&#x2F; 执行在 gradle 生命周期的第二个阶段，即配置阶段。</span><br><span class="line">    println(&quot;hello~&quot;)</span><br><span class="line">    &#x2F;&#x2F; 3、给 task 附带一些 执行动作（Action），执行在</span><br><span class="line">    &#x2F;&#x2F; gradle 生命周期的第三个阶段，即执行阶段。</span><br><span class="line">    doFirst &#123;</span><br><span class="line">        println(&quot;start&quot;)</span><br><span class="line">    &#125;</span><br><span class="line">    doLast &#123;</span><br><span class="line">        println(&quot;end&quot;)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">task Andorid(dependsOn:&quot;JsonChao&quot;) &#123;</span><br><span class="line">    doLast &#123;</span><br><span class="line">        println(&quot;end?&quot;)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对于 doFirst 与 doLast 这两个 Action，它们的作用分别如下所示：</p>
+<p>doFirst：表示 task 执行最开始的时候被调用的 Action。<br>doLast：表示 task 将执行完的时候被调用的 Action。<br>需要注意的是，doFirst 和 doLast 是可以被执行多次的。</p>
+<h3 id="SourceSet"><a href="#SourceSet" class="headerlink" title="SourceSet"></a>SourceSet</h3><p>SourceSet 主要是 用来设置我们项目中源码或资源的位置的，目前它最常见的两个使用案例就是如下 两类：</p>
+<ul>
+<li>1）、修改 so 库存放位置。</li>
+<li>2）、资源文件分包存放。</li>
+</ul>
+<p>1、修改 so 库存放位置<br>我们仅需在 app moudle 下的 android 闭包下配置如下代码即可修改 so 库存放位置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">android &#123;</span><br><span class="line">    ...</span><br><span class="line">    sourceSets &#123;</span><br><span class="line">        main &#123;</span><br><span class="line">            &#x2F;&#x2F; 修改 so 库存放位置</span><br><span class="line">            jniLibs.srcDirs &#x3D; [&quot;libs&quot;]</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2、资源文件分包存放<br>同样，在 app moudle 下的 android 闭包下配置如下代码即可将资源文件进行分包存放：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">android &#123;</span><br><span class="line">    sourceSets &#123;</span><br><span class="line">        main &#123;</span><br><span class="line">            res.srcDirs &#x3D; [&quot;src&#x2F;main&#x2F;res&quot;,</span><br><span class="line">                           &quot;src&#x2F;main&#x2F;res-play&quot;,</span><br><span class="line">                           &quot;src&#x2F;main&#x2F;res-shop&quot;</span><br><span class="line">                            ... </span><br><span class="line">                           ]</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>此外，我们也可以使用如下代码 将 sourceSets 在 android 闭包的外部进行定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">this.android.sourceSets &#123;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="自定义Gradle插件"><a href="#自定义Gradle插件" class="headerlink" title="自定义Gradle插件"></a>自定义Gradle插件</h3><p>在 Android 下的 gradle 插件共分为 两大类，如下所示：</p>
+<ul>
+<li>1、脚本插件：同普通的 gradle 脚本编写形式一样，通过 apply from: ‘JsonChao.gradle’ 引用。</li>
+<li>2、对象插件：通过插件全路径类名或 id 引用，它主要有 三种编写形式，如下所示：<br>1）在当前构建脚本下直接编写。<br>2）在 buildSrc 目录下编写。<br>3）在完全独立的项目中编写。</li>
+</ul>
+<h4 id="5-1-脚本插件"><a href="#5-1-脚本插件" class="headerlink" title="5.1 脚本插件"></a>5.1 脚本插件</h4><p>同普通的 gradle 脚本编写形式一样，我们既可以写在 build.gradle 里面，也可以自己新建一个 gradle 脚本文件进行编写。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">class PluginDemo implements Plugin&lt;Project&gt; &#123;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    void apply(Project target) &#123; </span><br><span class="line">        println &#39;Hello author!&#39;</span><br><span class="line">    &#125; </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">apply plugin: PluginDemo</span><br></pre></td></tr></table></figure>
+
+<h4 id="5-2-运用-buildSrc-默认插件目录"><a href="#5-2-运用-buildSrc-默认插件目录" class="headerlink" title="5.2 运用 buildSrc 默认插件目录"></a>5.2 运用 buildSrc 默认插件目录</h4><p>buildSrc 是默认的插件目录，其次，在 buildSrc 目录下与独立工程的插件工程一样，也能够发布插件</p>
+<img src="/2020/07/30/Gradle%E6%9E%84%E5%BB%BA%E8%AF%A6%E8%A7%A3/%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8F%92%E4%BB%B6%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84.png" class="" title="[自定义插件项目结构.png]">
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; [CustomGradlePlugin.groovy]</span><br><span class="line">class CustomGradlePlugin implements Plugin&lt;Project&gt; &#123;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    void apply(Project project) &#123;</span><br><span class="line">        println &quot;Hello plugin...&quot; + project.name</span><br><span class="line">        &#x2F;&#x2F; 定义拓展属性releaseInfo</span><br><span class="line">        project.extensions.create(&quot;releaseInfo&quot;, ReleaseInfoExtension.class)</span><br><span class="line">        </span><br><span class="line">        &#x2F;&#x2F; 创建新Task:releaseInfoTask</span><br><span class="line">        project.tasks.create(&quot;releaseInfoTask&quot;, ReleaseInfoTask.class)</span><br><span class="line">        </span><br><span class="line">        &#x2F;&#x2F; 定义Transform</span><br><span class="line">        def appExtension &#x3D; project.extensions.findByType(AppExtension.class)</span><br><span class="line">        appExtension.registerTransform(new MyTransform());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; [ReleaseInfoTask.groovy]</span><br><span class="line">class ReleaseInfoTask extends DefaultTask &#123;</span><br><span class="line"></span><br><span class="line">    ReleaseInfoTask() &#123;</span><br><span class="line">        println &#39;init ReleaseInfoTask&#39;</span><br><span class="line">        &#x2F;&#x2F; 1、在构造器中配置了该 Task 对应的 Task group，即 Task 组，并为其添加上了对应的描述信息。</span><br><span class="line">        group &#x3D; &#39;version_manager&#39;</span><br><span class="line">        description &#x3D; &#39;release info update&#39;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 2、在 gradle 执行阶段执行</span><br><span class="line">    @TaskAction</span><br><span class="line">    void doAction() &#123;</span><br><span class="line">        println &quot;start do updateVersionInfo 1&quot;</span><br><span class="line">        updateVersionInfo();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private void updateVersionInfo() &#123;</span><br><span class="line">        println &quot;start do updateVersionInfo 2&quot;</span><br><span class="line">        &#x2F;&#x2F; 3、从 realeaseInfo Extension 属性中获取相应的版本信息</span><br><span class="line">        def versionCodeMsg &#x3D; project.extensions.releaseInfo.versionCode;</span><br><span class="line">        def versionNameMsg &#x3D; project.extensions.releaseInfo.versionName;</span><br><span class="line">        def versionInfoMsg &#x3D; project.extensions.releaseInfo.versionInfo;</span><br><span class="line">        def fileName &#x3D; project.extensions.releaseInfo.fileName;</span><br><span class="line">        def file &#x3D; project.file(fileName)</span><br><span class="line">        println file.absolutePath</span><br><span class="line">        &#x2F;&#x2F; 4、将实体对象写入到 xml 文件中</span><br><span class="line">        def sw &#x3D; new StringWriter()</span><br><span class="line">        def xmlBuilder &#x3D; new MarkupBuilder(sw)</span><br><span class="line">        if (file.text !&#x3D; null &amp;&amp; file.text.size() &lt;&#x3D; 0) &#123;</span><br><span class="line">            &#x2F;&#x2F;没有内容</span><br><span class="line">            xmlBuilder.releases &#123;</span><br><span class="line">                release &#123;</span><br><span class="line">                    versionCode(versionCodeMsg)</span><br><span class="line">                    versionName(versionNameMsg)</span><br><span class="line">                    versionInfo(versionInfoMsg)</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F;直接写入</span><br><span class="line">            file.withWriter &#123; writer -&gt; writer.append(sw.toString())</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            println &quot;write finish&quot;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            &#x2F;&#x2F;已有其它版本内容</span><br><span class="line">            xmlBuilder.release &#123;</span><br><span class="line">                versionCode(versionCodeMsg)</span><br><span class="line">                versionName(versionNameMsg)</span><br><span class="line">                versionInfo(versionInfoMsg)</span><br><span class="line">            &#125;</span><br><span class="line">            &#x2F;&#x2F;插入到最后一行前面</span><br><span class="line">            def lines &#x3D; file.readLines()</span><br><span class="line">            def lengths &#x3D; lines.size() - 1</span><br><span class="line">            file.withWriter &#123; writer -&gt;</span><br><span class="line">                lines.eachWithIndex &#123; line, index -&gt;</span><br><span class="line">                    if (index !&#x3D; lengths) &#123;</span><br><span class="line">                        writer.append(line + &#39;\r\n&#39;)</span><br><span class="line">                    &#125; else if (index &#x3D;&#x3D; lengths) &#123;</span><br><span class="line">                        writer.append(&#39;\r\r\n&#39; + sw.toString() + &#39;\r\n&#39;)</span><br><span class="line">                        writer.append(lines.get(tlengths))</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="5-3-Transform"><a href="#5-3-Transform" class="headerlink" title="5.3 Transform"></a>5.3 Transform</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br></pre></td><td class="code"><pre><span class="line">class MyTransform extends Transform &#123;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 每一个 Transform 都有一个与之对应的 Transform task，</span><br><span class="line">     * 这里便是返回的 task name。它会出现在 app&#x2F;build&#x2F;intermediates&#x2F;transforms 目录下</span><br><span class="line">     *</span><br><span class="line">     * @return Transform Name</span><br><span class="line">     *&#x2F;</span><br><span class="line">    @Override</span><br><span class="line">    String getName() &#123;</span><br><span class="line">        return &quot;MyCustomTransform&quot;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 需要处理的数据类型，目前 ContentType 有六种枚举类型，通常我们使用比较频繁的有前两种：</span><br><span class="line">     *      1、CONTENT_CLASS：表示需要处理 java 的 class 文件。</span><br><span class="line">     *      2、CONTENT_JARS：表示需要处理 java 的 class 与 资源文件。</span><br><span class="line">     *      3、CONTENT_RESOURCES：表示需要处理 java 的资源文件。</span><br><span class="line">     *      4、CONTENT_NATIVE_LIBS：表示需要处理 native 库的代码。</span><br><span class="line">     *      5、CONTENT_DEX：表示需要处理 DEX 文件。</span><br><span class="line">     *      6、CONTENT_DEX_WITH_RESOURCES：表示需要处理 DEX 与 java 的资源文件。</span><br><span class="line">     *</span><br><span class="line">     * @return</span><br><span class="line">     *&#x2F;</span><br><span class="line">    @Override</span><br><span class="line">    Set&lt;QualifiedContent.ContentType&gt; getInputTypes() &#123;</span><br><span class="line">        &#x2F;&#x2F; 用于确定我们需要对哪些类型的结果进行转换：如字节码、资源⽂件等等。</span><br><span class="line">        &#x2F;&#x2F; return TransformManager.RESOURCES</span><br><span class="line">        return TransformManager.CONTENT_CLASS</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 表示 Transform 要操作的内容范围，目前 Scope 有五种基本类型：</span><br><span class="line">     *      1、PROJECT                   只有项目内容</span><br><span class="line">     *      2、SUB_PROJECTS              只有子项目</span><br><span class="line">     *      3、EXTERNAL_LIBRARIES        只有外部库</span><br><span class="line">     *      4、TESTED_CODE               由当前变体（包括依赖项）所测试的代码</span><br><span class="line">     *      5、PROVIDED_ONLY             只提供本地或远程依赖项</span><br><span class="line">     *      SCOPE_FULL_PROJECT 是一个 Scope 集合，包含 Scope.PROJECT, Scope.SUB_PROJECTS, Scope.EXTERNAL_LIBRARIES 这三项，即当前 Transform 的作用域包括当前项目、子项目以及外部的依赖库</span><br><span class="line">     *</span><br><span class="line">     * @return</span><br><span class="line">     *&#x2F;</span><br><span class="line">    @Override</span><br><span class="line">    Set&lt;? super QualifiedContent.Scope&gt; getScopes() &#123;</span><br><span class="line">        &#x2F;&#x2F; 适用范围：通常是指定整个 project，也可以指定其它范围</span><br><span class="line">        return TransformManager.SCOPE_FULL_PROJECT</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    boolean isIncremental() &#123;</span><br><span class="line">        &#x2F;&#x2F; 是否支持增量更新</span><br><span class="line">        &#x2F;&#x2F; 如果返回 true，TransformInput 会包含一份修改的文件列表</span><br><span class="line">        &#x2F;&#x2F; 如果返回 false，会进行全量编译，删除上一次的输出内容</span><br><span class="line">        return false</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 进行具体的转换过程</span><br><span class="line">     *</span><br><span class="line">     * @param transformInvocation</span><br><span class="line">     *&#x2F;</span><br><span class="line">    @Override</span><br><span class="line">    void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException &#123;</span><br><span class="line">        super.transform(transformInvocation)</span><br><span class="line">        println &#39;--------------- MyTransform visit start --------------- &#39;</span><br><span class="line">        def startTime &#x3D; System.currentTimeMillis()</span><br><span class="line">        def inputs &#x3D; transformInvocation.inputs</span><br><span class="line">        def outputProvider &#x3D; transformInvocation.outputProvider</span><br><span class="line">        &#x2F;&#x2F; 删除之前的输出</span><br><span class="line">        if (outputProvider !&#x3D; null)</span><br><span class="line">            outputProvider.deleteAll()</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; Transform 的 inputs 有两种类型，一种是目录，一种是 jar 包，要分开遍历</span><br><span class="line">        inputs.each &#123; TransformInput input -&gt;</span><br><span class="line">            &#x2F;&#x2F; 遍历 directoryInputs（本地 project 编译成的多个 class ⽂件存放的目录）</span><br><span class="line">            input.directoryInputs.each &#123; DirectoryInput directoryInput -&gt;</span><br><span class="line">                handleDirectory(directoryInput, outputProvider)</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; 遍历 jarInputs（各个依赖所编译成的 jar 文件）</span><br><span class="line">            input.jarInputs.each &#123; JarInput jarInput -&gt;</span><br><span class="line">                handleJar(jarInput, outputProvider)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        def cost &#x3D; (System.currentTimeMillis() - startTime) &#x2F; 1000</span><br><span class="line">        println &#39;--------------- MyTransform visit end --------------- &#39;</span><br><span class="line">        println &quot;MyTransform cost ： $cost s&quot;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    static void handleJar(JarInput jarInput, TransformOutputProvider outputProvider) &#123;</span><br><span class="line">        if (jarInput.file.getAbsolutePath().endsWith(&quot;.jar&quot;)) &#123;</span><br><span class="line">            &#x2F;&#x2F; 截取文件路径的 md5 值重命名输出文件，避免出现同名而覆盖的情况出现</span><br><span class="line">            def jarName &#x3D; jarInput.name</span><br><span class="line">            def md5Name &#x3D; DigestUtils.md5Hex(jarInput.file.getAbsolutePath())</span><br><span class="line">            if (jarName.endsWith(&quot;.jar&quot;)) &#123;</span><br><span class="line">                jarName &#x3D; jarName.substring(0, jarName.length() - 4)</span><br><span class="line">            &#125;</span><br><span class="line">            JarFile jarFile &#x3D; new JarFile(jarInput.file)</span><br><span class="line">            Enumeration enumeration &#x3D; jarFile.entries()</span><br><span class="line">            File tmpFile &#x3D; new File(jarInput.file.getParent() + File.separator + &quot;classes_temp.jar&quot;)</span><br><span class="line">            &#x2F;&#x2F; 避免上次的缓存被重复插入</span><br><span class="line">            if (tmpFile.exists()) &#123;</span><br><span class="line">                tmpFile.delete()</span><br><span class="line">            &#125;</span><br><span class="line">            JarOutputStream jarOutputStream &#x3D; new JarOutputStream(new FileOutputStream(tmpFile))</span><br><span class="line">            while (enumeration.hasMoreElements()) &#123;</span><br><span class="line">                JarEntry jarEntry &#x3D; (JarEntry) enumeration.nextElement()</span><br><span class="line">                String entryName &#x3D; jarEntry.getName()</span><br><span class="line">                ZipEntry zipEntry &#x3D; new ZipEntry(entryName)</span><br><span class="line">                InputStream inputStream &#x3D; jarFile.getInputStream(jarEntry)</span><br><span class="line">                if (checkClassFile(entryName)) &#123;</span><br><span class="line">                    &#x2F;&#x2F; 使用 ASM 对 class 文件进行操控</span><br><span class="line">                    println &#39;----------- deal with &quot;jar&quot; class file &lt;&#39; + entryName + &#39;&gt; -----------&#39;</span><br><span class="line">                    jarOutputStream.putNextEntry(zipEntry)</span><br><span class="line">                    ClassReader classReader &#x3D; new ClassReader(IOUtils.toByteArray(inputStream))</span><br><span class="line">                    ClassWriter classWriter &#x3D; new ClassWriter(classReader, org.objectweb.asm.ClassWriter.COMPUTE_MAXS)</span><br><span class="line">                    ClassVisitor cv &#x3D; new MyCustomClassVisitor(classWriter)</span><br><span class="line">                    classReader.accept(cv, EXPAND_FRAMES)</span><br><span class="line">                    byte[] code &#x3D; classWriter.toByteArray()</span><br><span class="line">                    jarOutputStream.write(code)</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    jarOutputStream.putNextEntry(zipEntry)</span><br><span class="line">                    jarOutputStream.write(IOUtils.toByteArray(inputStream))</span><br><span class="line">                &#125;</span><br><span class="line">                jarOutputStream.closeEntry()</span><br><span class="line">            &#125;</span><br><span class="line">            jarOutputStream.close()</span><br><span class="line">            jarFile.close()</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; 生成输出路径 dest：.&#x2F;app&#x2F;build&#x2F;intermediates&#x2F;transforms&#x2F;xxxTransform&#x2F;...</span><br><span class="line">            def dest &#x3D; outputProvider.getContentLocation(jarName + md5Name,</span><br><span class="line">                    jarInput.contentTypes, jarInput.scopes, Format.JAR)</span><br><span class="line">            &#x2F;&#x2F; 将 input 的目录复制到 output 指定目录</span><br><span class="line">            FileUtils.copyFile(tmpFile, dest)</span><br><span class="line">            tmpFile.delete()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    static void handleDirectory(DirectoryInput directoryInput, TransformOutputProvider outputProvider) &#123;</span><br><span class="line">        &#x2F;&#x2F; 在增量模式下可以通过 directoryInput.changedFiles 方法获取修改的文件</span><br><span class="line">&#x2F;&#x2F;        directoryInput.changedFiles</span><br><span class="line">        if (directoryInput.file.size() &#x3D;&#x3D; 0)</span><br><span class="line">            return</span><br><span class="line">        if (directoryInput.file.isDirectory()) &#123;</span><br><span class="line">            &#x2F;**遍历以某一扩展名结尾的文件*&#x2F;</span><br><span class="line">            directoryInput.file.traverse(type: FileType.FILES, nameFilter: ~&#x2F;.*\.class&#x2F;) &#123;</span><br><span class="line">                File classFile -&gt;</span><br><span class="line">                    def name &#x3D; classFile.name</span><br><span class="line">                    if (checkClassFile(name)) &#123;</span><br><span class="line">                        println &#39;----------- deal with &quot;class&quot; file &lt;&#39; + name + &#39;&gt; -----------&#39;</span><br><span class="line">                        def classReader &#x3D; new ClassReader(classFile.bytes)</span><br><span class="line">                        def classWriter &#x3D; new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS)</span><br><span class="line">                        def classVisitor &#x3D; new MyCustomClassVisitor(classWriter)</span><br><span class="line">                        classReader.accept(classVisitor, EXPAND_FRAMES)</span><br><span class="line">                        byte[] codeBytes &#x3D; classWriter.toByteArray()</span><br><span class="line">                        FileOutputStream fileOutputStream &#x3D; new FileOutputStream(</span><br><span class="line">                                classFile.parentFile.absolutePath + File.separator + name</span><br><span class="line">                        )</span><br><span class="line">                        fileOutputStream.write(codeBytes)</span><br><span class="line">                        fileOutputStream.close()</span><br><span class="line">                    &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F;&#x2F; 获取 output 目录 dest：.&#x2F;app&#x2F;build&#x2F;intermediates&#x2F;transforms&#x2F;hencoderTransform&#x2F;</span><br><span class="line">        def destFile &#x3D; outputProvider.getContentLocation(</span><br><span class="line">                directoryInput.name,</span><br><span class="line">                directoryInput.contentTypes,</span><br><span class="line">                directoryInput.scopes,</span><br><span class="line">                Format.DIRECTORY</span><br><span class="line">        )</span><br><span class="line">        &#x2F;&#x2F; 将 input 的目录复制到 output 指定目录</span><br><span class="line">        FileUtils.copyDirectory(directoryInput.file, destFile)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 检查 class 文件是否需要处理</span><br><span class="line">     *</span><br><span class="line">     * @param fileName</span><br><span class="line">     * @return class 文件是否需要处理</span><br><span class="line">     *&#x2F;</span><br><span class="line">    static boolean checkClassFile(String name) &#123;</span><br><span class="line">        &#x2F;&#x2F; 只处理需要的 class 文件</span><br><span class="line">        return (name.endsWith(&quot;.class&quot;) &amp;&amp; !name.startsWith(&quot;R\$&quot;)</span><br><span class="line">                &amp;&amp; &quot;R.class&quot; !&#x3D; name &amp;&amp; &quot;BuildConfig.class&quot; !&#x3D; name</span><br><span class="line">                &amp;&amp; &quot;android&#x2F;support&#x2F;v4&#x2F;app&#x2F;FragmentActivity.class&quot; &#x3D;&#x3D; name)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="发布-Gradle-插件"><a href="#发布-Gradle-插件" class="headerlink" title="发布 Gradle 插件"></a>发布 Gradle 插件</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">apply plugin: &#39;maven&#39;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 上传到本地</span><br><span class="line">uploadArchives &#123;</span><br><span class="line">    repositories &#123;</span><br><span class="line">        mavenDeployer &#123;</span><br><span class="line">            &#x2F;&#x2F; 上传到当前项目根目录下的本地 repo 目录中</span><br><span class="line">            repository(url: uri(&#39;..&#x2F;repo&#39;))</span><br><span class="line"></span><br><span class="line">            pom.groupId &#x3D; &#39;com.json.chao.study&#39;</span><br><span class="line">            pom.artifactId &#x3D; &#39;custom-gradle-plugin&#39;</span><br><span class="line">            pom.version &#x3D; &#39;1.0.0&#39;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 上传到远端</span><br><span class="line">uploadArchives &#123;</span><br><span class="line">    configuration &#x3D; configurations.archives</span><br><span class="line">    repositories &#123;</span><br><span class="line">        mavenDeployer &#123;</span><br><span class="line">            repository(url: MAVEN_REPO_RELEASE_URL) &#123;</span><br><span class="line">                authentication(userName: &quot;JsonChao&quot;, password: &quot;123456&quot;)</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            pom.groupId &#x3D; &#39;com.json.chao.study&#39;</span><br><span class="line">            pom.artifactId &#x3D; &#39;custom-gradle-plugin&#39;</span><br><span class="line">            pom.version &#x3D; &#39;1.0.0&#39;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><p><a href="https://juejin.im/post/5e924273f265da47f079379c#heading-24" target="_blank" rel="noopener">1. 深度探索 Gradle 自动化构建技术（一、Gradle 核心配置篇）</a><br><a href="https://juejin.im/post/5e97ac34f265da47aa3f6dca" target="_blank" rel="noopener">2. 深度探索 Gradle 自动化构建技术（二、Groovy 筑基篇）</a><br><a href="https://juejin.im/post/5e9c46c8518825737f1a7b4c#heading-57" target="_blank" rel="noopener">3. 深度探索 Gradle 自动化构建技术（三、Gradle 核心解密）</a><br><a href="https://juejin.im/post/5ea012f8e51d4546d4398a99" target="_blank" rel="noopener">4. 深度探索 Gradle 自动化构建技术（四、自定义 Gradle 插件）</a><br><a href="https://www.jianshu.com/p/0bac58cdff70" target="_blank" rel="noopener">5. 第四章 创建构建 Variant</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/29/%E5%BE%AE%E4%BF%A1%E5%B0%8F%E7%A8%8B%E5%BA%8F%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8/" rel="prev" title="微信小程序快速入门">
+      <i class="fa fa-chevron-left"></i> 微信小程序快速入门
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/08/10/ANR%E6%9C%BA%E5%88%B6%E4%BB%A5%E5%8F%8A%E9%97%AE%E9%A2%98%E5%88%86%E6%9E%90/" rel="next" title="ANR机制以及问题分析">
+      ANR机制以及问题分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Gradle构建详解"><span class="nav-number">1.</span> <span class="nav-text">Gradle构建详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Grdale-简介"><span class="nav-number">1.1.</span> <span class="nav-text">Grdale 简介</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-Gradle是什么"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.1 Gradle是什么?</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-Gradle-构建生命周期"><span class="nav-number">1.1.2.</span> <span class="nav-text">1.2 Gradle 构建生命周期</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-Hook-Gradle各个生命周期节点"><span class="nav-number">1.1.3.</span> <span class="nav-text">1.3 Hook Gradle各个生命周期节点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-4-实战【获取构建各个阶段、任务的耗时情况-】"><span class="nav-number">1.1.4.</span> <span class="nav-text">1.4 实战【获取构建各个阶段、任务的耗时情况 】</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Project"><span class="nav-number">1.2.</span> <span class="nav-text">Project</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-Project-核心-API"><span class="nav-number">1.2.1.</span> <span class="nav-text">2.1 Project 核心 API</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-Project-属性"><span class="nav-number">1.2.2.</span> <span class="nav-text">2.2 Project 属性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-文件相关-API"><span class="nav-number">1.2.3.</span> <span class="nav-text">2.3 文件相关 API</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-4-其它-API"><span class="nav-number">1.2.4.</span> <span class="nav-text">2.4 其它 API</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Task"><span class="nav-number">1.3.</span> <span class="nav-text">Task</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SourceSet"><span class="nav-number">1.4.</span> <span class="nav-text">SourceSet</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#自定义Gradle插件"><span class="nav-number">1.5.</span> <span class="nav-text">自定义Gradle插件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#5-1-脚本插件"><span class="nav-number">1.5.1.</span> <span class="nav-text">5.1 脚本插件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-2-运用-buildSrc-默认插件目录"><span class="nav-number">1.5.2.</span> <span class="nav-text">5.2 运用 buildSrc 默认插件目录</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-3-Transform"><span class="nav-number">1.5.3.</span> <span class="nav-text">5.3 Transform</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#发布-Gradle-插件"><span class="nav-number">1.6.</span> <span class="nav-text">发布 Gradle 插件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">1.7.</span> <span class="nav-text">参考</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

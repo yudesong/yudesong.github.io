@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="一、 前言1. Java 内存模型     名称 特征 作用 配置参数 异常    程序计数器 占用内存小，线程私有，生命周期与线程相同 大致为字节码行号指示器 无 无   虚拟机栈 线程私有，生命周期与线程相同，使用连续的内存空间 Java 方法执行的内存模型，存储局部变量表、操作栈、动态链接、方法出口等信息 -Xss StackOverflowError、OutOfMemoryError">
+  <meta name="description" content="一、 前言1. Java 内存模型">
 <meta property="og:type" content="article">
 <meta property="og:title" content="LeakCanary 源码解析">
 <meta property="og:url" content="http://yoursite.com/2020/05/29/LeakCanary-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="一、 前言1. Java 内存模型     名称 特征 作用 配置参数 异常    程序计数器 占用内存小，线程私有，生命周期与线程相同 大致为字节码行号指示器 无 无   虚拟机栈 线程私有，生命周期与线程相同，使用连续的内存空间 Java 方法执行的内存模型，存储局部变量表、操作栈、动态链接、方法出口等信息 -Xss StackOverflowError、OutOfMemoryError">
+<meta property="og:description" content="一、 前言1. Java 内存模型">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://upload-images.jianshu.io/upload_images/2169292-2cac348b34cec6a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="https://upload-images.jianshu.io/upload_images/2169292-ae32ae835a131864.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
@@ -38,7 +38,7 @@
 <meta property="og:image" content="https://upload-images.jianshu.io/upload_images/2169292-bb696c23031065fe.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="https://upload-images.jianshu.io/upload_images/2169292-41210c42d5eb1715.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="article:published_time" content="2020-05-29T15:49:03.383Z">
-<meta property="article:modified_time" content="2020-06-07T09:42:26.885Z">
+<meta property="article:modified_time" content="2020-06-21T08:54:32.679Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="Android开源框架源码分析">
 <meta name="twitter:card" content="summary">
@@ -214,7 +214,9 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h4 id="一、-前言"><a href="#一、-前言" class="headerlink" title="一、 前言"></a>一、 前言</h4><h6 id="1-Java-内存模型"><a href="#1-Java-内存模型" class="headerlink" title="1. Java 内存模型"></a>1. Java 内存模型</h6><p><img src="https://upload-images.jianshu.io/upload_images/2169292-2cac348b34cec6a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+        <h4 id="一、-前言"><a href="#一、-前言" class="headerlink" title="一、 前言"></a>一、 前言</h4><h6 id="1-Java-内存模型"><a href="#1-Java-内存模型" class="headerlink" title="1. Java 内存模型"></a>1. Java 内存模型</h6><a id="more"></a>
+
+<p><img src="https://upload-images.jianshu.io/upload_images/2169292-2cac348b34cec6a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
 <p><img src="https://upload-images.jianshu.io/upload_images/2169292-ae32ae835a131864.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="运行时数据区域"></p>
 <table>
 <thead>
@@ -410,20 +412,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">10</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -450,7 +452,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

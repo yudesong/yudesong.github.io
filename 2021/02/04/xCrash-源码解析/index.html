@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="一、 xCrash介绍xCrash 能为安卓 app 提供捕获 java 崩溃，native 崩溃和 ANR 的能力。不需要 root 权限或任何系统权限。 特征 支持 Android 4.1 - 11（API level 16 - 30）。 支持 armeabi-v7a，arm64-v8a，x86 和 x86_64。 捕获 java 崩溃，native 崩溃和 ANR。 获取详细的进程、线程、内">
+<meta property="og:type" content="article">
+<meta property="og:title" content="xCrash 源码解析">
+<meta property="og:url" content="http://yoursite.com/2021/02/04/xCrash-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="一、 xCrash介绍xCrash 能为安卓 app 提供捕获 java 崩溃，native 崩溃和 ANR 的能力。不需要 root 权限或任何系统权限。 特征 支持 Android 4.1 - 11（API level 16 - 30）。 支持 armeabi-v7a，arm64-v8a，x86 和 x86_64。 捕获 java 崩溃，native 崩溃和 ANR。 获取详细的进程、线程、内">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-02-04T09:12:34.727Z">
+<meta property="article:modified_time" content="2021-02-05T07:56:03.128Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android开源框架源码分析">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2021/02/04/xCrash-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>xCrash 源码解析 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/02/04/xCrash-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          xCrash 源码解析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-02-04 17:12:34" itemprop="dateCreated datePublished" datetime="2021-02-04T17:12:34+08:00">2021-02-04</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="一、-xCrash介绍"><a href="#一、-xCrash介绍" class="headerlink" title="一、 xCrash介绍"></a>一、 xCrash介绍</h2><p>xCrash 能为安卓 app 提供捕获 java 崩溃，native 崩溃和 ANR 的能力。不需要 root 权限或任何系统权限。</p>
+<h4 id="特征"><a href="#特征" class="headerlink" title="特征"></a>特征</h4><ul>
+<li>支持 Android 4.1 - 11（API level 16 - 30）。</li>
+<li>支持 armeabi-v7a，arm64-v8a，x86 和 x86_64。</li>
+<li>捕获 java 崩溃，native 崩溃和 ANR。</li>
+<li>获取详细的进程、线程、内存、FD、网络统计信息。</li>
+<li>通过正则表达式设置需要获取哪些线程的信息。</li>
+<li>不需要 root 权限或任何系统权限。</li>
+</ul>
+<h2 id="二、xCrash集成"><a href="#二、xCrash集成" class="headerlink" title="二、xCrash集成"></a>二、xCrash集成</h2><ol>
+<li><p>在app目录下面的build.gradle添加依赖库支持</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">android &#123;</span><br><span class="line">    defaultConfig &#123;</span><br><span class="line">        ndk &#123;</span><br><span class="line">            abiFilters &#39;armeabi-v7a&#39;, &#39;arm64-v8a&#39;, &#39;x86&#39;, &#39;x86_64&#39;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencies &#123;    </span><br><span class="line">    implementation &#39;com.iqiyi.xcrash:xcrash-android-lib:3.0.0&#39;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>xCrash初始化</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 在Application的onCreate方法里进行初始化</span><br><span class="line">xcrash.XCrash.init(this);</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<h2 id="三、xCrash-源码"><a href="#三、xCrash-源码" class="headerlink" title="三、xCrash 源码"></a>三、xCrash 源码</h2><h3 id="1-xcrash-XCrash-init-this"><a href="#1-xcrash-XCrash-init-this" class="headerlink" title="1. xcrash.XCrash.init(this)"></a>1. xcrash.XCrash.init(this)</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">public final class XCrash &#123;</span><br><span class="line">    </span><br><span class="line">    public static int init(Context ctx) &#123;</span><br><span class="line">        return init(ctx, null);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static synchronized int init(Context ctx, InitParameters params) &#123;</span><br><span class="line">        &#x2F;&#x2F; 参数初始化</span><br><span class="line">        ......</span><br><span class="line">        &#x2F;&#x2F; [重要] Java层Crash监控</span><br><span class="line">        JavaCrashHandler.getInstance().initialize(...);</span><br><span class="line">        &#x2F;&#x2F; [重要] 应用ANR监控</span><br><span class="line">        AnrHandler.getInstance().initialize(...);</span><br><span class="line">        &#x2F;&#x2F; [重要] Native层Crash监控</span><br><span class="line">        NativeHandler.getInstance().initialize(...);</span><br><span class="line">        &#x2F;&#x2F; 读写文件辅助类</span><br><span class="line">        FileManager.getInstance().maintain();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-JavaCrashHandler"><a href="#2-JavaCrashHandler" class="headerlink" title="2. JavaCrashHandler"></a>2. JavaCrashHandler</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">class JavaCrashHandler implements UncaughtExceptionHandler &#123;</span><br><span class="line">    private UncaughtExceptionHandler defaultHandler &#x3D; null;</span><br><span class="line">    </span><br><span class="line">    void initialize(...) &#123;</span><br><span class="line">        this.defaultHandler &#x3D; Thread.getDefaultUncaughtExceptionHandler();</span><br><span class="line">        Thread.setDefaultUncaughtExceptionHandler(this);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    @Override</span><br><span class="line">    public void uncaughtException(Thread thread, Throwable throwable) &#123;</span><br><span class="line">        if (defaultHandler !&#x3D; null) &#123;</span><br><span class="line">            Thread.setDefaultUncaughtExceptionHandler(defaultHandler);</span><br><span class="line">        &#125;</span><br><span class="line">        handleException(thread, throwable);</span><br><span class="line">        if (this.rethrow) &#123;</span><br><span class="line">            if (defaultHandler !&#x3D; null) &#123;</span><br><span class="line">                defaultHandler.uncaughtException(thread, throwable);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            ActivityMonitor.getInstance().finishAllActivities();</span><br><span class="line">            Process.killProcess(this.pid);</span><br><span class="line">            System.exit(10);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    private void handleException(Thread thread, Throwable throwable) &#123;</span><br><span class="line">        StringWriter sw &#x3D; new StringWriter();</span><br><span class="line">        PrintWriter pw &#x3D; new PrintWriter(sw);</span><br><span class="line">        throwable.printStackTrace(pw);</span><br><span class="line">        String stacktrace &#x3D; sw.toString();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-AnrHandler"><a href="#3-AnrHandler" class="headerlink" title="3. AnrHandler"></a>3. AnrHandler</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">class AnrHandler &#123;</span><br><span class="line">    private FileObserver fileObserver &#x3D; null;</span><br><span class="line">    </span><br><span class="line">    void initialize(...) &#123;</span><br><span class="line">        &#x2F;&#x2F; [重要] &lt; Android 5.0 以下可以访问&#x2F;data&#x2F;anr目录</span><br><span class="line">        fileObserver &#x3D; new FileObserver(&quot;&#x2F;data&#x2F;anr&#x2F;&quot;, FileObserver.CLOSE_WRITE) &#123;</span><br><span class="line">            public void onEvent(int event, String path) &#123;</span><br><span class="line">                if (path !&#x3D; null) &#123;</span><br><span class="line">                    String filepath &#x3D; &quot;&#x2F;data&#x2F;anr&#x2F;&quot; + path;</span><br><span class="line">                    if (filepath.contains(&quot;trace&quot;)) &#123;</span><br><span class="line">                        handleAnr(filepath);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">        fileObserver.startWatching();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; [重要] Android 5.0以上实际上是捕获了SIGQUIT信号，这个是Android App发生ANR时由ActivityMangerService向App发送的信号。</span><br><span class="line">int xcc_signal_trace_register(void (*handler)(int, siginfo_t *, void *))</span><br><span class="line">&#123;</span><br><span class="line">    int              r;</span><br><span class="line">    sigset_t         set;</span><br><span class="line">    struct sigaction act;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;un-block the SIGQUIT mask for current thread, hope this is the main thread</span><br><span class="line">    sigemptyset(&amp;set);</span><br><span class="line">    sigaddset(&amp;set, SIGQUIT);</span><br><span class="line">    if(0 !&#x3D; (r &#x3D; pthread_sigmask(SIG_UNBLOCK, &amp;set, &amp;xcc_signal_trace_oldset))) return r;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;register new signal handler for SIGQUIT</span><br><span class="line">    memset(&amp;act, 0, sizeof(act));</span><br><span class="line">    sigfillset(&amp;act.sa_mask);</span><br><span class="line">    act.sa_sigaction &#x3D; handler;</span><br><span class="line">    act.sa_flags &#x3D; SA_RESTART | SA_SIGINFO;</span><br><span class="line">    if(0 !&#x3D; sigaction(SIGQUIT, &amp;act, &amp;xcc_signal_trace_oldact))</span><br><span class="line">    &#123;</span><br><span class="line">        pthread_sigmask(SIG_SETMASK, &amp;xcc_signal_trace_oldset, NULL);</span><br><span class="line">        return XCC_ERRNO_SYS;</span><br><span class="line">    &#125;</span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-NativeHandler"><a href="#4-NativeHandler" class="headerlink" title="4. NativeHandler"></a>4. NativeHandler</h3><p>Native层崩溃捕获建议提前参考：<a href="https://www.cnblogs.com/mingfeng002/p/9118253.html" target="_blank" rel="noopener">Android 平台 Native 代码的崩溃捕获机制及实现</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line">class NativeHandler &#123;</span><br><span class="line">    int initialize(...) &#123;</span><br><span class="line">        System.loadLibrary(&quot;xcrash&quot;);</span><br><span class="line">        int r &#x3D; nativeInit(...);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 映射 xc_jni_init函数</span><br><span class="line">    private static native int nativeInit(...) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 映射 xc_jni_notify_java_crashed函数</span><br><span class="line">    private static native void nativeNotifyJavaCrashed();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">static jint xc_jni_init(JNIEnv *env, jobject thiz,) &#123;</span><br><span class="line">    xc_crash_init();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int xc_crash_init(JNIEnv *env,...) &#123;</span><br><span class="line">    xcc_signal_crash_register(xc_crash_signal_handler);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">static void xc_crash_signal_handler(int sig, siginfo_t *si, void *uc) &#123;</span><br><span class="line">    pid_t dumper_pid &#x3D; xc_crash_fork(xc_crash_exec_dumper);</span><br><span class="line">    if(-1 &#x3D;&#x3D; dumper_pid) &#123;</span><br><span class="line">        xcc_util_write_format_safe(xc_crash_log_fd, XC_CRASH_ERR_TITLE&quot;fork failed, errno&#x3D;%d\n\n&quot;, errno);</span><br><span class="line">        goto end;</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F;parent process ...</span><br><span class="line">    int wait_r &#x3D; XCC_UTIL_TEMP_FAILURE_RETRY(waitpid(dumper_pid, &amp;status, __WALL));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">static xcc_signal_crash_info_t xcc_signal_crash_info[] &#x3D;</span><br><span class="line">&#123;</span><br><span class="line">    &#123;.signum &#x3D; SIGABRT&#125;,</span><br><span class="line">    &#123;.signum &#x3D; SIGBUS&#125;,</span><br><span class="line">    &#123;.signum &#x3D; SIGFPE&#125;,</span><br><span class="line">    &#123;.signum &#x3D; SIGILL&#125;,</span><br><span class="line">    &#123;.signum &#x3D; SIGSEGV&#125;,</span><br><span class="line">    &#123;.signum &#x3D; SIGTRAP&#125;,</span><br><span class="line">    &#123;.signum &#x3D; SIGSYS&#125;,</span><br><span class="line">    &#123;.signum &#x3D; SIGSTKFLT&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">int xcc_signal_crash_register(void (*handler)(int, siginfo_t *, void *))</span><br><span class="line">&#123;</span><br><span class="line">    &#x2F;&#x2F; 设置额外栈空间，如果在默认的栈上运行很有可能会破坏程序运行的现场，无法获取到正确的上下文</span><br><span class="line">    stack_t ss;</span><br><span class="line">    if(NULL &#x3D;&#x3D; (ss.ss_sp &#x3D; calloc(1, XCC_SIGNAL_CRASH_STACK_SIZE))) return XCC_ERRNO_NOMEM;</span><br><span class="line">    ss.ss_size  &#x3D; XCC_SIGNAL_CRASH_STACK_SIZE;</span><br><span class="line">    ss.ss_flags &#x3D; 0;</span><br><span class="line">    if(0 !&#x3D; sigaltstack(&amp;ss, NULL)) return XCC_ERRNO_SYS;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 设置信号处理函数</span><br><span class="line">    struct sigaction act;</span><br><span class="line">    memset(&amp;act, 0, sizeof(act));</span><br><span class="line">    sigfillset(&amp;act.sa_mask);</span><br><span class="line">    act.sa_sigaction &#x3D; handler;</span><br><span class="line">    act.sa_flags &#x3D; SA_RESTART | SA_SIGINFO | SA_ONSTACK;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 1. 注册信号量</span><br><span class="line">    size_t i;</span><br><span class="line">    for(i &#x3D; 0; i &lt; sizeof(xcc_signal_crash_info) &#x2F; sizeof(xcc_signal_crash_info[0]); i++)</span><br><span class="line">        if(0 !&#x3D; sigaction(xcc_signal_crash_info[i].signum, &amp;act, &amp;(xcc_signal_crash_info[i].oldact)))</span><br><span class="line">            return XCC_ERRNO_SYS;</span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-其他"><a href="#5-其他" class="headerlink" title="5. 其他"></a>5. 其他</h3>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E5%BC%80%E6%BA%90%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># Android开源框架源码分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/02/04/BlockCanary-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="prev" title="BlockCanary 源码解析">
+      <i class="fa fa-chevron-left"></i> BlockCanary 源码解析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/02/07/JSBridge%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" rel="next" title="JsBridge 源码解析">
+      JsBridge 源码解析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#一、-xCrash介绍"><span class="nav-number">1.</span> <span class="nav-text">一、 xCrash介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#特征"><span class="nav-number">1.0.1.</span> <span class="nav-text">特征</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二、xCrash集成"><span class="nav-number">2.</span> <span class="nav-text">二、xCrash集成</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#三、xCrash-源码"><span class="nav-number">3.</span> <span class="nav-text">三、xCrash 源码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-xcrash-XCrash-init-this"><span class="nav-number">3.1.</span> <span class="nav-text">1. xcrash.XCrash.init(this)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-JavaCrashHandler"><span class="nav-number">3.2.</span> <span class="nav-text">2. JavaCrashHandler</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-AnrHandler"><span class="nav-number">3.3.</span> <span class="nav-text">3. AnrHandler</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-NativeHandler"><span class="nav-number">3.4.</span> <span class="nav-text">4. NativeHandler</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-其他"><span class="nav-number">3.5.</span> <span class="nav-text">5. 其他</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

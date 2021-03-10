@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="SparseArraySparseArray是用于在Android平台上替代HashMap的数据结构,更具体的说，是用于替代key为int类型，value为Object类型的HashMap。 和ArrayMap类似，它的实现相比于HashMap更加节省空间，而且由于key指定为int类型，也可以节省int-Integer的装箱拆箱操作带来的性能消耗。 它也是线程不安全的，允许value为null。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android基础之SparseArray &amp; ArrayMap">
+<meta property="og:url" content="http://yoursite.com/2020/06/21/Android%E5%9F%BA%E7%A1%80%E4%B9%8BSparseArray%20&%20ArrayMap/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="SparseArraySparseArray是用于在Android平台上替代HashMap的数据结构,更具体的说，是用于替代key为int类型，value为Object类型的HashMap。 和ArrayMap类似，它的实现相比于HashMap更加节省空间，而且由于key指定为int类型，也可以节省int-Integer的装箱拆箱操作带来的性能消耗。 它也是线程不安全的，允许value为null。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/06/21/Android%E5%9F%BA%E7%A1%80%E4%B9%8BSparseArray%20&%20ArrayMap/BN7Vna7.png">
+<meta property="og:image" content="http://yoursite.com/2020/06/21/Android%E5%9F%BA%E7%A1%80%E4%B9%8BSparseArray%20&%20ArrayMap/3768281-a6cd7588adac33c4.png">
+<meta property="article:published_time" content="2020-06-21T10:06:31.463Z">
+<meta property="article:modified_time" content="2020-06-21T14:09:40.958Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android基础">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/06/21/Android%E5%9F%BA%E7%A1%80%E4%B9%8BSparseArray%20&%20ArrayMap/BN7Vna7.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/06/21/Android%E5%9F%BA%E7%A1%80%E4%B9%8BSparseArray%20&%20ArrayMap/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Android基础之SparseArray & ArrayMap | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/21/Android%E5%9F%BA%E7%A1%80%E4%B9%8BSparseArray%20&%20ArrayMap/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Android基础之SparseArray & ArrayMap
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-06-21 18:06:31 / 修改时间：22:09:40" itemprop="dateCreated datePublished" datetime="2020-06-21T18:06:31+08:00">2020-06-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android%E5%9F%BA%E7%A1%80/" itemprop="url" rel="index"><span itemprop="name">Android基础</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="SparseArray"><a href="#SparseArray" class="headerlink" title="SparseArray"></a>SparseArray</h4><p>SparseArray<E>是用于在Android平台上替代HashMap的数据结构,更具体的说，是用于替代key为int类型，value为Object类型的HashMap。</p>
+<p>和ArrayMap类似，它的实现相比于HashMap更加节省空间，而且由于key指定为int类型，也可以节省int-Integer的装箱拆箱操作带来的性能消耗。</p>
+<p>它也是<strong>线程不安全的，允许value为null</strong>。内部实现是基于两个数组。一个int[]数组mKeys，用于保存每个item的key，key本身就是int类型，所以可以理解hashCode值就是key的值.一个Object[]数组mValues，保存value。容量和key数组的一样。<strong>扩容时只需要数组拷贝工作，不需要重建哈希表。</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br></pre></td><td class="code"><pre><span class="line">public class SparseArray&lt;E&gt; implements Cloneable &#123;</span><br><span class="line">    &#x2F;&#x2F; 同来标记已删除的元素</span><br><span class="line">    private static final Object DELETED &#x3D; new Object();</span><br><span class="line">    &#x2F;&#x2F; GC标记</span><br><span class="line">    private boolean mGarbage &#x3D; false;</span><br><span class="line">    &#x2F;&#x2F; 用来保存key的数据</span><br><span class="line">    private int[] mKeys;</span><br><span class="line">    &#x2F;&#x2F; 同来保存value的数组</span><br><span class="line">    private Object[] mValues;</span><br><span class="line">    &#x2F;&#x2F; SparseArray的大小</span><br><span class="line">    private int mSize;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 默认大小为10</span><br><span class="line">    public SparseArray() &#123;</span><br><span class="line">        this(10);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public SparseArray(int initialCapacity) &#123;</span><br><span class="line">        if (initialCapacity &#x3D;&#x3D; 0) &#123;</span><br><span class="line">            mKeys &#x3D; EmptyArray.INT;</span><br><span class="line">            mValues &#x3D; EmptyArray.OBJECT;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            mValues &#x3D; ArrayUtils.newUnpaddedObjectArray(initialCapacity);</span><br><span class="line">            mKeys &#x3D; new int[mValues.length];</span><br><span class="line">        &#125;</span><br><span class="line">        mSize &#x3D; 0;</span><br><span class="line">    &#125;    </span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 深拷贝</span><br><span class="line">    public SparseArray&lt;E&gt; clone() &#123;</span><br><span class="line">        SparseArray&lt;E&gt; clone &#x3D; null;</span><br><span class="line">        try &#123;</span><br><span class="line">            clone &#x3D; (SparseArray&lt;E&gt;) super.clone();</span><br><span class="line">            clone.mKeys &#x3D; mKeys.clone();</span><br><span class="line">            clone.mValues &#x3D; mValues.clone();</span><br><span class="line">        &#125; catch (CloneNotSupportedException cnse) &#123;</span><br><span class="line">            &#x2F;* ignore *&#x2F;</span><br><span class="line">        &#125;</span><br><span class="line">        return clone;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 【添加元素】</span><br><span class="line">    public void put(int key, E value) &#123;</span><br><span class="line">        &#x2F;&#x2F; 二分查找key对应的位置</span><br><span class="line">        int i &#x3D; ContainerHelpers.binarySearch(mKeys, mSize, key);</span><br><span class="line">        if (i &gt;&#x3D; 0) &#123;</span><br><span class="line">            &#x2F;&#x2F; 更新value值</span><br><span class="line">            mValues[i] &#x3D; value;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            &#x2F;&#x2F; 没找到，则取反返回应该插入的位置</span><br><span class="line">            i &#x3D; ~i;</span><br><span class="line">            &#x2F;&#x2F; 待插入的位置为已经删除的元素，则替换</span><br><span class="line">            if (i &lt; mSize &amp;&amp; mValues[i] &#x3D;&#x3D; DELETED) &#123;</span><br><span class="line">                mKeys[i] &#x3D; key;</span><br><span class="line">                mValues[i] &#x3D; value;</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line">            &#x2F;&#x2F; 如果size大小数组的长度，则进行GC回收完成之后再插入</span><br><span class="line">            if (mGarbage &amp;&amp; mSize &gt;&#x3D; mKeys.length) &#123;</span><br><span class="line">                gc();</span><br><span class="line">                i &#x3D; ~ContainerHelpers.binarySearch(mKeys, mSize, key);</span><br><span class="line">            &#125;</span><br><span class="line">            &#x2F;&#x2F; 这里涉及到扩容</span><br><span class="line">            mKeys &#x3D; GrowingArrayUtils.insert(mKeys, mSize, i, key);</span><br><span class="line">            mValues &#x3D; GrowingArrayUtils.insert(mValues, mSize, i, value);</span><br><span class="line">            mSize++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#x2F;&#x2F; &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;    </span><br><span class="line">&#x2F;&#x2F; [GrowingArrayUtils.java] </span><br><span class="line">    public static int[] insert(int[] array, int currentSize, int index, int element) &#123;</span><br><span class="line">        assert currentSize &lt;&#x3D; array.length;</span><br><span class="line"></span><br><span class="line">        if (currentSize + 1 &lt;&#x3D; array.length) &#123;</span><br><span class="line">            &#x2F;&#x2F; 这里涉及到移动元素的位置</span><br><span class="line">            System.arraycopy(array, index, array, index + 1, currentSize - index);</span><br><span class="line">            array[index] &#x3D; element;</span><br><span class="line">            return array;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        int[] newArray &#x3D; new int[growSize(currentSize)];</span><br><span class="line">        System.arraycopy(array, 0, newArray, 0, index);</span><br><span class="line">        newArray[index] &#x3D; element;</span><br><span class="line">        System.arraycopy(array, index, newArray, index + 1, array.length - index);</span><br><span class="line">        return newArray;</span><br><span class="line">    &#125;   </span><br><span class="line"></span><br><span class="line">    public static int growSize(int currentSize) &#123;</span><br><span class="line">        return currentSize &lt;&#x3D; 4 ? 8 : currentSize * 2;</span><br><span class="line">    &#125;</span><br><span class="line">&#x2F;&#x2F; &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 【查找元素】</span><br><span class="line">    public E get(int key) &#123;</span><br><span class="line">        return get(key, null);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public E get(int key, E valueIfKeyNotFound) &#123;</span><br><span class="line">        &#x2F;&#x2F; 二分查找返回key的位置</span><br><span class="line">        int i &#x3D; ContainerHelpers.binarySearch(mKeys, mSize, key);</span><br><span class="line">        if (i &lt; 0 || mValues[i] &#x3D;&#x3D; DELETED) &#123;</span><br><span class="line">            return valueIfKeyNotFound;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            return (E) mValues[i];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 【删除元素】</span><br><span class="line">    public void delete(int key) &#123;</span><br><span class="line">        int i &#x3D; ContainerHelpers.binarySearch(mKeys, mSize, key);</span><br><span class="line">        if (i &gt;&#x3D; 0) &#123;</span><br><span class="line">            &#x2F;&#x2F; 删除元素之后，将mGarbage标记为true</span><br><span class="line">            if (mValues[i] !&#x3D; DELETED) &#123;</span><br><span class="line">                mValues[i] &#x3D; DELETED;</span><br><span class="line">                mGarbage &#x3D; true;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 【回收已经删除的元素】</span><br><span class="line">    private void gc() &#123;</span><br><span class="line">        int n &#x3D; mSize;</span><br><span class="line">        int o &#x3D; 0;</span><br><span class="line">        int[] keys &#x3D; mKeys;</span><br><span class="line">        Object[] values &#x3D; mValues;</span><br><span class="line"></span><br><span class="line">        for (int i &#x3D; 0; i &lt; n; i++) &#123;</span><br><span class="line">            Object val &#x3D; values[i];</span><br><span class="line"></span><br><span class="line">            if (val !&#x3D; DELETED) &#123;</span><br><span class="line">                if (i !&#x3D; o) &#123;</span><br><span class="line">                    keys[o] &#x3D; keys[i];</span><br><span class="line">                    values[o] &#x3D; val;</span><br><span class="line">                    values[i] &#x3D; null;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                o++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mGarbage &#x3D; false;</span><br><span class="line">        mSize &#x3D; o;</span><br><span class="line">    &#125;    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>SparseArray是android里为&lt;Interger,Object&gt;这样的Hashmap而专门写的类,目的是提高内存效率，其核心是折半查找函数（binarySearch）。注意内存二字很重要，因为它仅仅提高内存效率，而不是提高执行效率，它只适用于android系统（内存对android项目有多重要，地球人都知道）。SparseArray有两个优点：1.避免了自动装箱（auto-boxing），2.数据结构不会依赖于外部对象映射。我们知道HashMap 采用一种所谓的“Hash 算法”来决定每个元素的存储位置，存放的都是数组元素的引用，通过每个对象的hash值来映射对象。而SparseArray则是用数组数据结构来保存映射，然后通过折半查找来找到对象。但其实一般来说，SparseArray执行效率比HashMap要慢一点，因为查找需要折半查找，而添加删除则需要在数组中执行，而HashMap都是通过外部映射。但相对来说影响不大，最主要是SparseArray不需要开辟内存空间来额外存储外部映射，从而节省内存</p>
+<p>总结来说，有几点设计思想还是值得学习的：</p>
+<ul>
+<li>延迟删除机制</li>
+<li>二分查找的返回值处理</li>
+<li>利用gc函数一次性压缩空间，提高效率</li>
+</ul>
+<h4 id="ArrayMap"><a href="#ArrayMap" class="headerlink" title="ArrayMap"></a>ArrayMap</h4><p>ArrayMap 实现了implements Map&lt;K, V&gt;接口，所以它也是一个关联数组、哈希表。存储以key-&gt;value 结构形式的数据。它也是线程不安全的，允许key为null,value为null。</p>
+<p>相比HashMap，空间效率更高。它的内部实现是基于两个数组。一个int[]数组，用于保存每个item的hashCode.一个Object[]数组，保存key/value键值对。容量是上一个数组的两倍。它可以避免在将数据插入Map中时额外的空间消耗（对比HashMap）。而且它扩容的更合适，扩容时只需要数组拷贝工作，不需要重建哈希表。</p>
+<p>ArrayMap有如下的特点：</p>
+<ul>
+<li>ArrayMap是Android特有的api，用在移动端，所以它主要是提高内存效率。</li>
+<li>ArrayMap比传统的HashMap慢，所以ArrayMap不适合包含大数据的处理，因为添加和删除元素的时候需要使用二分搜索来查找元素。</li>
+<li>ArrayMap会在remove item的时候收缩数组。</li>
+<li>ArrayMap不是线程安全的。</li>
+</ul>
+<p><img src="BN7Vna7.png" alt="ArrayMap原理"></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br></pre></td><td class="code"><pre><span class="line">public final class ArrayMap&lt;K, V&gt; implements Map&lt;K, V&gt; &#123;</span><br><span class="line">    &#x2F;&#x2F;扩容默认的size， 4是相对效率较高的大小</span><br><span class="line">    private static final int BASE_SIZE &#x3D; 4;</span><br><span class="line">    &#x2F;&#x2F;表示集合是不可变的</span><br><span class="line">    static final int[] EMPTY_IMMUTABLE_INTS &#x3D; new int[0];</span><br><span class="line">    &#x2F;&#x2F;是否利用System.identityHashCode(key) 获取唯一HashCode模式。    </span><br><span class="line">    final boolean mIdentityHashCode;</span><br><span class="line"></span><br><span class="line">    int[] mHashes;</span><br><span class="line">    Object[] mArray;</span><br><span class="line">    int mSize;</span><br><span class="line"></span><br><span class="line">    public ArrayMap() &#123;</span><br><span class="line">        this(0, false);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public ArrayMap(int capacity, boolean identityHashCode) &#123;</span><br><span class="line">        mIdentityHashCode &#x3D; identityHashCode;</span><br><span class="line">        &#x2F;&#x2F; capacity &lt; 0，构建一个不可变的ArrayMap</span><br><span class="line">        if (capacity &lt; 0) &#123;</span><br><span class="line">            mHashes &#x3D; EMPTY_IMMUTABLE_INTS;</span><br><span class="line">            mArray &#x3D; EmptyArray.OBJECT;</span><br><span class="line">        &#125; else if (capacity &#x3D;&#x3D; 0) &#123;</span><br><span class="line">            mHashes &#x3D; EmptyArray.INT;</span><br><span class="line">            mArray &#x3D; EmptyArray.OBJECT;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            allocArrays(capacity);</span><br><span class="line">        &#125;</span><br><span class="line">        mSize &#x3D; 0;        </span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 【查询元素】</span><br><span class="line">    public V get(Object key) &#123;</span><br><span class="line">        final int index &#x3D; indexOfKey(key);</span><br><span class="line">        return index &gt;&#x3D; 0 ? (V)mArray[(index&lt;&lt;1)+1] : null;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public int indexOfKey(Object key) &#123;</span><br><span class="line">        return key &#x3D;&#x3D; null ? indexOfNull()</span><br><span class="line">                : indexOf(key, mIdentityHashCode ? System.identityHashCode(key) : key.hashCode());</span><br><span class="line">    &#125;    </span><br><span class="line">    </span><br><span class="line">    int indexOf(Object key, int hash) &#123;</span><br><span class="line">        final int N &#x3D; mSize;</span><br><span class="line">        if (N &#x3D;&#x3D; 0) &#123;</span><br><span class="line">            return ~0;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        int index &#x3D; binarySearchHashes(mHashes, N, hash);</span><br><span class="line">        &#x2F;&#x2F; 没有找到该hash</span><br><span class="line">        if (index &lt; 0) &#123;</span><br><span class="line">            return index;</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F; 找到则判断key是否相同，如果不相同则hash冲突</span><br><span class="line">        if (key.equals(mArray[index&lt;&lt;1])) &#123;</span><br><span class="line">            return index;</span><br><span class="line">        &#125;</span><br><span class="line">        int end;</span><br><span class="line">        &#x2F;&#x2F; 查询index后面的key</span><br><span class="line">        for (end &#x3D; index + 1; end &lt; N &amp;&amp; mHashes[end] &#x3D;&#x3D; hash; end++) &#123;</span><br><span class="line">            if (key.equals(mArray[end &lt;&lt; 1])) return end;</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F; &#x2F;&#x2F; 查询index前面的key</span><br><span class="line">        for (int i &#x3D; index - 1; i &gt;&#x3D; 0 &amp;&amp; mHashes[i] &#x3D;&#x3D; hash; i--) &#123;</span><br><span class="line">            if (key.equals(mArray[i &lt;&lt; 1])) return i;</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F; 真的没有找到</span><br><span class="line">        return ~end;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 【添加元素】</span><br><span class="line">    public V put(K key, V value) &#123;</span><br><span class="line">        final int osize &#x3D; mSize;</span><br><span class="line">        final int hash;</span><br><span class="line">        int index;</span><br><span class="line">        &#x2F;&#x2F; 处理key&#x3D;null</span><br><span class="line">        if (key &#x3D;&#x3D; null) &#123;</span><br><span class="line">            hash &#x3D; 0;</span><br><span class="line">            index &#x3D; indexOfNull();</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            hash &#x3D; mIdentityHashCode ? System.identityHashCode(key) : key.hashCode();</span><br><span class="line">            index &#x3D; indexOf(key, hash);</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F; 处理覆盖操作</span><br><span class="line">        if (index &gt;&#x3D; 0) &#123;</span><br><span class="line">            index &#x3D; (index&lt;&lt;1) + 1;</span><br><span class="line">            final V old &#x3D; (V)mArray[index];</span><br><span class="line">            mArray[index] &#x3D; value;</span><br><span class="line">            return old;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        index &#x3D; ~index;</span><br><span class="line">        &#x2F;&#x2F; 需要扩容</span><br><span class="line">        if (osize &gt;&#x3D; mHashes.length) &#123;</span><br><span class="line">            &#x2F;&#x2F; 如果容量大于8，则扩容一半。</span><br><span class="line">            &#x2F;&#x2F; 否则容量大于4，则扩容到8.</span><br><span class="line">            &#x2F;&#x2F; 否则扩容到4</span><br><span class="line">            final int n &#x3D; osize &gt;&#x3D; (BASE_SIZE*2) ? (osize+(osize&gt;&gt;1))</span><br><span class="line">                    : (osize &gt;&#x3D; BASE_SIZE ? (BASE_SIZE*2) : BASE_SIZE);</span><br><span class="line">            &#x2F;&#x2F; 临时数组</span><br><span class="line">            final int[] ohashes &#x3D; mHashes;</span><br><span class="line">            final Object[] oarray &#x3D; mArray;</span><br><span class="line">            &#x2F;&#x2F; 分配空间完成扩容</span><br><span class="line">            allocArrays(n);</span><br><span class="line">            &#x2F;&#x2F; 复制临时数组中的数组进新数组</span><br><span class="line">            if (mHashes.length &gt; 0) &#123;</span><br><span class="line">                System.arraycopy(ohashes, 0, mHashes, 0, ohashes.length);</span><br><span class="line">                System.arraycopy(oarray, 0, mArray, 0, oarray.length);</span><br><span class="line">            &#125;</span><br><span class="line">            freeArrays(ohashes, oarray, osize);</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F; 因为这时候已经找到了插入的index位置，所以mHashes与mArray都要挪一位，为了给即将插入的元素留下位置。</span><br><span class="line">        if (index &lt; osize) &#123;</span><br><span class="line">            System.arraycopy(mHashes, index, mHashes, index + 1, osize - index);</span><br><span class="line">            System.arraycopy(mArray, index &lt;&lt; 1, mArray, (index + 1) &lt;&lt; 1, (mSize - index) &lt;&lt; 1);</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F; 赋值操作</span><br><span class="line">        mHashes[index] &#x3D; hash;</span><br><span class="line">        mArray[index&lt;&lt;1] &#x3D; key;</span><br><span class="line">        mArray[(index&lt;&lt;1)+1] &#x3D; value;</span><br><span class="line">        mSize++;</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ArrayMap增加元素的流程图]:</p>
+<p><img src="3768281-a6cd7588adac33c4.png" alt="ArrayMap增加元素的流程图"></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E5%9F%BA%E7%A1%80/" rel="tag"># Android基础</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/21/20%20Android%E6%8F%92%E4%BB%B6%E5%8C%96&%E7%83%AD%E4%BF%AE%E5%A4%8D/" rel="prev" title="20 Android插件化&热修复">
+      <i class="fa fa-chevron-left"></i> 20 Android插件化&热修复
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/21/Java%E5%9F%BA%E7%A1%80%E4%B9%8B%E5%8F%8D%E5%B0%84&%E6%B3%A8%E8%A7%A3&%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86/" rel="next" title="Java基础之反射&注解&动态代理">
+      Java基础之反射&注解&动态代理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#SparseArray"><span class="nav-number">1.</span> <span class="nav-text">SparseArray</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ArrayMap"><span class="nav-number">2.</span> <span class="nav-text">ArrayMap</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

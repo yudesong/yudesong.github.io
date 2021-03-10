@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Android插件化&amp;热修复">
+<meta property="og:type" content="article">
+<meta property="og:title" content="20 Android插件化&amp;热修复">
+<meta property="og:url" content="http://yoursite.com/2020/06/21/20%20Android%E6%8F%92%E4%BB%B6%E5%8C%96&%E7%83%AD%E4%BF%AE%E5%A4%8D/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Android插件化&amp;热修复">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/06/21/20%20Android%E6%8F%92%E4%BB%B6%E5%8C%96&%E7%83%AD%E4%BF%AE%E5%A4%8D/img/Android_ClassLoader_UML.png">
+<meta property="article:published_time" content="2020-06-21T09:31:37.254Z">
+<meta property="article:modified_time" content="2021-02-04T03:21:35.719Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android系统层">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/06/21/20%20Android%E6%8F%92%E4%BB%B6%E5%8C%96&%E7%83%AD%E4%BF%AE%E5%A4%8D/img/Android_ClassLoader_UML.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/06/21/20%20Android%E6%8F%92%E4%BB%B6%E5%8C%96&%E7%83%AD%E4%BF%AE%E5%A4%8D/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>20 Android插件化&热修复 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/21/20%20Android%E6%8F%92%E4%BB%B6%E5%8C%96&%E7%83%AD%E4%BF%AE%E5%A4%8D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          20 Android插件化&热修复
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-21 17:31:37" itemprop="dateCreated datePublished" datetime="2020-06-21T17:31:37+08:00">2020-06-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/" itemprop="url" rel="index"><span itemprop="name">源码</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/Android%E6%8F%92%E4%BB%B6%E5%8C%96-%E7%83%AD%E4%BF%AE%E5%A4%8D/" itemprop="url" rel="index"><span itemprop="name">Android插件化&热修复</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="Android插件化-amp-热修复"><a href="#Android插件化-amp-热修复" class="headerlink" title="Android插件化&amp;热修复"></a>Android插件化&amp;热修复</h4><a id="more"></a>
+
+<h5 id="Java类加载器"><a href="#Java类加载器" class="headerlink" title="Java类加载器"></a>Java类加载器</h5><p>每个类有自己的类加载器，用户也可以自己定义自己的类加载器，同一个类文件被不同加载器加载时，他们就不是同一个类了，使用isInstance()等将会得到False。验证多个类是同一个类的成立条件：</p>
+<ul>
+<li>相同的ClassName</li>
+<li>相同的PackageName</li>
+<li>被相同的ClassLoader加载</li>
+</ul>
+<p>Java类加载机制相关见：<a href="">Java类加载机制</a>。</p>
+<h4 id="Android类加载器"><a href="#Android类加载器" class="headerlink" title="Android类加载器"></a>Android类加载器</h4><p><img src="img/Android_ClassLoader_UML.png" alt=""></p>
+<h5 id="ClassLoader"><a href="#ClassLoader" class="headerlink" title="ClassLoader"></a>ClassLoader</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">public abstract class ClassLoader &#123;</span><br><span class="line"></span><br><span class="line">    static private class SystemClassLoader &#123;</span><br><span class="line">        public static ClassLoader loader &#x3D; ClassLoader.createSystemClassLoader();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static ClassLoader getSystemClassLoader() &#123;</span><br><span class="line">        return SystemClassLoader.loader;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    private final ClassLoader parent;</span><br><span class="line"></span><br><span class="line">    private static ClassLoader createSystemClassLoader() &#123;</span><br><span class="line">        String classPath &#x3D; System.getProperty(&quot;java.class.path&quot;, &quot;.&quot;);</span><br><span class="line">        String librarySearchPath &#x3D; System.getProperty(&quot;java.library.path&quot;, &quot;&quot;);</span><br><span class="line">        return new PathClassLoader(classPath, librarySearchPath, BootClassLoader.getInstance());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private ClassLoader(Void unused, ClassLoader parent) &#123;</span><br><span class="line">        this.parent &#x3D; parent;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    protected ClassLoader(ClassLoader parent) &#123;</span><br><span class="line">        this(checkCreateClassLoader(), parent);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    protected ClassLoader() &#123;</span><br><span class="line">        this(checkCreateClassLoader(), getSystemClassLoader());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException &#123;</span><br><span class="line">        return loadClass(name, false);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    protected Class&lt;?&gt; loadClass(String name, boolean resolve)</span><br><span class="line">        throws ClassNotFoundException</span><br><span class="line">    &#123;</span><br><span class="line">        Class&lt;?&gt; c &#x3D; findLoadedClass(name);</span><br><span class="line">        if (c &#x3D;&#x3D; null) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                if (parent !&#x3D; null) &#123;</span><br><span class="line">                    c &#x3D; parent.loadClass(name, false);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    c &#x3D; findBootstrapClassOrNull(name);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line">            </span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            if (c &#x3D;&#x3D; null) &#123;</span><br><span class="line">                c &#x3D; findClass(name);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        return c;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>getSystemClassLoader() 得到的是一个 PathClassLoader，它的父类加载器是一个 BootClassLoader。也就是说，系统默认的类加载器是 PathClassLoader。</p>
+<h5 id="BaseDexClassLoader"><a href="#BaseDexClassLoader" class="headerlink" title="BaseDexClassLoader"></a>BaseDexClassLoader</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">public class BaseDexClassLoader extends ClassLoader &#123;</span><br><span class="line">    private final DexPathList pathList;</span><br><span class="line">    </span><br><span class="line">    public BaseDexClassLoader(String dexPath, File optimizedDirectory,</span><br><span class="line">            String librarySearchPath, ClassLoader parent) &#123;</span><br><span class="line">        this(dexPath, optimizedDirectory, librarySearchPath, parent, false);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public BaseDexClassLoader(String dexPath, File optimizedDirectory,</span><br><span class="line">            String librarySearchPath, ClassLoader parent, boolean isTrusted) &#123;</span><br><span class="line">        super(parent);</span><br><span class="line">        this.pathList &#x3D; new DexPathList(this, dexPath, librarySearchPath, null, isTrusted);</span><br><span class="line">        if (reporter !&#x3D; null) &#123;</span><br><span class="line">            reportClassLoaderChain();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    @Override</span><br><span class="line">    protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException &#123;</span><br><span class="line">        List&lt;Throwable&gt; suppressedExceptions &#x3D; new ArrayList&lt;Throwable&gt;();</span><br><span class="line">        Class c &#x3D; pathList.findClass(name, suppressedExceptions);</span><br><span class="line">        if (c &#x3D;&#x3D; null) &#123;</span><br><span class="line">            ClassNotFoundException cnfe &#x3D; new ClassNotFoundException(</span><br><span class="line">                    &quot;Didn&#39;t find class \&quot;&quot; + name + &quot;\&quot; on path: &quot; + pathList);</span><br><span class="line">            for (Throwable t : suppressedExceptions) &#123;</span><br><span class="line">                cnfe.addSuppressed(t);</span><br><span class="line">            &#125;</span><br><span class="line">            throw cnfe;</span><br><span class="line">        &#125;</span><br><span class="line">        return c;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>dexPath：包含类或者资源的.jar/.apk路径，如果是多个路径，则用 File.pathSeparator(默认是:) 来分隔。当然也可以直接传 dex 的路径。</li>
+<li>optimizedDirectory：在 API 26(Android 8.0)的版本中，它表示 odex(optimized dex) 读写存放目录，如果传 null 则表示使用系统默认的目录来存储。自 Android 8.0 起，这个参数已经被弃用，不再生效，使用系统默认的目录。</li>
+<li>librarySearchPath：native 库文件存放目录，多个库文件则用 File.pathSeparator(默认是:) 分隔。</li>
+<li>parent: 父类加载器</li>
+<li>isTrusted: 当前加载的dex是否受信任，如果受信任则可以访问平台隐藏的API，默认为 false</li>
+</ul>
+<p>BaseDexClassLoader 中有一个 DexPathList 类的 pathList 成员变量，它表示 dexPath 下的 .dex 列表。</p>
+<h5 id="PathClassLoader"><a href="#PathClassLoader" class="headerlink" title="PathClassLoader"></a>PathClassLoader</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public class PathClassLoader extends BaseDexClassLoader &#123;</span><br><span class="line">    public PathClassLoader(String dexPath, ClassLoader parent) &#123;</span><br><span class="line">        super(dexPath, null, null, parent);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public PathClassLoader(String dexPath, String librarySearchPath, ClassLoader parent) &#123;</span><br><span class="line">        super(dexPath, null, librarySearchPath, parent);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>PathClassLoader 构造函数很简单，直接调用父类 BaseDexClassLoader 的构造函数。第二个构造参数始终是 null，表示 optimizedDirectory 始终为 null。</p>
+<h5 id="DexClassLoader"><a href="#DexClassLoader" class="headerlink" title="DexClassLoader"></a>DexClassLoader</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public class DexClassLoader extends BaseDexClassLoader &#123;</span><br><span class="line">    public DexClassLoader(String dexPath, String optimizedDirectory,</span><br><span class="line">            String librarySearchPath, ClassLoader parent) &#123;</span><br><span class="line">        super(dexPath, null, librarySearchPath, parent);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>DexClassLoader 跟 PathClassLoader 相似。和前面一样，第二个参数 optimizedDirectory 也从 Android 8.0 开始弃用，不再有效。</p>
+<h5 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h5><ul>
+<li>BaseDexClassLoader 类（PathClassLoader 和 DexClassLoader）在初始化过程中，会找到其相关的 .dex 列表进行初始化。</li>
+<li>系统默认的类加载器就是 PathClassLoader</li>
+</ul>
+<h5 id="DexPathList"><a href="#DexPathList" class="headerlink" title="DexPathList"></a>DexPathList</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">@hide</span><br><span class="line">public final class DexPathList &#123;</span><br><span class="line">    private static final String DEX_SUFFIX &#x3D; &quot;.dex&quot;;</span><br><span class="line">    private static final String zipSeparator &#x3D; &quot;!&#x2F;&quot;;</span><br><span class="line"></span><br><span class="line">    private Element[] dexElements;</span><br><span class="line">    NativeLibraryElement[] nativeLibraryPathElements;</span><br><span class="line"></span><br><span class="line">    public DexPathList(ClassLoader definingContext, String dexPath,</span><br><span class="line">            String librarySearchPath, File optimizedDirectory) &#123;</span><br><span class="line">        this(definingContext, dexPath, librarySearchPath, optimizedDirectory, false);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    DexPathList(ClassLoader definingContext, String dexPath,</span><br><span class="line">            String librarySearchPath, File optimizedDirectory, boolean isTrusted) &#123;</span><br><span class="line">        ...</span><br><span class="line">        if (optimizedDirectory !&#x3D; null) &#123;</span><br><span class="line">            if (!optimizedDirectory.exists())  &#123;</span><br><span class="line">                throw new IllegalArgumentException(</span><br><span class="line">                        &quot;optimizedDirectory doesn&#39;t exist: &quot;</span><br><span class="line">                        + optimizedDirectory);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            if (!(optimizedDirectory.canRead()</span><br><span class="line">                            &amp;&amp; optimizedDirectory.canWrite())) &#123;</span><br><span class="line">                throw new IllegalArgumentException(</span><br><span class="line">                        &quot;optimizedDirectory not readable&#x2F;writable: &quot;</span><br><span class="line">                        + optimizedDirectory);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        this.definingContext &#x3D; definingContext;</span><br><span class="line">        this.dexElements &#x3D; makeDexElements(splitDexPath(dexPath), optimizedDirectory,</span><br><span class="line">                                           suppressedExceptions, definingContext, isTrusted);</span><br><span class="line">        this.nativeLibraryDirectories &#x3D; splitPaths(librarySearchPath, false);</span><br><span class="line">        this.systemNativeLibraryDirectories &#x3D;</span><br><span class="line">                splitPaths(System.getProperty(&quot;java.library.path&quot;), true);</span><br><span class="line">        List&lt;File&gt; allNativeLibraryDirectories &#x3D; new ArrayList&lt;&gt;(nativeLibraryDirectories);</span><br><span class="line">        allNativeLibraryDirectories.addAll(systemNativeLibraryDirectories);</span><br><span class="line">        this.nativeLibraryPathElements &#x3D; makePathElements(allNativeLibraryDirectories);</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>类 Element 用来描述一个 dex 文件所代表的元素。字段 dexElements 则为 dex 文件元素列表，通过 makeDexElements() 方法来初始化。<br>类 NativeLibraryElement 用来描述一个库文件所代表的元素，字段 nativeLibraryPathElements 则为库文件元素列表，通过 makePathElements 方法来初始化。</p>
+<h5 id="makeDexEleemnts"><a href="#makeDexEleemnts" class="headerlink" title="makeDexEleemnts"></a>makeDexEleemnts</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">private static Element[] makeDexElements(List&lt;File&gt; files, File optimizedDirectory,</span><br><span class="line">        List&lt;IOException&gt; suppressedExceptions, ClassLoader loader, boolean isTrusted) &#123;</span><br><span class="line">    Element[] elements &#x3D; new Element[files.size()];</span><br><span class="line">    int elementsPos &#x3D; 0;</span><br><span class="line">    for (File file : files) &#123;</span><br><span class="line">        if (file.isDirectory()) &#123;</span><br><span class="line">            elements[elementsPos++] &#x3D; new Element(file);</span><br><span class="line">        &#125; else if (file.isFile()) &#123;</span><br><span class="line">            String name &#x3D; file.getName();</span><br><span class="line"></span><br><span class="line">            DexFile dex &#x3D; null;</span><br><span class="line">            if (name.endsWith(DEX_SUFFIX)) &#123;</span><br><span class="line">                try &#123;</span><br><span class="line">                    dex &#x3D; loadDexFile(file, optimizedDirectory, loader, elements);</span><br><span class="line">                    if (dex !&#x3D; null) &#123;</span><br><span class="line">                        elements[elementsPos++] &#x3D; new Element(dex, null);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; catch (IOException suppressed) &#123;</span><br><span class="line">                    </span><br><span class="line">                &#125;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                try &#123;</span><br><span class="line">                    dex &#x3D; loadDexFile(file, optimizedDirectory, loader, elements);</span><br><span class="line">                &#125; catch (IOException suppressed) &#123;</span><br><span class="line">                    </span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                if (dex &#x3D;&#x3D; null) &#123;</span><br><span class="line">                    elements[elementsPos++] &#x3D; new Element(file);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    elements[elementsPos++] &#x3D; new Element(dex, file);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            if (dex !&#x3D; null &amp;&amp; isTrusted) &#123;</span><br><span class="line">                dex.setTrusted();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            System.logW(&quot;ClassLoader referenced unknown path: &quot; + file);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (elementsPos !&#x3D; elements.length) &#123;</span><br><span class="line">        elements &#x3D; Arrays.copyOf(elements, elementsPos);</span><br><span class="line">    &#125;</span><br><span class="line">    return elements;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private static DexFile loadDexFile(File file, File optimizedDirectory, ClassLoader loader, Element[] elements)</span><br><span class="line">        throws IOException &#123;</span><br><span class="line">    if (optimizedDirectory &#x3D;&#x3D; null) &#123;</span><br><span class="line">        return new DexFile(file, loader, elements);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        String optimizedPath &#x3D; optimizedPathFor(file, optimizedDirectory);</span><br><span class="line">        return DexFile.loadDex(file.getPath(), optimizedPath, 0, loader, elements);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>makeDexElements() 就是找到指定文件列表中的所有的 .dex 文件，以数组的形式返回。 loadDexFile 会初始化对应的 DexFile 类，DexFile 代表 .dex 文件。DexFile 在初始化过程中会打开对应的 .dex 文件：</p>
+<h5 id="DexFile"><a href="#DexFile" class="headerlink" title="DexFile"></a>DexFile</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">public final class DexFile &#123;</span><br><span class="line">    private Object mCookie;</span><br><span class="line">    private Object mInternalCookie;</span><br><span class="line">    private final String mFileName;</span><br><span class="line"></span><br><span class="line">    DexFile(String fileName, ClassLoader loader, DexPathList.Element[] elements) throws IOException &#123;</span><br><span class="line">        mCookie &#x3D; openDexFile(fileName, null, 0, loader, elements);</span><br><span class="line">        mInternalCookie &#x3D; mCookie;</span><br><span class="line">        mFileName &#x3D; fileName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 打开 Dex 文件</span><br><span class="line">    private static Object openDexFile(String sourceName, String outputName, int flags,</span><br><span class="line">        ClassLoader loader, DexPathList.Element[] elements) throws IOException &#123;</span><br><span class="line">        return openDexFileNative(new File(sourceName).getAbsolutePath(),</span><br><span class="line">                                 (outputName &#x3D;&#x3D; null) ? null : new File(outputName).getAbsolutePath(), flags, loader, elements);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; native 方法： 打开 Dex 文件</span><br><span class="line">    private static native Object openDexFileNative(String sourceName, String outputName, int flags,</span><br><span class="line">        ClassLoader loader, DexPathList.Element[] elements);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="加载过程"><a href="#加载过程" class="headerlink" title="加载过程"></a>加载过程</h4><h5 id="ClassLoader-loadClass"><a href="#ClassLoader-loadClass" class="headerlink" title="ClassLoader#loadClass()"></a>ClassLoader#loadClass()</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">public abstract class ClassLoader &#123;</span><br><span class="line">    public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException &#123;</span><br><span class="line">        return loadClass(name, false);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    protected Class&lt;?&gt; loadClass(String name, boolean resolve) throws ClassNotFoundException &#123;</span><br><span class="line">        &#x2F;&#x2F; 判断当前类加载器是否已经加载过指定类，若已加载则直接返回</span><br><span class="line">        Class&lt;?&gt; c &#x3D; findLoadedClass(name);</span><br><span class="line">        if (c &#x3D;&#x3D; null) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                &#x2F;&#x2F; 如果没有加载过，则调用parent的类加载递归加载该类，若已加载则直接返回</span><br><span class="line">                if (parent !&#x3D; null) &#123;</span><br><span class="line">                    c &#x3D; parent.loadClass(name, false);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    c &#x3D; findBootstrapClassOrNull(name);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; 还没加载，则调用当前类加载器来加载</span><br><span class="line">            if (c &#x3D;&#x3D; null) &#123;</span><br><span class="line">                c &#x3D; findClass(name);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        return c;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException &#123;</span><br><span class="line">        throw new ClassNotFoundException(name);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>类加载过程采用的遵循双亲委派原则。ClassLoader#findClass() 方法会直接抛出异常，说明 ClassLoader 的子类需要重写该方法才有意义。</p>
+<h5 id="BaseDexClassLoader-findClass"><a href="#BaseDexClassLoader-findClass" class="headerlink" title="BaseDexClassLoader#findClass()"></a>BaseDexClassLoader#findClass()</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">public class BaseDexClassLoader extends ClassLoader &#123;</span><br><span class="line">    private final DexPathList pathList;</span><br><span class="line"></span><br><span class="line">    protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException &#123;</span><br><span class="line">        List&lt;Throwable&gt; suppressedExceptions &#x3D; new ArrayList&lt;Throwable&gt;();</span><br><span class="line">        Class c &#x3D; pathList.findClass(name, suppressedExceptions);</span><br><span class="line">        if (c &#x3D;&#x3D; null) &#123;</span><br><span class="line">            ClassNotFoundException cnfe &#x3D; new ClassNotFoundException(</span><br><span class="line">                    &quot;Didn&#39;t find class \&quot;&quot; + name + &quot;\&quot; on path: &quot; + pathList);</span><br><span class="line">            for (Throwable t : suppressedExceptions) &#123;</span><br><span class="line">                cnfe.addSuppressed(t);</span><br><span class="line">            &#125;</span><br><span class="line">            throw cnfe;</span><br><span class="line">        &#125;</span><br><span class="line">        return c;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>BaseDexClassLoader 实现了 findClass 方法，实际上是在通过 DexPathList#findClass() 方法在 pathList 中找有没有指定的类。</p>
+<h5 id="DexPathList-findClass"><a href="#DexPathList-findClass" class="headerlink" title="DexPathList#findClass()"></a>DexPathList#findClass()</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">public final class DexPathList &#123;</span><br><span class="line">    private Element[] dexElements;</span><br><span class="line"></span><br><span class="line">    public Class&lt;?&gt; findClass(String name, List&lt;Throwable&gt; suppressed) &#123;</span><br><span class="line">        for (Element element : dexElements) &#123;</span><br><span class="line">            Class&lt;?&gt; clazz &#x3D; element.findClass(name, definingContext, suppressed);</span><br><span class="line">            if (clazz !&#x3D; null) &#123;</span><br><span class="line">                return clazz;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (dexElementsSuppressedExceptions !&#x3D; null) &#123;</span><br><span class="line">            suppressed.addAll(Arrays.asList(dexElementsSuppressedExceptions));</span><br><span class="line">        &#125;</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    static class Element &#123;</span><br><span class="line">        private final File path;</span><br><span class="line">        private final DexFile dexFile;</span><br><span class="line">        </span><br><span class="line">        public Class&lt;?&gt; findClass(String name, ClassLoader definingContext, List&lt;Throwable&gt; suppressed) &#123;</span><br><span class="line">            return dexFile !&#x3D; null ? dexFile.loadClassBinaryName(name, definingContext, suppressed)</span><br><span class="line">                    : null;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从上面源码中，可以发现，类加载是在 dexElements 数组中寻找对应的类，一旦在某一个 .dex 文件中找到指定的类，则不再继续查找，并直接返回。</p>
+<h5 id="DexFile-loadClassBinaryName"><a href="#DexFile-loadClassBinaryName" class="headerlink" title="DexFile#loadClassBinaryName()"></a>DexFile#loadClassBinaryName()</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">public final class DexFile &#123;</span><br><span class="line">    public Class loadClassBinaryName(String name, ClassLoader loader, List&lt;Throwable&gt; suppressed) &#123;</span><br><span class="line">        return defineClass(name, loader, mCookie, this, suppressed);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static Class defineClass(String name, ClassLoader loader, Object cookie,</span><br><span class="line">                                     DexFile dexFile, List&lt;Throwable&gt; suppressed) &#123;</span><br><span class="line">        Class result &#x3D; null;</span><br><span class="line">        try &#123;</span><br><span class="line">            result &#x3D; defineClassNative(name, loader, cookie, dexFile);</span><br><span class="line">        &#125; catch (NoClassDefFoundError e) &#123;</span><br><span class="line"></span><br><span class="line">        &#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static native Class defineClassNative(String name, ClassLoader loader, Object cookie, DexFile dexFile)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="类加载相关总结"><a href="#类加载相关总结" class="headerlink" title="类加载相关总结"></a>类加载相关总结</h4><p>几种类加载器：</p>
+<ul>
+<li>PathClassLoader: 主要用于系统和app的类加载器,其中optimizedDirectory为null, 采用默认目录/data/dalvik-cache/</li>
+<li>DexClassLoader: 可以从包含classes.dex的jar或者apk中，加载类的类加载器, 可用于执行动态加载,但必须是app私有可写目录来缓存odex文件. 能够加载系统没有安装的apk或者jar文件， 因此很多插件化方案都是采用DexClassLoader;</li>
+<li>BaseDexClassLoader: 比较基础的类加载器, </li>
+<li>PathClassLoader和DexClassLoader都只是在构造函数上对其简单封装而已.</li>
+<li>BootClassLoader: 作为父类的类构造器。</li>
+</ul>
+<p>热修复核心逻辑：在DexPathList.findClass()过程，一个Classloader可以包含多个dex文件，每个dex文件被封装到一个Element对象，这些Element对象排列成有序的数组dexElements。当查找某个类时，会遍历所有的dex文件，如果找到则直接返回，不再继续遍历dexElements。也就是说当两个类不同的dex中出现，会优先处理排在前面的dex文件，这便是热修复的核心精髓，将需要修复的类所打包的dex文件插入到dexElements前面。</p>
+<h4 id="热修复-插件化原理"><a href="#热修复-插件化原理" class="headerlink" title="热修复/插件化原理"></a>热修复/插件化原理</h4><p>在Android中应用插件化技术，其实就是动态加载的过程，分为以下几步：</p>
+<ul>
+<li>把可执行文件（ .so/dex/jar/apk 等）拷贝到应用 APP 内部。</li>
+<li>加载可执行文件，更换静态资源</li>
+<li>调用具体的方法执行业务逻辑</li>
+</ul>
+<p>Android 项目中，动态加载技术按照加载的可执行文件的不同大致可以分为两种：</p>
+<ul>
+<li>动态加载 .so 库</li>
+<li>动态加载 dex/jar/apk文件</li>
+</ul>
+<p>第一点，Android 中 NDK 中其实就使用了动态加载，动态加载 .so 库并通过 JNI 调用其封装好的方法。后者一般是由 C/C++ 编译而成，运行在 Native 层，效率会比执行在虚拟机层的 Java 代码高很多，所以 Android 中经常通过动态加载 .so 库来完成一些对性能比较有需求的工作（比如 Bitmap 的解码、图片高斯模糊处理等）。此外，由于 .so 库是由 C/C++ 编译而来的，只能被反编译成汇编代码，相比中 dex 文件反编译得到的 Smali 代码更难被破解，因此 .so 库也可以被用于安全领域。</p>
+<p>第二点，“基于 ClassLoader 的动态加载 dex/jar/apk 文件”，就是我们指在 Android 中 动态加载由 Java 代码编译而来的 dex 包并执行其中的代码逻辑，这是常规 Android 开发比较少用到的一种技术，目前说的动态加载指的就是这种。<br>ClassLoader在加载Class时，是顺序从DexPathList的dexElements中寻找类的，因此可以通过反射的方式，将我们要替换或者修复的apk/dex等模块插入到dexElements前端，这样类加载器会首先加载我们更新的模块。</p>
+<h4 id="插件化-热修复的限制"><a href="#插件化-热修复的限制" class="headerlink" title="插件化/热修复的限制"></a>插件化/热修复的限制</h4><ul>
+<li>插件化中使用了许多反射的功能，由于Android P的到来，Google发布了一些禁令，它维护三个名单，分别是浅灰名单，深灰名单，黑名单：</li>
+<li>浅灰名单中的接口还可以继续在 AndroidP 中使用，但是在未来的版本中就有可能会移到黑名单中，也可能会开发新的public API来供开发者光明正大的使用。</li>
+<li>深灰名单中的接口，在Android P 的后续预览版中将不可访问，所以如果有使用深灰名单中的接口，必须马上进行整改。</li>
+<li>黑名单中的接口就不允许调用了，如果调用直接就是抛异常等行为。</li>
+</ul>
+<p>因此要想提高稳定性，需要更少地Hook Android系统的API。</p>
+<h4 id="热修复示例"><a href="#热修复示例" class="headerlink" title="热修复示例"></a>热修复示例</h4><p>反射工具类：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line">public final class ReflectUtils &#123;</span><br><span class="line"></span><br><span class="line">    private static Field getField(Class&lt;?&gt; cls, String fieldName) &#123;</span><br><span class="line">        for (Class&lt;?&gt; acls &#x3D; cls; acls !&#x3D; null; acls &#x3D; acls.getSuperclass()) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                final Field field &#x3D; acls.getDeclaredField(fieldName);</span><br><span class="line">                setAccessible(field, true);</span><br><span class="line"></span><br><span class="line">                return field;</span><br><span class="line">            &#125; catch (final NoSuchFieldException ex) &#123;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        Field match &#x3D; null;</span><br><span class="line">        for (final Class&lt;?&gt; class1 : cls.getInterfaces()) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                match &#x3D; class1.getField(fieldName);</span><br><span class="line">            &#125; catch (final NoSuchFieldException ex) &#123;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        return match;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static Object readField(Object target, String fieldName) throws Exception &#123;</span><br><span class="line">        return readField(target.getClass(), target, fieldName);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static Object readField(Class&lt;?&gt; c, Object target, String fieldName) throws Exception &#123;</span><br><span class="line">        Field f &#x3D; getField(c, fieldName);</span><br><span class="line"></span><br><span class="line">        return readField(f, target);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static Object readField(final Field field, final Object target) throws Exception &#123;</span><br><span class="line">        return field.get(target);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void writeField(Object target, String fName, Object value) throws Exception &#123;</span><br><span class="line">        writeField(target.getClass(), target, fName, value);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static void writeField(Class&lt;?&gt; c, Object object, String fName, Object value) throws Exception &#123;</span><br><span class="line">        Field f &#x3D; getField(c, fName);</span><br><span class="line">        writeField(f, object, value);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static void writeField(final Field field, final Object target, final Object value) throws Exception &#123;</span><br><span class="line">        field.set(target, value);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static void setAccessible(AccessibleObject ao, boolean value) &#123;</span><br><span class="line">        if (ao.isAccessible() !&#x3D; value) &#123;</span><br><span class="line">            ao.setAccessible(value);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static Object combineArray(Object arrayLhs, Object arrayRhs) throws Exception &#123;</span><br><span class="line">        Class&lt;?&gt; clazz &#x3D; arrayLhs.getClass().getComponentType();</span><br><span class="line">        int i &#x3D; Array.getLength(arrayLhs);</span><br><span class="line">        int j &#x3D; Array.getLength(arrayRhs);</span><br><span class="line">        int k &#x3D; i + j;</span><br><span class="line">        Object result &#x3D; Array.newInstance(clazz, k);</span><br><span class="line">        System.arraycopy(arrayLhs, 0, result, 0, i);</span><br><span class="line">        System.arraycopy(arrayRhs, 0, result, i, j);</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>修复工具类：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line">public class FixDexUtil &#123;</span><br><span class="line"></span><br><span class="line">    private static final String DEX_SUFFIX &#x3D; &quot;.dex&quot;;</span><br><span class="line">    private static final String APK_SUFFIX &#x3D; &quot;.apk&quot;;</span><br><span class="line"></span><br><span class="line">    private static final String PATCH_DIR &#x3D; &quot;patch&quot;;</span><br><span class="line"></span><br><span class="line">    private static HashSet&lt;File&gt; sLoadedDex &#x3D; new HashSet&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    public static boolean needFix(@NonNull Context context) &#123;</span><br><span class="line">        sLoadedDex.clear();</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; &#x2F;data&#x2F;data&#x2F;包名&#x2F;files&#x2F;patch</span><br><span class="line">        File fileDir &#x3D; new File(context.getFilesDir(), PATCH_DIR);</span><br><span class="line">        if (!fileDir.exists()) &#123;</span><br><span class="line">            fileDir.mkdirs();</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">        if (!fileDir.isDirectory()) &#123;</span><br><span class="line">            fileDir.delete();</span><br><span class="line">            fileDir.mkdirs();</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        boolean canFix &#x3D; false;</span><br><span class="line">        File[] listFiles &#x3D; fileDir.listFiles();</span><br><span class="line">        if (listFiles &#x3D;&#x3D; null) &#123;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">        for (File file : listFiles) &#123;</span><br><span class="line">            if ((file.getName().endsWith(DEX_SUFFIX)</span><br><span class="line">                    || file.getName().endsWith(APK_SUFFIX))) &#123;</span><br><span class="line">                sLoadedDex.add(file);</span><br><span class="line">                canFix &#x3D; true;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        return canFix;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void fix(Application application) &#123;</span><br><span class="line">        doFix(application, sLoadedDex);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private static void doFix(Application application, HashSet&lt;File&gt; loadedDex) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            Context base &#x3D; application.getBaseContext();</span><br><span class="line">            if (base &#x3D;&#x3D; null) &#123;</span><br><span class="line">                Log.d(&quot;LLL&quot;, &quot;base &#x3D;&#x3D; null&quot;);</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            Object packageInfo &#x3D; ReflectUtils.readField(base, &quot;mPackageInfo&quot;);</span><br><span class="line">            if (packageInfo &#x3D;&#x3D; null) &#123;</span><br><span class="line">                Log.d(&quot;LLL&quot;, &quot;packageInfo &#x3D;&#x3D; null&quot;);</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; 这里也可以由context.getClassLoader()得到PathClassLoader</span><br><span class="line">            &#x2F;&#x2F; 而loadedDex.getClass().getClassLoader()返回的是BootCLassLoader</span><br><span class="line">            ClassLoader classLoader &#x3D; (ClassLoader) ReflectUtils.readField(packageInfo, &quot;mClassLoader&quot;);</span><br><span class="line">            if (!(classLoader instanceof PathClassLoader)) &#123;</span><br><span class="line">                Log.d(&quot;LLL&quot;, &quot;classLoader &#x3D;&#x3D; null&quot;);</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            PathClassLoader pathLoader &#x3D; (PathClassLoader) classLoader;</span><br><span class="line"></span><br><span class="line">            for (File dex : loadedDex) &#123;</span><br><span class="line">                DexClassLoader dexLoader &#x3D; new DexClassLoader(dex.getAbsolutePath(), null, null, pathLoader);</span><br><span class="line"></span><br><span class="line">                &#x2F;&#x2F; 3.开始合并: 合并的目标是Element[], 重新赋值它的值即可</span><br><span class="line"></span><br><span class="line">                &#x2F;&#x2F;3.1 准备好pathList的引用</span><br><span class="line">                Object dexPathList &#x3D; ReflectUtils.readField(dexLoader, &quot;pathList&quot;);</span><br><span class="line">                Object pathPathList &#x3D; ReflectUtils.readField(pathLoader, &quot;pathList&quot;);</span><br><span class="line">                &#x2F;&#x2F;3.2 从pathList中反射出element集合</span><br><span class="line">                Object leftDexElements &#x3D; ReflectUtils.readField(dexPathList, &quot;dexElements&quot;);</span><br><span class="line">                Object rightDexElements &#x3D; ReflectUtils.readField(pathPathList, &quot;dexElements&quot;);</span><br><span class="line">                &#x2F;&#x2F;3.3 合并两个dex数组</span><br><span class="line">                Object dexElements &#x3D; ReflectUtils.combineArray(leftDexElements, rightDexElements);</span><br><span class="line"></span><br><span class="line">                Object pathList &#x3D; ReflectUtils.readField(pathLoader, &quot;pathList&quot;);</span><br><span class="line">                ReflectUtils.writeField(pathList, &quot;dexElements&quot;, dexElements);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Application启动调用：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public class PatchApplication extends Application &#123;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    protected void attachBaseContext(Context base) &#123;</span><br><span class="line">        super.attachBaseContext(base);</span><br><span class="line">        if (FixDexUtil.needFix(this)) &#123;</span><br><span class="line">            Log.d(&quot;LLL&quot;, &quot;begin to fix&quot;);</span><br><span class="line">            FixDexUtil.fix(this);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>需要修复的工具类：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 修复前</span><br><span class="line">public class Util &#123;</span><br><span class="line">    private static final String TAG &#x3D; &quot;LLL&quot;;</span><br><span class="line"></span><br><span class="line">    public static void test() &#123;</span><br><span class="line">        Log.d(TAG, &quot;first publish.&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 修复后</span><br><span class="line">public class Util &#123;</span><br><span class="line">    private static final String TAG &#x3D; &quot;LLL&quot;;</span><br><span class="line"></span><br><span class="line">    public static void test() &#123;</span><br><span class="line">        Log.d(TAG, &quot;first publish.&quot;);</span><br><span class="line">        Log.d(TAG, &quot;patch publish.&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>首先在手机上安装修复前的版本，调用Util.test()，会输出first publish.；</li>
+<li>然后修改Util类，打包成apk，也可以只将Util类单独打包成dex，push到/data/data/pkg/files/patch下，由于我的测试机已经root，所以直接使用这个目录，否则可以添加从sd卡拷贝到私有目录的逻辑；</li>
+<li>重启后会加载修复包，多输出一行patch publish.。</li>
+<li>打包成dex的命令：dx –dex –output=util.dex com\hearing\gopatch\Util.class。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E7%B3%BB%E7%BB%9F%E5%B1%82/" rel="tag"># Android系统层</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/21/19%20Android-IPC-Binder%E6%9C%BA%E5%88%B6/" rel="prev" title="19 Android-IPC-Binder机制">
+      <i class="fa fa-chevron-left"></i> 19 Android-IPC-Binder机制
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/21/Android%E5%9F%BA%E7%A1%80%E4%B9%8BSparseArray%20&%20ArrayMap/" rel="next" title="Android基础之SparseArray & ArrayMap">
+      Android基础之SparseArray & ArrayMap <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#Android插件化-amp-热修复"><span class="nav-number">1.</span> <span class="nav-text">Android插件化&amp;热修复</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Java类加载器"><span class="nav-number">1.1.</span> <span class="nav-text">Java类加载器</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Android类加载器"><span class="nav-number">2.</span> <span class="nav-text">Android类加载器</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#ClassLoader"><span class="nav-number">2.1.</span> <span class="nav-text">ClassLoader</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#BaseDexClassLoader"><span class="nav-number">2.2.</span> <span class="nav-text">BaseDexClassLoader</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#PathClassLoader"><span class="nav-number">2.3.</span> <span class="nav-text">PathClassLoader</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#DexClassLoader"><span class="nav-number">2.4.</span> <span class="nav-text">DexClassLoader</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#小结"><span class="nav-number">2.5.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#DexPathList"><span class="nav-number">2.6.</span> <span class="nav-text">DexPathList</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#makeDexEleemnts"><span class="nav-number">2.7.</span> <span class="nav-text">makeDexEleemnts</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#DexFile"><span class="nav-number">2.8.</span> <span class="nav-text">DexFile</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#加载过程"><span class="nav-number">3.</span> <span class="nav-text">加载过程</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#ClassLoader-loadClass"><span class="nav-number">3.1.</span> <span class="nav-text">ClassLoader#loadClass()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#BaseDexClassLoader-findClass"><span class="nav-number">3.2.</span> <span class="nav-text">BaseDexClassLoader#findClass()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#DexPathList-findClass"><span class="nav-number">3.3.</span> <span class="nav-text">DexPathList#findClass()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#DexFile-loadClassBinaryName"><span class="nav-number">3.4.</span> <span class="nav-text">DexFile#loadClassBinaryName()</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#类加载相关总结"><span class="nav-number">4.</span> <span class="nav-text">类加载相关总结</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#热修复-插件化原理"><span class="nav-number">5.</span> <span class="nav-text">热修复&#x2F;插件化原理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#插件化-热修复的限制"><span class="nav-number">6.</span> <span class="nav-text">插件化&#x2F;热修复的限制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#热修复示例"><span class="nav-number">7.</span> <span class="nav-text">热修复示例</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

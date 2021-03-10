@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="MMKV——基于 mmap 的高性能通用 key-value 组件MMKV 是基于 mmap 内存映射的 key-value 组件，底层序列化&#x2F;反序列化使用 protobuf 实现，性能高，稳定性强。从 2015 年中至今在微信上使用，其性能和稳定性经过了时间的验证。近期也已移植到 Android &#x2F; macOS &#x2F; Win32 &#x2F; POSIX 平台，一并开源。 MMKV 源起在微信客户端的日常运">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MMKV 原理剖析">
+<meta property="og:url" content="http://yoursite.com/2020/07/19/MMKV%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="MMKV——基于 mmap 的高性能通用 key-value 组件MMKV 是基于 mmap 内存映射的 key-value 组件，底层序列化&#x2F;反序列化使用 protobuf 实现，性能高，稳定性强。从 2015 年中至今在微信上使用，其性能和稳定性经过了时间的验证。近期也已移植到 Android &#x2F; macOS &#x2F; Win32 &#x2F; POSIX 平台，一并开源。 MMKV 源起在微信客户端的日常运">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-07-19T08:41:24.413Z">
+<meta property="article:modified_time" content="2020-07-21T05:25:41.366Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android开源框架源码分析">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/07/19/MMKV%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>MMKV 原理剖析 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/19/MMKV%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MMKV 原理剖析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-19 16:41:24" itemprop="dateCreated datePublished" datetime="2020-07-19T16:41:24+08:00">2020-07-19</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="MMKV——基于-mmap-的高性能通用-key-value-组件"><a href="#MMKV——基于-mmap-的高性能通用-key-value-组件" class="headerlink" title="MMKV——基于 mmap 的高性能通用 key-value 组件"></a>MMKV——基于 mmap 的高性能通用 key-value 组件</h3><p>MMKV 是基于 mmap 内存映射的 key-value 组件，底层序列化/反序列化使用 protobuf 实现，性能高，稳定性强。从 2015 年中至今在微信上使用，其性能和稳定性经过了时间的验证。近期也已移植到 Android / macOS / Win32 / POSIX 平台，一并开源。</p>
+<h5 id="MMKV-源起"><a href="#MMKV-源起" class="headerlink" title="MMKV 源起"></a>MMKV 源起</h5><p>在微信客户端的日常运营中，时不时就会爆发特殊文字引起系统的 crash，<a href="https://mp.weixin.qq.com/s?__biz=MzAwNDY1ODY2OQ==&mid=2649286826&idx=1&sn=35601cb1156617aa235b7fd4b085bfc4" target="_blank" rel="noopener">参考文章</a>，文章里面设计的技术方案是在关键代码前后进行计数器的加减，通过检查计数器的异常，来发现引起闪退的异常文字。在会话列表、会话界面等有大量 cell 的地方，希望新加的计时器不会影响滑动性能；另外这些计数器还要永久存储下来——因为闪退随时可能发生。这就需要一个性能非常高的通用 key-value 存储组件，我们考察了 SharedPreferences、NSUserDefaults、SQLite 等常见组件，发现都没能满足如此苛刻的性能要求。考虑到这个防 crash 方案最主要的诉求还是实时写入，而 mmap 内存映射文件刚好满足这种需求，我们尝试通过它来实现一套 key-value 组件。</p>
+<h5 id="MMKV-原理"><a href="#MMKV-原理" class="headerlink" title="MMKV 原理"></a>MMKV 原理</h5><ul>
+<li><strong>内存准备</strong><br>通过 mmap 内存映射文件，提供一段可供随时写入的内存块，App 只管往里面写数据，由操作系统负责将内存回写到文件，不必担心 crash 导致数据丢失。</li>
+<li><strong>数据组织</strong><br>数据序列化方面我们选用 protobuf 协议，pb 在性能和空间占用上都有不错的表现。</li>
+<li><strong>写入优化</strong><br>考虑到主要使用场景是频繁地进行写入更新，我们需要有增量更新的能力。我们考虑将增量 kv 对象序列化后，append 到内存末尾。</li>
+<li><strong>空间增长</strong><br>使用 append 实现增量更新带来了一个新的问题，就是不断 append 的话，文件大小会增长得不可控。我们需要在性能和空间上做个折中。</li>
+</ul>
+<p>更详细的设计原理参考 <a href="https://github.com/Tencent/MMKV/wiki/design" target="_blank" rel="noopener">MMKV 原理</a>。</p>
+<h3 id="Android-指南"><a href="#Android-指南" class="headerlink" title="Android 指南"></a>Android 指南</h3><figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">dependencies</span> &#123;</span><br><span class="line">    implementation <span class="string">'com.tencent:mmkv-static:1.2.1'</span></span><br><span class="line">    <span class="comment">// replace "1.2.1" with any available version</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>更多安装指引参考 <a href="https://github.com/Tencent/MMKV/wiki/android_setup_cn" target="_blank" rel="noopener">Android Setup</a>。</p>
+<h3 id="快速上手"><a href="#快速上手" class="headerlink" title="快速上手"></a>快速上手</h3><p>MMKV 的使用非常简单，所有变更立马生效，无需调用 <code>sync</code>、<code>apply</code>。<br>在 App 启动时初始化 MMKV，设定 MMKV 的根目录（files/mmkv/），例如在 <code>Application</code> 里：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.onCreate();</span><br><span class="line">    String rootDir = MMKV.initialize(<span class="keyword">this</span>);</span><br><span class="line">    System.out.println(<span class="string">"mmkv root: "</span> + rootDir);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>MMKV 提供一个全局的实例，可以直接使用：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">MMKV kv = MMKV.defaultMMKV();</span><br><span class="line">kv.encode(<span class="string">"bool"</span>, <span class="keyword">true</span>);</span><br><span class="line"><span class="keyword">boolean</span> bValue = kv.decodeBool(<span class="string">"bool"</span>);</span><br><span class="line"></span><br><span class="line">kv.encode(<span class="string">"int"</span>, Integer.MIN_VALUE);</span><br><span class="line"><span class="keyword">int</span> iValue = kv.decodeInt(<span class="string">"int"</span>);</span><br><span class="line"></span><br><span class="line">kv.encode(<span class="string">"string"</span>, <span class="string">"Hello from mmkv"</span>);</span><br><span class="line">String str = kv.decodeString(<span class="string">"string"</span>);</span><br></pre></td></tr></table></figure>
+
+<h3 id="原理剖析"><a href="#原理剖析" class="headerlink" title="原理剖析"></a>原理剖析</h3><h4 id="MMKV-初始化"><a href="#MMKV-初始化" class="headerlink" title="MMKV 初始化"></a>MMKV 初始化</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; [MMKV.java]</span><br><span class="line">public class MMKV implements SharedPreferences, SharedPreferences.Editor &#123;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 应用初始化</span><br><span class="line">    public static String initialize(Context context) &#123;</span><br><span class="line">        &#x2F;&#x2F; 设置根目录(不可修改)</span><br><span class="line">        String root &#x3D; context.getFilesDir().getAbsolutePath() + &quot;&#x2F;mmkv&quot;;</span><br><span class="line">        &#x2F;&#x2F; 日志级别(debug、info、warning、error、none)</span><br><span class="line">        MMKVLogLevel logLevel &#x3D; BuildConfig.DEBUG ? MMKVLogLevel.LevelDebug : MMKVLogLevel.LevelInfo;</span><br><span class="line">        return initialize(root, null, logLevel);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static String initialize(String rootDir, LibLoader loader, MMKVLogLevel logLevel) &#123;</span><br><span class="line">        if (loader !&#x3D; null) &#123;</span><br><span class="line">            &#x2F;&#x2F; 设置loader,通过loader加载库</span><br><span class="line">            if (BuildConfig.FLAVOR.equals(&quot;SharedCpp&quot;)) &#123;</span><br><span class="line">                loader.loadLibrary(&quot;c++_shared&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">            loader.loadLibrary(&quot;mmkv&quot;);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            &#x2F;&#x2F; 不设置loader，通过System加载库</span><br><span class="line">            if (BuildConfig.FLAVOR.equals(&quot;SharedCpp&quot;)) &#123;</span><br><span class="line">                System.loadLibrary(&quot;c++_shared&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">            System.loadLibrary(&quot;mmkv&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F; 设置root目录</span><br><span class="line">        MMKV.rootDir &#x3D; rootDir;</span><br><span class="line">        jniInitialize(MMKV.rootDir, logLevel2Int(logLevel));</span><br><span class="line">        return rootDir;</span><br><span class="line">    &#125;    </span><br><span class="line">    private static native void jniInitialize(String rootDir, int level);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; [native-bridge.cpp]</span><br><span class="line">MMKV_JNI void jniInitialize(JNIEnv *env, jobject obj, jstring rootDir, jint logLevel) &#123;</span><br><span class="line">    if (!rootDir) &#123;</span><br><span class="line">        return;</span><br><span class="line">    &#125;</span><br><span class="line">    const char *kstr &#x3D; env-&gt;GetStringUTFChars(rootDir, nullptr);</span><br><span class="line">    if (kstr) &#123;</span><br><span class="line">        MMKV::initializeMMKV(kstr, (MMKVLogLevel) logLevel);</span><br><span class="line">        env-&gt;ReleaseStringUTFChars(rootDir, kstr);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; [MMKV.cpp]</span><br><span class="line">ThreadOnceToken_t once_control &#x3D; ThreadOnceUninitialized;</span><br><span class="line">void MMKV::initializeMMKV(const MMKVPath_t &amp;rootDir, MMKVLogLevel logLevel) &#123;</span><br><span class="line">    g_currentLogLevel &#x3D; logLevel;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; Linux Threads使用互斥锁和条件变量保证由pthread_once()指定的函数执行且仅执行一次，而once_control表示是否执行过。</span><br><span class="line">    ThreadLock::ThreadOnce(&amp;once_control, initialize);</span><br><span class="line"></span><br><span class="line">    g_rootDir &#x3D; rootDir;</span><br><span class="line">    &#x2F;&#x2F; mkpath：上层目录不存在也没关系，自动一起创建。目录已经存在时会返回true。</span><br><span class="line">    &#x2F;&#x2F; mkdir：上层目录不存在时，创建会失败。比如创建“c:\\test\test”，如果test不存在，那test也创建不了。目录已经存在时会返回false。</span><br><span class="line">    mkPath(g_rootDir);</span><br><span class="line"></span><br><span class="line">    MMKVInfo(&quot;root dir: &quot; MMKV_PATH_FORMAT, g_rootDir.c_str());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="获取MMKV对象"><a href="#获取MMKV对象" class="headerlink" title="获取MMKV对象"></a>获取MMKV对象</h4><p>C语言底层创建MMKV对象，并将该对象地址保存到nativeHandle</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; [MMKV.java]</span><br><span class="line">public class MMKV implements SharedPreferences, SharedPreferences.Editor &#123;</span><br><span class="line">    static public final int SINGLE_PROCESS_MODE &#x3D; 0x1;</span><br><span class="line">    private long nativeHandle;</span><br><span class="line">    </span><br><span class="line">    private MMKV(long handle) &#123;</span><br><span class="line">        nativeHandle &#x3D; handle;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static MMKV defaultMMKV() &#123;</span><br><span class="line">        if (rootDir &#x3D;&#x3D; null) &#123;</span><br><span class="line">            throw new IllegalStateException(&quot;You should Call MMKV.initialize() first.&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F; 底层创建MMKV对象，并返回该对象地址</span><br><span class="line">        long handle &#x3D; getDefaultMMKV(SINGLE_PROCESS_MODE, null);</span><br><span class="line">        &#x2F;&#x2F; 将底层MMKV地址保存到nativeHandle</span><br><span class="line">        return new MMKV(handle);</span><br><span class="line">    &#125;</span><br><span class="line">    private native static long getDefaultMMKV(int mode, String cryptKey);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; [native-bridge.cpp]</span><br><span class="line">MMKV_JNI jlong getDefaultMMKV(JNIEnv *env, jobject obj, jint mode, jstring cryptKey) &#123;</span><br><span class="line">    MMKV *kv &#x3D; nullptr;</span><br><span class="line">    if (cryptKey) &#123;</span><br><span class="line">        string crypt &#x3D; jstring2string(env, cryptKey);</span><br><span class="line">        if (crypt.length() &gt; 0) &#123;</span><br><span class="line">            kv &#x3D; MMKV::defaultMMKV((MMKVMode) mode, &amp;crypt);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (!kv) &#123;</span><br><span class="line">        kv &#x3D; MMKV::defaultMMKV((MMKVMode) mode, nullptr);</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; 返回地址</span><br><span class="line">    return (jlong) kv;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; [MMKV.cpp]</span><br><span class="line">&#x2F;&#x2F; 获取一个 unordered_map, 类似于 Java 中的 HashMap</span><br><span class="line">unordered_map&lt;std::string, MMKV *&gt; *g_instanceDic;</span><br><span class="line"></span><br><span class="line">MMKV *MMKV::defaultMMKV(MMKVMode mode, string *cryptKey) &#123;</span><br><span class="line">#ifndef MMKV_ANDROID</span><br><span class="line">    return mmkvWithID(DEFAULT_MMAP_ID, mode, cryptKey);</span><br><span class="line">#else</span><br><span class="line">    return mmkvWithID(DEFAULT_MMAP_ID, DEFAULT_MMAP_SIZE, mode, cryptKey);</span><br><span class="line">#endif</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">#ifndef MMKV_ANDROID</span><br><span class="line">MMKV *MMKV::mmkvWithID(const string &amp;mmapID, MMKVMode mode, string *cryptKey, MMKVPath_t *rootPath) &#123;</span><br><span class="line"></span><br><span class="line">    if (mmapID.empty()) &#123;</span><br><span class="line">        return nullptr;</span><br><span class="line">    &#125;</span><br><span class="line">    SCOPED_LOCK(g_instanceLock);</span><br><span class="line">    &#x2F;&#x2F; 通过 mmapID 和 rootPath, 组成最终的 mmap 文件路径的 key</span><br><span class="line">    auto mmapKey &#x3D; mmapedKVKey(mmapID, rootPath);</span><br><span class="line">    auto itr &#x3D; g_instanceDic-&gt;find(mmapKey);</span><br><span class="line">    if (itr !&#x3D; g_instanceDic-&gt;end()) &#123;</span><br><span class="line">        MMKV *kv &#x3D; itr-&gt;second;</span><br><span class="line">        return kv;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (rootPath) &#123;</span><br><span class="line">        MMKVPath_t specialPath &#x3D; (*rootPath) + MMKV_PATH_SLASH + SPECIAL_CHARACTER_DIRECTORY_NAME;</span><br><span class="line">        if (!isFileExist(specialPath)) &#123;</span><br><span class="line">            mkPath(specialPath);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; 创建MMKV对象</span><br><span class="line">    auto kv &#x3D; new MMKV(mmapID, mode, cryptKey, rootPath);</span><br><span class="line">    kv-&gt;m_mmapKey &#x3D; mmapKey;</span><br><span class="line">    (*g_instanceDic)[mmapKey] &#x3D; kv;</span><br><span class="line">    return kv;</span><br><span class="line">&#125;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 获取文件名</span><br><span class="line">string mmapedKVKey(const string &amp;mmapID, MMKVPath_t *rootPath) &#123;</span><br><span class="line">    if (rootPath &amp;&amp; g_rootDir !&#x3D; (*rootPath)) &#123;</span><br><span class="line">        return md5(*rootPath + MMKV_PATH_SLASH + string2MMKVPath_t(mmapID));</span><br><span class="line">    &#125;</span><br><span class="line">    return mmapID;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">#ifndef MMKV_ANDROID</span><br><span class="line">MMKV::MMKV(const std::string &amp;mmapID, MMKVMode mode, string *cryptKey, MMKVPath_t *rootPath)</span><br><span class="line">    : m_mmapID(mmapID) &#x2F;&#x2F; 文件名</span><br><span class="line">    , m_path(mappedKVPathWithID(m_mmapID, mode, rootPath)) &#x2F;&#x2F; 存放路径</span><br><span class="line">    , m_crcPath(crcPathWithID(m_mmapID, mode, rootPath)) &#x2F;&#x2F; 校验文件存放路径</span><br><span class="line">    , m_dic(nullptr) &#x2F;&#x2F; </span><br><span class="line">    , m_dicCrypt(nullptr)</span><br><span class="line">    , m_file(new MemoryFile(m_path))</span><br><span class="line">    , m_metaFile(new MemoryFile(m_crcPath))</span><br><span class="line">    , m_metaInfo(new MMKVMetaInfo())</span><br><span class="line">    , m_crypter(nullptr)</span><br><span class="line">    , m_lock(new ThreadLock())</span><br><span class="line">    , m_fileLock(new FileLock(m_metaFile-&gt;getFd()))</span><br><span class="line">    , m_sharedProcessLock(new InterProcessLock(m_fileLock, SharedLockType))</span><br><span class="line">    , m_exclusiveProcessLock(new InterProcessLock(m_fileLock, ExclusiveLockType))</span><br><span class="line">    , m_isInterProcess((mode &amp; MMKV_MULTI_PROCESS) !&#x3D; 0) &#123;</span><br><span class="line">    m_actualSize &#x3D; 0;</span><br><span class="line">    m_output &#x3D; nullptr;</span><br><span class="line"></span><br><span class="line">#    ifndef MMKV_DISABLE_CRYPT</span><br><span class="line">    if (cryptKey &amp;&amp; cryptKey-&gt;length() &gt; 0) &#123;</span><br><span class="line">        m_dicCrypt &#x3D; new MMKVMapCrypt();</span><br><span class="line">        m_crypter &#x3D; new AESCrypt(cryptKey-&gt;data(), cryptKey-&gt;length());</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        m_dic &#x3D; new MMKVMap();</span><br><span class="line">    &#125;</span><br><span class="line">#    else</span><br><span class="line">    m_dic &#x3D; new MMKVMap();</span><br><span class="line">#    endif</span><br><span class="line"></span><br><span class="line">    m_needLoadFromFile &#x3D; true;</span><br><span class="line">    m_hasFullWriteback &#x3D; false;</span><br><span class="line"></span><br><span class="line">    m_crcDigest &#x3D; 0;</span><br><span class="line"></span><br><span class="line">    m_lock-&gt;initialize();</span><br><span class="line">    m_sharedProcessLock-&gt;m_enable &#x3D; m_isInterProcess;</span><br><span class="line">    m_exclusiveProcessLock-&gt;m_enable &#x3D; m_isInterProcess;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; sensitive zone</span><br><span class="line">    &#123;</span><br><span class="line">        SCOPED_LOCK(m_sharedProcessLock);</span><br><span class="line">        &#x2F;&#x2F; 根据 m_mmapID 来加载文件中的数据</span><br><span class="line">        loadFromFile();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; [MMKV_IO.cpp]</span><br><span class="line">void MMKV::loadFromFile() &#123;</span><br><span class="line">    &#x2F;&#x2F; </span><br><span class="line">    if (m_metaFile-&gt;isFileValid()) &#123;</span><br><span class="line">        m_metaInfo-&gt;read(m_metaFile-&gt;getMemory());</span><br><span class="line">    &#125;</span><br><span class="line">    if (!m_file-&gt;isFileValid()) &#123;</span><br><span class="line">        m_file-&gt;reloadFromFile();</span><br><span class="line">    &#125;</span><br><span class="line">    if (!m_file-&gt;isFileValid()) &#123;</span><br><span class="line">        MMKVError(&quot;file [%s] not valid&quot;, m_path.c_str());</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        bool loadFromFile &#x3D; false, needFullWriteback &#x3D; false;</span><br><span class="line">        checkDataValid(loadFromFile, needFullWriteback);</span><br><span class="line">        auto ptr &#x3D; (uint8_t *) m_file-&gt;getMemory();</span><br><span class="line">        if (loadFromFile &amp;&amp; m_actualSize &gt; 0) &#123;</span><br><span class="line">            MMBuffer inputBuffer(ptr + Fixed32Size, m_actualSize, MMBufferNoCopy);</span><br><span class="line">            if (m_crypter) &#123;</span><br><span class="line">                clearDictionary(m_dicCrypt);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                clearDictionary(m_dic);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            if (needFullWriteback) &#123;</span><br><span class="line">                MiniPBCoder::greedyDecodeMap(*m_dic, inputBuffer);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                MiniPBCoder::decodeMap(*m_dic, inputBuffer);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    m_needLoadFromFile &#x3D; false;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; [MemoryFile.cpp]</span><br><span class="line">MemoryFile::MemoryFile(const MMKVPath_t &amp;path) : m_name(path), m_fd(-1), m_ptr(nullptr), m_size(0) &#123;</span><br><span class="line">    reloadFromFile();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void MemoryFile::reloadFromFile() &#123;</span><br><span class="line">    m_fd &#x3D; open(m_name.c_str(), O_RDWR | O_CREAT | O_CLOEXEC, S_IRWXU);</span><br><span class="line">    mmkv::getFileSize(m_fd, m_size);</span><br><span class="line">    &#x2F;&#x2F; round up to (n * pagesize)</span><br><span class="line">    if (m_size &lt; DEFAULT_MMAP_SIZE || (m_size % DEFAULT_MMAP_SIZE !&#x3D; 0)) &#123;</span><br><span class="line">        size_t roundSize &#x3D; ((m_size &#x2F; DEFAULT_MMAP_SIZE) + 1) * DEFAULT_MMAP_SIZE;</span><br><span class="line">        &#x2F;&#x2F; 修正文件大小, 最小为 4kb</span><br><span class="line">        truncate(roundSize);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        auto ret &#x3D; mmap();</span><br><span class="line">        if (!ret) &#123;</span><br><span class="line">            doCleanMemoryCache(true);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">bool MemoryFile::mmap() &#123;</span><br><span class="line">    m_ptr &#x3D; (char *) ::mmap(m_ptr, m_size, PROT_READ | PROT_WRITE, MAP_SHARED, m_fd, 0);</span><br><span class="line">    if (m_ptr &#x3D;&#x3D; MAP_FAILED) &#123;</span><br><span class="line">        m_ptr &#x3D; nullptr;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line">    return true;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void MemoryFile::doCleanMemoryCache(bool forceClean) &#123;</span><br><span class="line">    if (m_ptr &amp;&amp; m_ptr !&#x3D; MAP_FAILED) &#123;</span><br><span class="line">        if (munmap(m_ptr, m_size) !&#x3D; 0) &#123;</span><br><span class="line">            MMKVError(&quot;fail to munmap [%s], %s&quot;, m_name.c_str(), strerror(errno));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    m_ptr &#x3D; nullptr;</span><br><span class="line"></span><br><span class="line">    if (m_fd &gt;&#x3D; 0) &#123;</span><br><span class="line">        if (::close(m_fd) !&#x3D; 0) &#123;</span><br><span class="line">            MMKVError(&quot;fail to close [%s], %s&quot;, m_name.c_str(), strerror(errno));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    m_fd &#x3D; -1;</span><br><span class="line">    m_size &#x3D; 0;    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="MMKV-encode、decode方法"><a href="#MMKV-encode、decode方法" class="headerlink" title="MMKV encode、decode方法"></a>MMKV encode、decode方法</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; [MMKV.java]</span><br><span class="line">public class MMKV implements SharedPreferences, SharedPreferences.Editor &#123;</span><br><span class="line">    public boolean encode(String key, String value) &#123;</span><br><span class="line">        return encodeString(nativeHandle, key, value);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    private native boolean encodeString(long handle, String key, String value);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; [native-bridge.cpp]</span><br><span class="line">MMKV_JNI jboolean encodeString(JNIEnv *env, jobject, jlong handle, jstring oKey, jstring oValue) &#123;</span><br><span class="line">    MMKV *kv &#x3D; reinterpret_cast&lt;MMKV *&gt;(handle);</span><br><span class="line">    if (kv &amp;&amp; oKey) &#123;</span><br><span class="line">        string key &#x3D; jstring2string(env, oKey);</span><br><span class="line">        if (oValue) &#123;</span><br><span class="line">            string value &#x3D; jstring2string(env, oValue);</span><br><span class="line">            return (jboolean) kv-&gt;set(value, key);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            kv-&gt;removeValueForKey(key);</span><br><span class="line">            return (jboolean) true;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return (jboolean) false;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; [MMKV.cpp]</span><br><span class="line">bool MMKV::set(const string &amp;value, MMKVKey_t key) &#123;</span><br><span class="line">    if (isKeyEmpty(key)) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; 将数据编码成 ProtocolBuffer</span><br><span class="line">    return setDataForKey(MMBuffer((void *) value.data(), value.length(), MMBufferNoCopy), key, true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; [MMKV_IO.cpp]</span><br><span class="line">bool MMKV::setDataForKey(MMBuffer &amp;&amp;data, MMKVKey_t key, bool isDataHolder) &#123;</span><br><span class="line">    if ((!isDataHolder &amp;&amp; data.length() &#x3D;&#x3D; 0) || isKeyEmpty(key)) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line">    SCOPED_LOCK(m_lock);</span><br><span class="line">    SCOPED_LOCK(m_exclusiveProcessLock);</span><br><span class="line">    &#x2F;&#x2F; 检查文件有效性</span><br><span class="line">    checkLoadData();</span><br><span class="line">    ...</span><br><span class="line">    auto itr &#x3D; m_dic-&gt;find(key);</span><br><span class="line">    if (itr !&#x3D; m_dic-&gt;end()) &#123;</span><br><span class="line">        &#x2F;&#x2F; 将该对象添加到内存里</span><br><span class="line">        auto ret &#x3D; appendDataWithKey(data, itr-&gt;second, isDataHolder);</span><br><span class="line">        if (!ret.first) &#123;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">        itr-&gt;second &#x3D; std::move(ret.second);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        auto ret &#x3D; appendDataWithKey(data, key, isDataHolder);</span><br><span class="line">        if (!ret.first) &#123;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">        m_dic-&gt;emplace(key, std::move(ret.second));</span><br><span class="line">    &#125;</span><br><span class="line">    m_hasFullWriteback &#x3D; false;</span><br><span class="line">    return true;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">MMBuffer MMKV::getDataForKey(MMKVKey_t key) &#123;</span><br><span class="line">    checkLoadData();</span><br><span class="line">    ...</span><br><span class="line">    auto itr &#x3D; m_dic-&gt;find(key);</span><br><span class="line">    if (itr !&#x3D; m_dic-&gt;end()) &#123;</span><br><span class="line">        auto basePtr &#x3D; (uint8_t *) (m_file-&gt;getMemory()) + Fixed32Size;</span><br><span class="line">        return itr-&gt;second.toMMBuffer(basePtr);</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; 没找到就返回一个新的MMBuffer</span><br><span class="line">    MMBuffer nan;</span><br><span class="line">    return nan;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h3><p><a href="https://www.jianshu.com/p/13b889028326" target="_blank" rel="noopener">Android 存储优化 —— MMKV 集成与原理</a><br><a href="https://blog.csdn.net/z_ryan/article/details/79604192" target="_blank" rel="noopener">剖析linux下的零拷贝技术（zero-copy）</a><br><a href="https://zhuanlan.zhihu.com/p/103508247" target="_blank" rel="noopener"></a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E5%BC%80%E6%BA%90%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># Android开源框架源码分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/18/Linux%20MMAP%E6%9C%BA%E5%88%B6/" rel="prev" title="Linux MMAP机制">
+      <i class="fa fa-chevron-left"></i> Linux MMAP机制
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/20/Flutter%20%E7%AA%A5%E6%8E%A2/" rel="next" title="Flutter 窥探">
+      Flutter 窥探 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#MMKV——基于-mmap-的高性能通用-key-value-组件"><span class="nav-number">1.</span> <span class="nav-text">MMKV——基于 mmap 的高性能通用 key-value 组件</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#MMKV-源起"><span class="nav-number">1.0.1.</span> <span class="nav-text">MMKV 源起</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#MMKV-原理"><span class="nav-number">1.0.2.</span> <span class="nav-text">MMKV 原理</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Android-指南"><span class="nav-number">2.</span> <span class="nav-text">Android 指南</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#快速上手"><span class="nav-number">3.</span> <span class="nav-text">快速上手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#原理剖析"><span class="nav-number">4.</span> <span class="nav-text">原理剖析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MMKV-初始化"><span class="nav-number">4.1.</span> <span class="nav-text">MMKV 初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#获取MMKV对象"><span class="nav-number">4.2.</span> <span class="nav-text">获取MMKV对象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MMKV-encode、decode方法"><span class="nav-number">4.3.</span> <span class="nav-text">MMKV encode、decode方法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考："><span class="nav-number">5.</span> <span class="nav-text">参考：</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

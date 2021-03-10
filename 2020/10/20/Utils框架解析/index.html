@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Utils框架解析View 注入 Class&lt;?&gt; thisCls &#x3D; activity.getClass() 获取Class对象 thisCls.getAnnotation(ContentView.class) 获取注解对象 activity.setContentView(viewId) Field[] fields &#x3D; thisCls.getDeclaredFields(); 遍历">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Utils框架解析">
+<meta property="og:url" content="http://yoursite.com/2020/10/20/Utils%E6%A1%86%E6%9E%B6%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Utils框架解析View 注入 Class&lt;?&gt; thisCls &#x3D; activity.getClass() 获取Class对象 thisCls.getAnnotation(ContentView.class) 获取注解对象 activity.setContentView(viewId) Field[] fields &#x3D; thisCls.getDeclaredFields(); 遍历">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-10-20T02:04:17.590Z">
+<meta property="article:modified_time" content="2020-10-21T06:35:23.599Z">
+<meta property="article:author" content="yudesong">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/10/20/Utils%E6%A1%86%E6%9E%B6%E8%A7%A3%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Utils框架解析 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/10/20/Utils%E6%A1%86%E6%9E%B6%E8%A7%A3%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Utils框架解析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-10-20 10:04:17" itemprop="dateCreated datePublished" datetime="2020-10-20T10:04:17+08:00">2020-10-20</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Utils框架解析"><a href="#Utils框架解析" class="headerlink" title="Utils框架解析"></a>Utils框架解析</h2><h3 id="View-注入"><a href="#View-注入" class="headerlink" title="View 注入"></a>View 注入</h3><ol>
+<li>Class&lt;?&gt; thisCls = activity.getClass() 获取Class对象</li>
+<li>thisCls.getAnnotation(ContentView.class) 获取注解对象</li>
+<li>activity.setContentView(viewId)</li>
+<li>Field[] fields = thisCls.getDeclaredFields(); 遍历activity的所有fields字段获取ViewInject注解对象</li>
+<li></li>
+</ol>
+<h2 id="仿小红书ViewPage滑动指示器"><a href="#仿小红书ViewPage滑动指示器" class="headerlink" title="仿小红书ViewPage滑动指示器"></a>仿小红书ViewPage滑动指示器</h2><ol>
+<li><p>布局文件<br> &lt;RelativeLayout</p>
+<pre><code>android:layout_width=&quot;66dp&quot;
+android:layout_height=&quot;wrap_content&quot;
+android:layout_gravity=&quot;bottom|right&quot;
+android:layout_marginEnd=&quot;20dp&quot;
+android:layout_marginBottom=&quot;10dp&quot;&gt;
+
+&lt;com.vid007.videobuddy.xlui.widget.SlidingIndicator
+    android:id=&quot;@+id/sliding_indicator&quot;
+    android:layout_width=&quot;match_parent&quot;
+    android:layout_height=&quot;wrap_content&quot; /&gt;</code></pre> </RelativeLayout>
+</li>
+<li><p>自定义指示器SlidingIndicator<br>public class SlidingIndicator extends HorizontalScrollView {<br> private int mNumber = 1;<br> private int mLastCursorPosition = 0;<br> private Context mContext;<br> private LinearLayout mLinearLayout;<br> private FrameLayout mFrameLayout;<br> private int ivWidth = 40;<br> private int ivHeight = 20;<br> private int mDotNormalBackgroundResource = R.drawable.commonui_white_oval;<br> private int mDotSelectedBackgroundResource = R.drawable.web_find_video_guide_title_icon;</p>
+<p> public SlidingIndicator(Context context) {</p>
+<pre><code>this(context, null);</code></pre><p> }</p>
+<p> public SlidingIndicator(Context context, AttributeSet attrs) {</p>
+<pre><code>this(context, attrs, 0);</code></pre><p> }</p>
+<p> public SlidingIndicator(Context context, AttributeSet attrs, int defStyleAttr) {</p>
+<pre><code>super(context, attrs, defStyleAttr);
+mContext = context;</code></pre><p> }</p>
+<p> public void setNumber(int number) {</p>
+<pre><code>if (number &gt; 0) {
+    mNumber = number;
+}</code></pre><p> }</p>
+<p> public void setIvWidth(int width) {</p>
+<pre><code>if (width &gt; 0 &amp;&amp; width &lt;= 100) {
+    this.ivWidth = width;
+}</code></pre><p> }</p>
+<p> public void setIvHeight(int height) {</p>
+<pre><code>if (height &gt; 0 &amp;&amp; height &lt;= 100) {
+    this.ivHeight = height;
+}</code></pre><p> }</p>
+<p> public void slidingIndicatorShow() {</p>
+<pre><code>init(mContext, ivWidth, ivHeight);</code></pre><p> }</p>
+<p> public void setDotBg(@DrawableRes int drawableId) {</p>
+<pre><code>mDotNormalBackgroundResource = drawableId;</code></pre><p> }</p>
+<p> public void setIvSlidingBg(@DrawableRes int drawableId) {</p>
+<pre><code>mDotSelectedBackgroundResource = drawableId;</code></pre><p> }</p>
+<p> private void init(Context context, int width, int height) {</p>
+<pre><code>mFrameLayout = new FrameLayout(context);
+mFrameLayout.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+mLinearLayout = new LinearLayout(context);
+mLinearLayout.setOrientation(LinearLayout.HORIZONTAL);
+mLinearLayout.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+for (int i = 0; i &lt; mNumber; i++) {
+    ImageView imageView = new ImageView(context);
+    imageView.setBackgroundResource(mDotNormalBackgroundResource);
+    MarginLayoutParams vm = null;
+    if (i == 4 &amp;&amp; mNumber &gt;= 5) {
+        vm = new MarginLayoutParams(15, 15);
+        vm.setMargins(height / 2, 3, height / 2, 0);
+    } else {
+        vm = new MarginLayoutParams(width / 2, height);
+        vm.setMargins(height / 2, 0, height / 2, 0);
+    }
+    imageView.setLayoutParams(vm);
+    mLinearLayout.addView(imageView);
+}
+mFrameLayout.addView(mLinearLayout);
+addView(mFrameLayout);</code></pre><p> }</p>
+<p> public void setDotSelected(int position) {</p>
+<pre><code>for (int i = 0; i &lt; mNumber; i++) {
+    ImageView imageView = (ImageView) mLinearLayout.getChildAt(i);
+    if (position == i) {
+        imageView.setBackgroundResource(mDotSelectedBackgroundResource);
+    } else {
+        imageView.setBackgroundResource(mDotNormalBackgroundResource);
+    }
+    imageView.setAlpha(0.8f);
+}
+setItemScrollAnimation(position);</code></pre><p> }</p>
+<p> public void setItemScrollAnimation(int position) {</p>
+<pre><code>if (mNumber &lt;= 5) return;
+if (position &lt; 3) return;
+if (position == mNumber - 1) return;
+if (position == (mLastCursorPosition + 1)) {
+    smoothScrollBy(40, 0);
+    tryChangeItemToSmall(position);
+} else if (position == (mLastCursorPosition - 1)) {
+    smoothScrollBy(-40, 0);
+    tryChangeItemToSmall(position);
+}
+mLastCursorPosition = position;</code></pre><p> }</p>
+<p> public void tryChangeItemToSmall(int position) {</p>
+<pre><code>for (int i = 0; i &lt; mNumber; i++) {
+    ImageView imageView = (ImageView) mLinearLayout.getChildAt(i);
+    LinearLayout.LayoutParams vm = new LinearLayout.LayoutParams(ivWidth / 2, ivHeight);
+    vm.setMargins(ivHeight / 2, 0, ivHeight / 2, 0);
+    imageView.setLayoutParams(vm);
+}
+
+if (position == 3) {
+    return;
+}
+ImageView imageView2 = (ImageView) mLinearLayout.getChildAt(position - 3);
+LinearLayout.LayoutParams vm2 = new LinearLayout.LayoutParams(15, 15);
+vm2.setMargins(ivHeight / 2, 3, ivHeight / 2, 0);
+imageView2.setLayoutParams(vm2);
+
+if (position == mNumber - 2) {
+    return;
+}
+ImageView imageView3 = (ImageView) mLinearLayout.getChildAt(position + 1);
+LinearLayout.LayoutParams vm3 = new LinearLayout.LayoutParams(15, 15);
+vm3.setMargins(ivHeight / 2, 3, ivHeight / 2, 0);
+imageView3.setLayoutParams(vm3);</code></pre><p> }<br>}</p>
+</li>
+<li><p>对接</p>
+<pre><code>mSlidingIndicator = findViewById(R.id.sliding_indicator);
+mSlidingIndicator.setOnTouchListener(new View.OnTouchListener(){
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        return true;
+    }
+});</code></pre></li>
+</ol>
+<p>mSlidingIndicator.setDotSelected(position);<br>        mSlidingIndicator.setNumber(bannerSize);<br>        mSlidingIndicator.slidingIndicatorShow();<br>        mSlidingIndicator.setDotSelected(0);    </p>
+<ol start="4">
+<li>完整备份<br>package com.vid007.videobuddy.xlui.widget;</li>
+</ol>
+<p>import android.content.Context;<br>import android.os.Handler;<br>import android.os.Looper;<br>import android.os.Message;<br>import android.util.AttributeSet;<br>import android.util.SparseArray;<br>import android.view.LayoutInflater;<br>import android.view.MotionEvent;<br>import android.view.View;<br>import android.view.ViewGroup;<br>import android.widget.FrameLayout;<br>import android.widget.HorizontalScrollView;<br>import android.widget.ImageView;<br>import android.widget.LinearLayout;</p>
+<p>import androidx.annotation.CallSuper;<br>import androidx.annotation.NonNull;<br>import androidx.viewpager.widget.PagerAdapter;<br>import androidx.viewpager.widget.ViewPager;</p>
+<p>import com.vid007.videobuddy.R;<br>import com.xl.basic.coreutils.android.DimensionUtil;<br>import com.xl.basic.coreutils.android.HandlerTimer;<br>import com.xl.basic.coreutils.log.XLLog;<br>import com.xl.basic.xlui.widget.AspectRatioViewPager;</p>
+<p>import java.util.ArrayList;<br>import java.util.List;</p>
+<p>/**</p>
+<ul>
+<li><p>轮播图控件</p>
+</li>
+<li><p></li>
+<li><p>Created by lixianpeng on 2019/1/23.</p>
+</li>
+<li><p>Copyright (c) 2019 Xunlei. All rights reserved.</p>
+</li>
+<li></li>
+<li><p>@author lixianpeng</p>
+</li>
+<li><p>@since 2019/1/23</p>
+</li>
+<li><p>/<br>public class SliderView extends FrameLayout {<br>  public static final String TAG = SliderView.class.getSimpleName();</p>
+<p>  private static final int WHAT_CHANGE_BAR_MESSAGE = 1201;<br>  protected SlidingIndicator mSlidingIndicator;<br>  protected LinearLayout mDotLinearLayout;<br>  protected AspectRatioViewPager mViewPager;<br>  protected SliderAdapter&lt;?&gt; mAdapter;</p>
+<p>  protected int mDotSize;<br>  protected int mDotSpace; //dot间距<br>  protected int mBannerVisible;<br>  protected int mCurrentPosition;<br>  protected OnItemShowListener mOnItemShowListener;<br>  protected OnItemClickListener mOnItemClickListener;</p>
+<p>  private int mDotNormalBackgroundResource;<br>  private int mDotSelectedBackgroundResource;<br>  private int mPeriod = 1000 * 20;<br>  private boolean mIsVisibleToUser = true;<br>  private boolean mIsUserScrolling = false;</p>
+<p>  private Handler.Callback mMsgCallback = new Handler.Callback() {</p>
+<pre><code>@Override
+public boolean handleMessage(Message msg) {
+    switch (msg.what) {
+        case WHAT_CHANGE_BAR_MESSAGE: {
+            XLLog.d(TAG, &quot;handleMessage&quot;);
+            if (!mIsUserScrolling) {
+                XLLog.d(TAG, &quot;handleMessage scrollToNextPosition&quot;);
+                scrollToNextPosition();
+            }
+        }
+        break;
+    }
+    return false;
+}</code></pre><p>  };<br>  private Handler mHandler = new Handler(Looper.getMainLooper(), mMsgCallback);<br>  private HandlerTimer mHandlerTimer = new HandlerTimer(mHandler) {</p>
+<pre><code>@Override
+public void onTimer() {
+    if (mBannerVisible == View.VISIBLE &amp;&amp; mIsVisibleToUser) {
+        XLLog.d(TAG, &quot;mTimer schedule visible&quot;);
+        mHandler.sendMessage(mHandler.obtainMessage(WHAT_CHANGE_BAR_MESSAGE));
+    }
+    XLLog.d(TAG, &quot;mTimer schedule&quot;);
+}</code></pre><p>  };</p>
+<p>  public SliderView(Context context, AttributeSet attrs, int defStyleAttr) {</p>
+<pre><code>super(context, attrs, defStyleAttr);
+init(context);</code></pre><p>  }</p>
+<p>  public SliderView(Context context, AttributeSet attrs) {</p>
+<pre><code>super(context, attrs);
+init(context);</code></pre><p>  }</p>
+<p>  public SliderView(Context context) {</p>
+<pre><code>super(context);
+init(context);</code></pre><p>  }</p>
+<p>  protected int getRealPosition(int position) {</p>
+<pre><code>if (mDotLinearLayout != null) {
+    int count = mDotLinearLayout.getChildCount();
+    if (count &gt; 0) {
+        return position % count;
+    }
+}
+return 0;</code></pre><p>  }</p>
+<p>  // if: Banner &gt; 5<br>  protected int getDotViewRealPosition(int position) {</p>
+<pre><code>if (mDotLinearLayout != null) {
+    int count = mRealBannerDotViewSize;
+    if (count &gt; 0) {
+        return position % count;
+    }
+}
+return 0;</code></pre><p>  }</p>
+<p>  public void setOnItemShowListener(OnItemShowListener listener) {</p>
+<pre><code>mOnItemShowListener = listener;</code></pre><p>  }</p>
+<p>  public void setOnItemClickListener(OnItemClickListener listener) {</p>
+<pre><code>mOnItemClickListener = listener;</code></pre><p>  }</p>
+<p>  @CallSuper<br>  protected void init(Context context) {</p>
+<pre><code>LayoutInflater.from(context).inflate(R.layout.layout_silder_view, this);
+
+mDotSize = DimensionUtil.dip2px(6);
+mDotSpace = DimensionUtil.dip2px(3);
+mDotNormalBackgroundResource = R.drawable.commonui_white_oval;
+mDotSelectedBackgroundResource = R.drawable.web_find_video_guide_title_icon;
+
+mViewPager = findViewById(R.id.banner_viewpager);
+mSlidingIndicator = findViewById(R.id.sliding_indicator);
+mSlidingIndicator.setOnTouchListener(new View.OnTouchListener(){
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        return true;
+    }
+});
+//mDotLinearLayout = findViewById(R.id.banner_dot_lin);
+mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+    @Override
+    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+    }
+
+    @Override
+    public void onPageSelected(int position) {
+        mSlidingIndicator.setDotSelected(position);
+        //setDotSelected(position);
+        reportSliderItemViewShow();
+    }
+
+    @Override
+    public void onPageScrollStateChanged(int state) {
+        if (state == ViewPager.SCROLL_STATE_IDLE) {
+            mIsUserScrolling = false;
+        } else {
+            mIsUserScrolling = true;
+        }
+    }
+});
+mViewPager.setOffscreenPageLimit(2);
+mViewPager.setPageMargin(DimensionUtil.dip2px(8));</code></pre><p>  }</p>
+<p>  public void shouldStartTimer() {</p>
+<pre><code>if (mAdapter != null) {
+    if (mAdapter.getRealSize() &gt; 1) {
+        startTimer();
+    } else {
+        cancelTimer();
+    }
+}</code></pre><p>  }</p>
+<p>  public void setAdapter(SliderAdapter&lt;?&gt; adapter) {</p>
+<pre><code>mAdapter = adapter;
+mViewPager.setAdapter(mAdapter);</code></pre><p>  }</p>
+<p>  @CallSuper<br>  public void destroy() {</p>
+<pre><code>if (mAdapter != null) {
+    mAdapter.setData(null);
+}
+mHandler.removeCallbacks(null);</code></pre><p>  }</p>
+<p>  protected void reportSliderItemViewShow() {</p>
+<pre><code>if (mOnItemShowListener != null &amp;&amp; mAdapter != null &amp;&amp; mBannerVisible == View.VISIBLE) {
+    mOnItemShowListener.onSliderItemShow(mCurrentPosition % mAdapter.getData().size());
+}</code></pre><p>  }</p>
+<p>  protected void setDotSelected(int position) {</p>
+<pre><code>mCurrentPosition = position;
+int count = mDotLinearLayout.getChildCount();
+if (count &gt; 0) {
+    int realPosition = getDotViewRealPosition(position);
+    // 如果超过5个最后一个也是点点点
+    if (realPosition &gt;= 4) realPosition = 4;
+    for (int i = 0; i &lt; count; i++) {
+        ImageView imageView = (ImageView) mDotLinearLayout.getChildAt(i);
+        if (realPosition == i) {
+            imageView.setBackgroundResource(mDotSelectedBackgroundResource);
+        } else {
+            imageView.setBackgroundResource(mDotNormalBackgroundResource);
+        }
+        imageView.setAlpha(0.8f);
+    }
+}</code></pre><p>  }</p>
+<p>  /**</p>
+<ul>
+<li><p>滑动到下一个位置</p>
+</li>
+<li><p>/<br>protected void scrollToNextPosition() {<br>  if (mViewPager != null &amp;&amp; mAdapter != null) {</p>
+<pre><code>int position = mViewPager.getCurrentItem();
+position++;
+if (position + 1 &gt;= mAdapter.getCount()) {
+    position = mAdapter.getMiddlePosition(getRealPosition(position));
+    XLLog.e(TAG, &quot;handleMessage out reposition&quot;);
+}
+XLLog.d(TAG, &quot;scrollToNextPosition &quot;);
+mViewPager.setCurrentItem(position);</code></pre><p>  }<br>}</p>
+<p>protected void cancelTimer() {<br>  if (mHandlerTimer != null) {</p>
+<pre><code>mHandlerTimer.stop();
+XLLog.d(TAG, &quot;cancelTimer &quot;);</code></pre><p>  }<br>}</p>
+<p>@Override<br>protected void onAttachedToWindow() {<br>  super.onAttachedToWindow();<br>  XLLog.d(TAG, “onAttachedToWindow”);<br>  if (mAdapter != null &amp;&amp; mAdapter.getRealSize() &gt; 1) {</p>
+<pre><code>startTimer();
+XLLog.d(TAG, &quot;onAttachedToWindow startTimer&quot;);</code></pre><p>  }<br>}</p>
+<p>@Override<br>protected void onVisibilityChanged(@NonNull View changedView, int visibility) {<br>  super.onVisibilityChanged(changedView, visibility);<br>  mBannerVisible = visibility;<br>  XLLog.d(TAG, “onVisibilityChanged “ + visibility);<br>  setTimerAccordingToVisible();<br>}</p>
+<p>@Override<br>protected void onDetachedFromWindow() {<br>  super.onDetachedFromWindow();<br>  cancelTimer();<br>  mHandler.removeCallbacksAndMessages(null);<br>  XLLog.d(TAG, “onDetachedFromWindow”);<br>}</p>
+<p>protected void startTimer() {<br>  mHandlerTimer.start(mPeriod, true);<br>  XLLog.d(TAG, “startTimer “);<br>}</p>
+<p>private int mRealBannerDotViewSize = 0;</p>
+<p>protected void addBannerDotView(int bannerSize) {<br>  mSlidingIndicator.setNumber(bannerSize);<br>  mSlidingIndicator.slidingIndicatorShow();<br>  mSlidingIndicator.setDotSelected(0);<br>//        mRealBannerDotViewSize = bannerSize;<br>//        if (bannerSize &lt;= 5) {<br>//            for (int i = 0; i &lt; bannerSize; i++) {<br>//                addDotView();<br>//            }<br>//        } else {<br>//            for (int i = 0; i &lt; bannerSize - 1; i++) {<br>//                addDotView();<br>//            }<br>//            addSmallDotView();<br>//        }<br>}</p>
+<p>protected void addDotView() {<br>  LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(mDotSize, mDotSize);<br>  params.leftMargin = mDotSpace;<br>  params.rightMargin = mDotSpace;<br>  ImageView imageView = new ImageView(getContext());<br>  imageView.setScaleType(ImageView.ScaleType.FIT_XY);<br>  mDotLinearLayout.addView(imageView, params);<br>}</p>
+<p>protected void addSmallDotView() {<br>  int dotSize = DimensionUtil.dip2px(4);<br>  int dotSpace = DimensionUtil.dip2px(3);<br>  int topMargin = DimensionUtil.dip2px(1);<br>  LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dotSize, dotSize);<br>  params.leftMargin = dotSpace;<br>  params.rightMargin = dotSpace;<br>  params.topMargin = topMargin;<br>  ImageView imageView = new ImageView(getContext());<br>  imageView.setScaleType(ImageView.ScaleType.FIT_XY);<br>  mDotLinearLayout.addView(imageView, params);<br>}</p>
+<p>private void setTimerAccordingToVisible() {<br>  if (mBannerVisible == View.VISIBLE &amp;&amp; mIsVisibleToUser) {</p>
+<pre><code>shouldStartTimer();</code></pre><p>  } else {</p>
+<pre><code>cancelTimer();</code></pre><p>  }<br>}</p>
+<p>public void setUserVisibleHint(boolean isVisibleToUser) {<br>  mIsVisibleToUser = isVisibleToUser;<br>  setTimerAccordingToVisible();<br>}</p>
+<p>public interface OnItemShowListener {<br>  void onSliderItemShow(int position);<br>}</p>
+<p>public interface OnItemClickListener {<br>  void onItemClick(int position);<br>}</p>
+<p>public abstract class SliderAdapter<DATA> extends PagerAdapter {<br>  private final int COUNT = 10 * 10000;<br>  private ArrayList<DATA> mData = new ArrayList&lt;&gt;();<br>  private SparseArray<View> mRecoverItemArray = new SparseArray&lt;&gt;();<br>  private static final int MAX_RECOVER_SIZE = 7;</p>
+<p>  public ArrayList<DATA> getData() {</p>
+<pre><code>return mData;</code></pre><p>  }</p>
+<p>  public int getRealSize() {</p>
+<pre><code>if (mData != null) {
+    return mData.size();
+}
+return 0;</code></pre><p>  }</p>
+<p>  public void clearData() {</p>
+<pre><code>mData.clear();
+mRecoverItemArray.clear();
+notifyDataSetChanged();</code></pre><p>  }</p>
+<p>  public void setData(List<DATA> data) {</p>
+<pre><code>mData.clear();
+if (data != null) {
+    mData.addAll(data);
+}
+notifyDataSetChanged();</code></pre><p>  }</p>
+<p>  /**</p>
+<ul>
+<li><p>中间位置的第relativePosition项</p>
+</li>
+<li></li>
+<li><p>@return 中间位置的第relativePosition项</p>
+</li>
+<li><p>/<br>public int getMiddlePosition(int relativePosition) {<br>  if (mData.size() &gt; 0) {</p>
+<pre><code>return COUNT / 2 - COUNT / 2 % mData.size() + relativePosition;</code></pre><p>  }<br>  return 0;<br>}</p>
+<p>@Override<br>public int getCount() {<br>  if (mData.size() == 1) {</p>
+<pre><code>return 1;</code></pre><p>  }<br>  return mData.size() &gt; 0 ? COUNT : 0;<br>}</p>
+<p>@Override<br>public boolean isViewFromObject(@NonNull View view, @NonNull Object object) {<br>  return view == object;<br>}</p>
+<p>@NonNull<br>@Override<br>public final Object instantiateItem(@NonNull ViewGroup container, int position) {<br>  View itemView = mRecoverItemArray.get(position % MAX_RECOVER_SIZE);<br>  if (itemView == null) {</p>
+<pre><code>itemView = onCreateSliderItemView(container, position);</code></pre><p>  } else {</p>
+<pre><code>mRecoverItemArray.remove(position % MAX_RECOVER_SIZE);</code></pre><p>  }<br>  container.addView(itemView, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);<br>  onSliderItemViewInstantiated(itemView, position);<br>  XLLog.d(TAG, “SliderAdapter instantiateItem position=” + position + “,itemView=” + itemView);<br>  return itemView;<br>}</p>
+<p>@Override<br>public final void destroyItem(@NonNull ViewGroup container, int position, @NonNull Object object) {<br>  View itemView = (View) object;<br>  container.removeView(itemView);<br>  if (itemView instanceof ImageView) {</p>
+<pre><code>((ImageView) itemView).setImageDrawable(null);</code></pre><p>  }<br>  XLLog.d(TAG, “SliderAdapter destroyItem position=” + position + “,itemView=” + itemView);<br>  mRecoverItemArray.put(position % MAX_RECOVER_SIZE, itemView);<br>  onSliderItemViewDestroyed(itemView);<br>}</p>
+<p>@Override<br>public int getItemPosition(@NonNull Object object) {<br>  return POSITION_NONE;<br>}</p>
+<p>@NonNull<br>abstract public View onCreateSliderItemView(@NonNull ViewGroup container, int position);</p>
+<p>abstract public void onSliderItemViewInstantiated(@NonNull View itemView, int position);</p>
+<p>public void onSliderItemViewDestroyed(@NonNull View itemView) {<br>}<br>}<br>}</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/08/21/%E8%87%AA%E5%AE%9A%E4%B9%89Native%20Crash%E5%BC%82%E5%B8%B8%E6%8D%95%E8%8E%B7/" rel="prev" title="自定义Native Crash异常捕获">
+      <i class="fa fa-chevron-left"></i> 自定义Native Crash异常捕获
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/11/23/Smail%E7%AE%80%E4%BB%8B/" rel="next" title="Smail简介">
+      Smail简介 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Utils框架解析"><span class="nav-number">1.</span> <span class="nav-text">Utils框架解析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#View-注入"><span class="nav-number">1.1.</span> <span class="nav-text">View 注入</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#仿小红书ViewPage滑动指示器"><span class="nav-number">2.</span> <span class="nav-text">仿小红书ViewPage滑动指示器</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

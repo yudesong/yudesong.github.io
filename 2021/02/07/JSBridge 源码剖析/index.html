@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="一、JsBridge 简介1.1 集成JsBridge 源码 1234567repositories &amp;#123;    maven &amp;#123; url &quot;https:&#x2F;&#x2F;jitpack.io&quot; &amp;#125;&amp;#125;dependencies &amp;#123;    implementation &#39;com.github.lzyzsd:jsbridge">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JsBridge 源码解析">
+<meta property="og:url" content="http://yoursite.com/2021/02/07/JSBridge%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="一、JsBridge 简介1.1 集成JsBridge 源码 1234567repositories &amp;#123;    maven &amp;#123; url &quot;https:&#x2F;&#x2F;jitpack.io&quot; &amp;#125;&amp;#125;dependencies &amp;#123;    implementation &#39;com.github.lzyzsd:jsbridge">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-02-07T07:21:38.829Z">
+<meta property="article:modified_time" content="2021-02-07T08:48:49.268Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android开源框架源码分析">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2021/02/07/JSBridge%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>JsBridge 源码解析 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/02/07/JSBridge%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JsBridge 源码解析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-02-07 15:21:38 / 修改时间：16:48:49" itemprop="dateCreated datePublished" datetime="2021-02-07T15:21:38+08:00">2021-02-07</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="一、JsBridge-简介"><a href="#一、JsBridge-简介" class="headerlink" title="一、JsBridge 简介"></a>一、JsBridge 简介</h2><h3 id="1-1-集成"><a href="#1-1-集成" class="headerlink" title="1.1 集成"></a>1.1 集成</h3><p>JsBridge <a href="https://github.com/lzyzsd/JsBridge" target="_blank" rel="noopener">源码</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">repositories &#123;</span><br><span class="line">    maven &#123; url &quot;https:&#x2F;&#x2F;jitpack.io&quot; &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencies &#123;</span><br><span class="line">    implementation &#39;com.github.lzyzsd:jsbridge:1.0.4&#39;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-2-使用"><a href="#1-2-使用" class="headerlink" title="1.2 使用"></a>1.2 使用</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">webView.registerHandler(&quot;submitFromWeb&quot;, new BridgeHandler() &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void handler(String data, CallBackFunction function) &#123;</span><br><span class="line">        Log.i(TAG, &quot;handler &#x3D; submitFromWeb, data from web &#x3D; &quot; + data);</span><br><span class="line">        function.onCallBack(&quot;submitFromWeb exe, response data from Java&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">WebViewJavascriptBridge.callHandler(</span><br><span class="line">    &#39;submitFromWeb&#39;</span><br><span class="line">    , &#123;&#39;param&#39;: str1&#125;</span><br><span class="line">    , function(responseData) &#123;</span><br><span class="line">        document.getElementById(&quot;show&quot;).innerHTML &#x3D; &quot;send get responseData from java, data &#x3D; &quot; + responseData</span><br><span class="line">    &#125;</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">webView.callHandler(&quot;functionInJs&quot;, new Gson().toJson(user), new CallBackFunction() &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void onCallBack(String data) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h2 id="二、JsBridge-源码"><a href="#二、JsBridge-源码" class="headerlink" title="二、JsBridge 源码"></a>二、JsBridge 源码</h2><h3 id="2-1-BridgeWebView-源码"><a href="#2-1-BridgeWebView-源码" class="headerlink" title="2.1 BridgeWebView 源码"></a>2.1 BridgeWebView 源码</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line">public class BridgeWebView extends WebView implements WebViewJavascriptBridge &#123;</span><br><span class="line">    &#x2F;&#x2F; 缓存向WebView注册的方法，以及回调</span><br><span class="line">    Map&lt;String, BridgeHandler&gt; messageHandlers &#x3D; new HashMap&lt;String, BridgeHandler&gt;();</span><br><span class="line">    Map&lt;String, CallBackFunction&gt; responseCallbacks &#x3D; new HashMap&lt;String, CallBackFunction&gt;();</span><br><span class="line">	</span><br><span class="line">    public BridgeWebView(Context context, AttributeSet attrs) &#123;</span><br><span class="line">		super(context, attrs);</span><br><span class="line">		init();</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">    private void init() &#123;</span><br><span class="line">		this.setVerticalScrollBarEnabled(false);</span><br><span class="line">		this.setHorizontalScrollBarEnabled(false);</span><br><span class="line">		this.getSettings().setJavaScriptEnabled(true);</span><br><span class="line">        if (Build.VERSION.SDK_INT &gt;&#x3D; Build.VERSION_CODES.KITKAT) &#123;</span><br><span class="line">            WebView.setWebContentsDebuggingEnabled(true);</span><br><span class="line">        &#125;</span><br><span class="line">		this.setWebViewClient(generateBridgeWebViewClient());</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">    protected BridgeWebViewClient generateBridgeWebViewClient() &#123;</span><br><span class="line">        return new BridgeWebViewClient(this);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 注册方法</span><br><span class="line">	public void registerHandler(String handlerName, BridgeHandler handler) &#123;</span><br><span class="line">		if (handler !&#x3D; null) &#123;</span><br><span class="line">			messageHandlers.put(handlerName, handler);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 执行</span><br><span class="line">	public void callHandler(String handlerName, String data, CallBackFunction callBack) &#123;</span><br><span class="line">        doSend(handlerName, data, callBack);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	private void doSend(String handlerName, String data, CallBackFunction responseCallback) &#123;</span><br><span class="line">		Message m &#x3D; new Message();</span><br><span class="line">		if (!TextUtils.isEmpty(data)) &#123;</span><br><span class="line">			m.setData(data);</span><br><span class="line">		&#125;</span><br><span class="line">		if (responseCallback !&#x3D; null) &#123;</span><br><span class="line">			String callbackStr &#x3D; String.format(&quot;javascript:WebViewJavascriptBridge._handleMessageFromNative(&#39;%s&#39;);&quot;, ++uniqueId + (BridgeUtil.UNDERLINE_STR + SystemClock.currentThreadTimeMillis()));</span><br><span class="line">			responseCallbacks.put(callbackStr, responseCallback);</span><br><span class="line">			m.setCallbackId(callbackStr);</span><br><span class="line">		&#125;</span><br><span class="line">		if (!TextUtils.isEmpty(handlerName)) &#123;</span><br><span class="line">			m.setHandlerName(handlerName);</span><br><span class="line">		&#125;</span><br><span class="line">		queueMessage(m);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	private void queueMessage(Message m) &#123;</span><br><span class="line">		if (startupMessage !&#x3D; null) &#123;</span><br><span class="line">			startupMessage.add(m);</span><br><span class="line">		&#125; else &#123;</span><br><span class="line">			dispatchMessage(m);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">	void dispatchMessage(Message m) &#123;</span><br><span class="line">        String messageJson &#x3D; m.toJson();</span><br><span class="line">        messageJson &#x3D; messageJson.replaceAll(&quot;(\\\\)([^utrn])&quot;, &quot;\\\\\\\\$1$2&quot;);</span><br><span class="line">        messageJson &#x3D; messageJson.replaceAll(&quot;(?&lt;&#x3D;[^\\\\])(\&quot;)&quot;, &quot;\\\\\&quot;&quot;);</span><br><span class="line">        String javascriptCommand &#x3D; String.format(BridgeUtil.JS_HANDLE_MESSAGE_FROM_JAVA, messageJson);</span><br><span class="line">        if (Thread.currentThread() &#x3D;&#x3D; Looper.getMainLooper().getThread()) &#123;</span><br><span class="line">            this.loadUrl(javascriptCommand);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 处理页面返回数据</span><br><span class="line">	void handlerReturnData(String url) &#123;</span><br><span class="line">		String functionName &#x3D; BridgeUtil.getFunctionFromReturnUrl(url);</span><br><span class="line">		CallBackFunction f &#x3D; responseCallbacks.get(functionName);</span><br><span class="line">		String data &#x3D; BridgeUtil.getDataFromReturnUrl(url);</span><br><span class="line">		if (f !&#x3D; null) &#123;</span><br><span class="line">			f.onCallBack(data);</span><br><span class="line">			responseCallbacks.remove(functionName);</span><br><span class="line">			return;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2-BridgeWebViewClient源码"><a href="#2-2-BridgeWebViewClient源码" class="headerlink" title="2.2 BridgeWebViewClient源码"></a>2.2 BridgeWebViewClient源码</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">public class BridgeWebViewClient extends WebViewClient &#123;</span><br><span class="line">    private BridgeWebView webView;</span><br><span class="line"></span><br><span class="line">    public BridgeWebViewClient(BridgeWebView webView) &#123;</span><br><span class="line">        this.webView &#x3D; webView;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean shouldOverrideUrlLoading(WebView view, String url) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            url &#x3D; URLDecoder.decode(url, &quot;UTF-8&quot;);</span><br><span class="line">        &#125; catch (UnsupportedEncodingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (url.startsWith(BridgeUtil.YY_RETURN_DATA)) &#123;</span><br><span class="line">            &#x2F;&#x2F; 如果是返回数据</span><br><span class="line">            webView.handlerReturnData(url);</span><br><span class="line">            return true;</span><br><span class="line">        &#125; else if (url.startsWith(BridgeUtil.YY_OVERRIDE_SCHEMA)) &#123; </span><br><span class="line">            &#x2F;&#x2F; 刷新消息列队</span><br><span class="line">            webView.flushMessageQueue();</span><br><span class="line">            return true;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            return super.shouldOverrideUrlLoading(view, url);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    @Override</span><br><span class="line">    public void onPageFinished(WebView view, String url) &#123;</span><br><span class="line">        super.onPageFinished(view, url);</span><br><span class="line">        if (BridgeWebView.toLoadJs !&#x3D; null) &#123;</span><br><span class="line">            BridgeUtil.webViewLoadLocalJs(view, BridgeWebView.toLoadJs);</span><br><span class="line">        &#125;</span><br><span class="line">        if (webView.getStartupMessage() !&#x3D; null) &#123;</span><br><span class="line">            for (Message m : webView.getStartupMessage()) &#123;</span><br><span class="line">                webView.dispatchMessage(m);</span><br><span class="line">            &#125;</span><br><span class="line">            webView.setStartupMessage(null);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E5%BC%80%E6%BA%90%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># Android开源框架源码分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/02/04/xCrash-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="prev" title="xCrash 源码解析">
+      <i class="fa fa-chevron-left"></i> xCrash 源码解析
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#一、JsBridge-简介"><span class="nav-number">1.</span> <span class="nav-text">一、JsBridge 简介</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-集成"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 集成</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-使用"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 使用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二、JsBridge-源码"><span class="nav-number">2.</span> <span class="nav-text">二、JsBridge 源码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-BridgeWebView-源码"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 BridgeWebView 源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-BridgeWebViewClient源码"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 BridgeWebViewClient源码</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

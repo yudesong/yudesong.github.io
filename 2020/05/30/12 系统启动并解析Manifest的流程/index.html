@@ -28,7 +28,7 @@
 <meta property="og:description" content="最近有同学问我关于Manifest何时被系统解析的问题，正好也分析到这一块了，索性这一章就讲解一下android系统何时解析Manifest吧，这里的Manifest指的是android安装文件apk中的androidManifest.xml文件是何时被解析的。大家应该都知道，Android系统启动之后，我们就可以在一个应用中打开另一个从未打开过的应用，或者是在一个应用中发送广播，如果另外一个应用">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-05-29T16:29:04.393Z">
-<meta property="article:modified_time" content="2020-06-21T07:13:38.951Z">
+<meta property="article:modified_time" content="2020-06-21T08:46:24.644Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="Android系统层">
 <meta name="twitter:card" content="summary">
@@ -221,6 +221,8 @@
 
       
         <p>最近有同学问我关于Manifest何时被系统解析的问题，正好也分析到这一块了，索性这一章就讲解一下android系统何时解析Manifest吧，这里的Manifest指的是android安装文件apk中的androidManifest.xml文件是何时被解析的。<br>大家应该都知道，Android系统启动之后，我们就可以在一个应用中打开另一个从未打开过的应用，或者是在一个应用中发送广播，如果另外一个应用设置了这个广播的接收器，那么这个应用进程就会被启动并接收该广播并作出相应的处理，这样的例子很多，我们可以猜测到Android系统在启动的时候就会抓取到了系统中所有安装的应用信息（应该是解析apk文件的Manifest信息），即在Android系统的启动过程中就已经解析了系统中安装应用的androidManifest.xml文件并保存起来了，那么这个过程具体是如何的呢?</p>
+<a id="more"></a>
+
 <p>其实android系统启动过程中解析Manifest的流程是通过PackageManagerService服务来实现的。这里我们重点分析一下PackageManagerService服务是如何解析Manifest的。</p>
 <p>首先看一下在SystemServer进程启动过程中是如何启动PackageManagerService服务的：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">private void startBootstrapServices() &#123;</span><br><span class="line">	...</span><br><span class="line">    mPackageManagerService &#x3D; PackageManagerService.main(mSystemContext, installer,</span><br><span class="line">            mFactoryTestMode !&#x3D; FactoryTest.FACTORY_TEST_OFF, mOnlyCore);</span><br><span class="line">    mFirstBoot &#x3D; mPackageManagerService.isFirstBoot();</span><br><span class="line">    mPackageManager &#x3D; mSystemContext.getPackageManager();</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -361,20 +363,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-count">102</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">10</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -401,7 +403,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

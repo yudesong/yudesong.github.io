@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="一、简介ARouter一个用于帮助 Android App 进行组件化改造的框架 —— 支持模块间的路由、通信、解耦  主要功能：  支持直接解析标准URL进行跳转，并自动注入参数到目标页面中支持多模块工程使用 支持添加多个拦截器，自定义拦截顺序 支持依赖注入，可单独作为依赖注入框架使用 支持用户指定全局降级与局部降级策略 页面、拦截器、服务等组件均自动注册到框架  二、使用方法 添加依赖和配置">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ARouter 原理剖析">
+<meta property="og:url" content="http://yoursite.com/2020/07/10/ARouter%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="一、简介ARouter一个用于帮助 Android App 进行组件化改造的框架 —— 支持模块间的路由、通信、解耦  主要功能：  支持直接解析标准URL进行跳转，并自动注入参数到目标页面中支持多模块工程使用 支持添加多个拦截器，自定义拦截顺序 支持依赖注入，可单独作为依赖注入框架使用 支持用户指定全局降级与局部降级策略 页面、拦截器、服务等组件均自动注册到框架  二、使用方法 添加依赖和配置">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/07/10/ARouter%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/ARouter%E6%9E%B6%E6%9E%84%E5%9B%BE.png">
+<meta property="og:image" content="http://yoursite.com/2020/07/10/ARouter%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/ARouter%E6%B3%A8%E8%A7%A3%E7%94%9F%E6%88%90%E4%BB%A3%E7%A0%81.png">
+<meta property="article:published_time" content="2020-07-10T15:53:54.862Z">
+<meta property="article:modified_time" content="2021-02-08T03:13:55.173Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android开源框架源码分析">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/07/10/ARouter%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/ARouter%E6%9E%B6%E6%9E%84%E5%9B%BE.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/07/10/ARouter%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ARouter 原理剖析 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/10/ARouter%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ARouter 原理剖析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-10 23:53:54" itemprop="dateCreated datePublished" datetime="2020-07-10T23:53:54+08:00">2020-07-10</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="一、简介"><a href="#一、简介" class="headerlink" title="一、简介"></a>一、简介</h4><p><a href="https://github.com/alibaba/ARouter" target="_blank" rel="noopener">ARouter</a>一个用于帮助 Android App 进行组件化改造的框架 —— 支持模块间的路由、通信、解耦</p>
+<p><img src="ARouter%E6%9E%B6%E6%9E%84%E5%9B%BE.png" alt="ARouter架构图"></p>
+<p>主要功能：</p>
+<ul>
+<li>支持直接解析标准URL进行跳转，并自动注入参数到目标页面中支持多模块工程使用</li>
+<li>支持添加多个拦截器，自定义拦截顺序</li>
+<li>支持依赖注入，可单独作为依赖注入框架使用</li>
+<li>支持用户指定全局降级与局部降级策略</li>
+<li>页面、拦截器、服务等组件均自动注册到框架</li>
+</ul>
+<h4 id="二、使用方法"><a href="#二、使用方法" class="headerlink" title="二、使用方法"></a>二、使用方法</h4><ol>
+<li>添加依赖和配置</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">android &#123;</span><br><span class="line">    defaultConfig &#123;</span><br><span class="line">        javaCompileOptions &#123;</span><br><span class="line">            annotationProcessorOptions &#123;</span><br><span class="line">                arguments &#x3D; [AROUTER_MODULE_NAME: project.getName()]</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencies &#123;</span><br><span class="line">    compile &#39;com.alibaba:arouter-api:x.x.x&#39;</span><br><span class="line">    annotationProcessor &#39;com.alibaba:arouter-compiler:x.x.x&#39;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>添加注解</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@Route(path &#x3D; &quot;&#x2F;test&#x2F;activity&quot;)</span><br><span class="line">public class YourActivity extend Activity &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>初始化SDK(推荐在Application中初始化)</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">if (isDebug()) &#123;           </span><br><span class="line">    ARouter.openLog();</span><br><span class="line">    ARouter.openDebug();</span><br><span class="line">&#125;</span><br><span class="line">ARouter.init(mApplication);</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li>发起路由操作</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 1. 应用内简单的跳转(通过URL跳转在&#39;进阶用法&#39;中)</span><br><span class="line">ARouter.getInstance().build(&quot;&#x2F;test&#x2F;activity&quot;).navigation();</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 2. 跳转并携带参数</span><br><span class="line">ARouter.getInstance().build(&quot;&#x2F;test&#x2F;1&quot;)</span><br><span class="line">            .withLong(&quot;key1&quot;, 666L)</span><br><span class="line">            .withString(&quot;key3&quot;, &quot;888&quot;)</span><br><span class="line">            .withObject(&quot;key4&quot;, new Test(&quot;Jack&quot;, &quot;Rose&quot;))</span><br><span class="line">            .navigation();</span><br></pre></td></tr></table></figure>
+
+<h4 id="三、源码剖析"><a href="#三、源码剖析" class="headerlink" title="三、源码剖析"></a>三、源码剖析</h4><p>整个ARouter框架的源码主要分为三个模块：<strong>arouter-annotation</strong>、<strong>arouter-compiler</strong>、<strong>arouter-api</strong></p>
+<h5 id="3-1-annotation注解模块"><a href="#3-1-annotation注解模块" class="headerlink" title="3.1 annotation注解模块"></a>3.1 annotation注解模块</h5><p><strong>Route.java</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">@Target(&#123;ElementType.TYPE&#125;)</span><br><span class="line">@Retention(RetentionPolicy.CLASS)</span><br><span class="line">public @interface Route &#123;</span><br><span class="line">    String path();</span><br><span class="line">    String group() default &quot;&quot;;</span><br><span class="line">    String name() default &quot;&quot;;</span><br><span class="line">    int extras() default Integer.MIN_VALUE;</span><br><span class="line">    int priority() default -1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Autowired.java</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@Target(&#123;ElementType.FIELD&#125;)</span><br><span class="line">@Retention(RetentionPolicy.CLASS)</span><br><span class="line">public @interface Autowired &#123;</span><br><span class="line">    String name() default &quot;&quot;;</span><br><span class="line">    boolean required() default false;</span><br><span class="line">    String desc() default &quot;&quot;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-2-compiler注解处理模块"><a href="#3-2-compiler注解处理模块" class="headerlink" title="3.2 compiler注解处理模块"></a>3.2 compiler注解处理模块</h5><p><strong>RouteProcessor注解处理器</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line">public class RouteProcessor extends BaseProcessor &#123;</span><br><span class="line">    private Map&lt;String, Set&lt;RouteMeta&gt;&gt; groupMap &#x3D; new HashMap&lt;&gt;();</span><br><span class="line">    private Map&lt;String, String&gt; rootMap &#x3D; new TreeMap&lt;&gt;(); </span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean process(Set&lt;? extends TypeElement&gt; annotations, RoundEnvironment roundEnv) &#123;</span><br><span class="line">        if (CollectionUtils.isNotEmpty(annotations)) &#123;</span><br><span class="line">            Set&lt;? extends Element&gt; routeElements &#x3D; roundEnv.getElementsAnnotatedWith(Route.class);</span><br><span class="line">            parseRoutes(routeElements);</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    private void parseRoutes(Set&lt;? extends Element&gt; routeElements) throws IOException &#123;</span><br><span class="line">        if (CollectionUtils.isNotEmpty(routeElements)) &#123;</span><br><span class="line">            rootMap.clear();</span><br><span class="line">            &#x2F;&#x2F; 定义参数类型: Map&lt;String, Class&lt;? extends IRouteGroup&gt;&gt;</span><br><span class="line">            ParameterizedTypeName inputMapTypeOfRoot &#x3D; ParameterizedTypeName.get(</span><br><span class="line">                    ClassName.get(Map.class),</span><br><span class="line">                    ClassName.get(String.class),</span><br><span class="line">                    ParameterizedTypeName.get(</span><br><span class="line">                            ClassName.get(Class.class),</span><br><span class="line">                            WildcardTypeName.subtypeOf(ClassName.get(type_IRouteGroup))</span><br><span class="line">                    )</span><br><span class="line">            );</span><br><span class="line">            ParameterSpec rootParamSpec &#x3D; ParameterSpec.builder(inputMapTypeOfRoot, &quot;routes&quot;).build();</span><br><span class="line">            </span><br><span class="line">            &#x2F;&#x2F; 定义参数类型: Map&lt;String, RouteMeta&gt;</span><br><span class="line">            ParameterizedTypeName inputMapTypeOfGroup &#x3D; ParameterizedTypeName.get(</span><br><span class="line">                    ClassName.get(Map.class),</span><br><span class="line">                    ClassName.get(String.class),</span><br><span class="line">                    ClassName.get(RouteMeta.class)</span><br><span class="line">            ); </span><br><span class="line">            ParameterSpec groupParamSpec &#x3D; ParameterSpec.builder(inputMapTypeOfGroup, &quot;atlas&quot;).build();</span><br><span class="line">            </span><br><span class="line">            &#x2F;&#x2F; 定义loadInto方法</span><br><span class="line">            MethodSpec.Builder loadIntoMethodOfRootBuilder &#x3D; MethodSpec.methodBuilder(METHOD_LOAD_INTO)</span><br><span class="line">                    .addAnnotation(Override.class)</span><br><span class="line">                    .addModifiers(PUBLIC)</span><br><span class="line">                    .addParameter(rootParamSpec);</span><br><span class="line">                    </span><br><span class="line">            for (Element element : routeElements) &#123;</span><br><span class="line">                TypeMirror tm &#x3D; element.asType();</span><br><span class="line">                Route route &#x3D; element.getAnnotation(Route.class);</span><br><span class="line">                RouteMeta routeMeta;    </span><br><span class="line">                ...</span><br><span class="line">                routeMeta &#x3D; new RouteMeta(route, element, RouteType.ACTIVITY, paramsType);</span><br><span class="line">                ...</span><br><span class="line">                categories(routeMeta);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            for (Map.Entry&lt;String, Set&lt;RouteMeta&gt;&gt; entry : groupMap.entrySet()) &#123;</span><br><span class="line">                String groupName &#x3D; entry.getKey();</span><br><span class="line">                MethodSpec.Builder loadIntoMethodOfGroupBuilder &#x3D; MethodSpec.methodBuilder(METHOD_LOAD_INTO)</span><br><span class="line">                        .addAnnotation(Override.class)</span><br><span class="line">                        .addModifiers(PUBLIC)</span><br><span class="line">                        .addParameter(groupParamSpec);</span><br><span class="line">            </span><br><span class="line">                Set&lt;RouteMeta&gt; groupData &#x3D; entry.getValue();</span><br><span class="line">                for (RouteMeta routeMeta : groupData) &#123;</span><br><span class="line">                    ClassName className &#x3D; ClassName.get((TypeElement) routeMeta.getRawType());</span><br><span class="line">                    StringBuilder mapBodyBuilder &#x3D; new StringBuilder();</span><br><span class="line">                    Map&lt;String, Integer&gt; paramsType &#x3D; routeMeta.getParamsType();</span><br><span class="line">                    Map&lt;String, Autowired&gt; injectConfigs &#x3D; routeMeta.getInjectConfig();</span><br><span class="line">                    if (MapUtils.isNotEmpty(paramsType)) &#123;</span><br><span class="line">                        for (Map.Entry&lt;String, Integer&gt; types : paramsType.entrySet()) &#123;</span><br><span class="line">                            mapBodyBuilder.append(&quot;put(\&quot;&quot;).append(types.getKey()).append(&quot;\&quot;, &quot;).append(types.getValue()).append(&quot;); &quot;);</span><br><span class="line">                            Autowired injectConfig &#x3D; injectConfigs.get(types.getKey());</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                    String mapBody &#x3D; mapBodyBuilder.toString();</span><br><span class="line"></span><br><span class="line">                    loadIntoMethodOfGroupBuilder.addStatement(</span><br><span class="line">                            &quot;atlas.put($S, $T.build($T.&quot; + routeMeta.getType() + &quot;, $T.class, $S, $S, &quot; + (StringUtils.isEmpty(mapBody) ? null : (&quot;new java.util.HashMap&lt;String, Integer&gt;()&#123;&#123;&quot; + mapBodyBuilder.toString() + &quot;&#125;&#125;&quot;)) + &quot;, &quot; + routeMeta.getPriority() + &quot;, &quot; + routeMeta.getExtra() + &quot;))&quot;,</span><br><span class="line">                            routeMeta.getPath(),</span><br><span class="line">                            routeMetaCn,</span><br><span class="line">                            routeTypeCn,</span><br><span class="line">                            className,</span><br><span class="line">                            routeMeta.getPath().toLowerCase(),</span><br><span class="line">                            routeMeta.getGroup().toLowerCase());</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最终生成的代码路径：app/build/generated/ap_generated_sources/</p>
+<p><img src="ARouter%E6%B3%A8%E8%A7%A3%E7%94%9F%E6%88%90%E4%BB%A3%E7%A0%81.png" alt="ARouter注解生成代码"></p>
+<h5 id="3-3-api接口模块"><a href="#3-3-api接口模块" class="headerlink" title="3.3 api接口模块"></a>3.3 api接口模块</h5><p><strong>ARouter门面类</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * ARouter 代理模式， 内部实际是_ARouter</span><br><span class="line"> *&#x2F;</span><br><span class="line">public final class ARouter &#123;</span><br><span class="line">    private volatile static ARouter instance &#x3D; null;</span><br><span class="line">    private volatile static boolean hasInit &#x3D; false;</span><br><span class="line">    </span><br><span class="line">    public static void init(Application application) &#123;</span><br><span class="line">        if (!hasInit) &#123;</span><br><span class="line">            hasInit &#x3D; _ARouter.init(application);</span><br><span class="line">            if (hasInit) &#123;</span><br><span class="line">                _ARouter.afterInit();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; DCL</span><br><span class="line">    public static ARouter getInstance() &#123;</span><br><span class="line">        if (!hasInit) &#123;</span><br><span class="line">            Log.d(TAG, &quot;ARouter::Init::Invoke init(context) first!&quot;);</span><br><span class="line">            return null;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            if (instance &#x3D;&#x3D; null) &#123;</span><br><span class="line">                synchronized (ARouter.class) &#123;</span><br><span class="line">                    if (instance &#x3D;&#x3D; null) &#123;</span><br><span class="line">                        instance &#x3D; new ARouter();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            return instance;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public Postcard build(String path) &#123;</span><br><span class="line">        return _ARouter.getInstance().build(path);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public Object navigation(Context mContext, Postcard postcard, int requestCode, NavigationCallback callback) &#123;</span><br><span class="line">        return _ARouter.getInstance().navigation(mContext, postcard, requestCode, callback);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>_ARouter 实际类</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br></pre></td><td class="code"><pre><span class="line">final class _ARouter &#123;</span><br><span class="line">    private volatile static _ARouter instance &#x3D; null;</span><br><span class="line">    private static Handler mHandler;    </span><br><span class="line"></span><br><span class="line">    protected static synchronized boolean init(Application application) &#123;</span><br><span class="line">        mContext &#x3D; application;</span><br><span class="line">        LogisticsCenter.init(mContext, executor);</span><br><span class="line">        hasInit &#x3D; true;</span><br><span class="line">        mHandler &#x3D; new Handler(Looper.getMainLooper());</span><br><span class="line">        return true;</span><br><span class="line">    &#125;    </span><br><span class="line"></span><br><span class="line">    protected Postcard build(String path) &#123;</span><br><span class="line">        return build(path, extractGroup(path), true);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 根据path、group生成Postcard对象</span><br><span class="line">    protected Postcard build(String path, String group, Boolean afterReplace) &#123;</span><br><span class="line">        return new Postcard(path, group);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    protected Object navigation(final Context context, final Postcard postcard, final int requestCode, final NavigationCallback callback) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            LogisticsCenter.completion(postcard);</span><br><span class="line">        &#125; catch (NoRouteFoundException ex) &#123;</span><br><span class="line">            if (null !&#x3D; callback) &#123;</span><br><span class="line">                callback.onLost(postcard);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                &#x2F;&#x2F; 采用降级服务</span><br><span class="line">                DegradeService degradeService &#x3D; ARouter.getInstance().navigation(DegradeService.class);</span><br><span class="line">                if (null !&#x3D; degradeService) &#123;</span><br><span class="line">                    degradeService.onLost(context, postcard);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            return null;</span><br><span class="line">        &#125;</span><br><span class="line">        if (null !&#x3D; callback) &#123;</span><br><span class="line">            callback.onFound(postcard);</span><br><span class="line">        &#125;</span><br><span class="line">        if (!postcard.isGreenChannel()) &#123;</span><br><span class="line">            &#x2F;&#x2F; It must be run in async thread, maybe interceptor cost too mush time made ANR.</span><br><span class="line">            interceptorService.doInterceptions(postcard, new InterceptorCallback() &#123;</span><br><span class="line">                @Override</span><br><span class="line">                public void onContinue(Postcard postcard) &#123;</span><br><span class="line">                    _navigation(context, postcard, requestCode, callback);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                @Override</span><br><span class="line">                public void onInterrupt(Throwable exception) &#123;</span><br><span class="line">                    if (null !&#x3D; callback) &#123;</span><br><span class="line">                        callback.onInterrupt(postcard);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);        </span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            return _navigation(context, postcard, requestCode, callback);</span><br><span class="line">        &#125;</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    private Object _navigation(final Context context, final Postcard postcard, final int requestCode, final NavigationCallback callback) &#123;</span><br><span class="line">        final Context currentContext &#x3D; null &#x3D;&#x3D; context ? mContext : context;</span><br><span class="line"></span><br><span class="line">        switch (postcard.getType()) &#123;</span><br><span class="line">            case ACTIVITY:</span><br><span class="line">                final Intent intent &#x3D; new Intent(currentContext, postcard.getDestination());</span><br><span class="line">                intent.putExtras(postcard.getExtras());</span><br><span class="line">                int flags &#x3D; postcard.getFlags();</span><br><span class="line">                if (-1 !&#x3D; flags) &#123;</span><br><span class="line">                    intent.setFlags(flags);</span><br><span class="line">                &#125; else if (!(currentContext instanceof Activity)) &#123;</span><br><span class="line">                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                String action &#x3D; postcard.getAction();</span><br><span class="line">                if (!TextUtils.isEmpty(action)) &#123;</span><br><span class="line">                    intent.setAction(action);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                runInMainThread(new Runnable() &#123;</span><br><span class="line">                    @Override</span><br><span class="line">                    public void run() &#123;</span><br><span class="line">                        startActivity(requestCode, currentContext, intent, postcard, callback);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line">                break;</span><br><span class="line">            case PROVIDER:</span><br><span class="line">                return postcard.getProvider();</span><br><span class="line">            case BOARDCAST:</span><br><span class="line">            case CONTENT_PROVIDER:</span><br><span class="line">            case FRAGMENT:</span><br><span class="line">                Class fragmentMeta &#x3D; postcard.getDestination();</span><br><span class="line">                try &#123;</span><br><span class="line">                    Object instance &#x3D; fragmentMeta.getConstructor().newInstance();</span><br><span class="line">                    if (instance instanceof Fragment) &#123;</span><br><span class="line">                        ((Fragment) instance).setArguments(postcard.getExtras());</span><br><span class="line">                    &#125; else if (instance instanceof androidx.fragment.app.Fragment) &#123;</span><br><span class="line">                        ((androidx.fragment.app.Fragment) instance).setArguments(postcard.getExtras());</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    return instance;</span><br><span class="line">                &#125; catch (Exception ex) &#123;</span><br><span class="line"></span><br><span class="line">                &#125;</span><br><span class="line">            case METHOD:</span><br><span class="line">            case SERVICE:</span><br><span class="line">            default:</span><br><span class="line">                return null;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        return null;</span><br><span class="line">    &#125;    </span><br><span class="line">    </span><br><span class="line">    private void startActivity(int requestCode, Context currentContext, Intent intent, Postcard postcard, NavigationCallback callback) &#123;</span><br><span class="line">        if (requestCode &gt;&#x3D; 0) &#123;</span><br><span class="line">            if (currentContext instanceof Activity) &#123;</span><br><span class="line">                ActivityCompat.startActivityForResult((Activity) currentContext, intent, requestCode, postcard.getOptionsBundle());</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                Log.d(TAG, &quot;Must use [navigation(activity, ...)] to support [startActivityForResult]&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            ActivityCompat.startActivity(currentContext, intent, postcard.getOptionsBundle());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if ((-1 !&#x3D; postcard.getEnterAnim() &amp;&amp; -1 !&#x3D; postcard.getExitAnim()) &amp;&amp; currentContext instanceof Activity) &#123;</span><br><span class="line">            &#x2F;&#x2F; Old version.</span><br><span class="line">            ((Activity) currentContext).overridePendingTransition(postcard.getEnterAnim(), postcard.getExitAnim());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (null !&#x3D; callback) &#123; &#x2F;&#x2F; Navigation over.</span><br><span class="line">            callback.onArrival(postcard);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>LogisticsCenter 物流中心</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line">public class LogisticsCenter &#123;</span><br><span class="line"></span><br><span class="line">    public synchronized static void init(Context context, ThreadPoolExecutor tpe) throws HandlerException &#123;</span><br><span class="line">        mContext &#x3D; context;</span><br><span class="line">        executor &#x3D; tpe;</span><br><span class="line">        </span><br><span class="line">        loadRouterMap();</span><br><span class="line">        if (registerByPlugin) &#123;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            Set&lt;String&gt; routerMap;</span><br><span class="line">            if (ARouter.debuggable() || PackageUtils.isNewVersion(context)) &#123;</span><br><span class="line">                &#x2F;&#x2F; 根据包名，获取对应报名下的所有注解生成文件[ARouter混淆策略]</span><br><span class="line">                &#x2F;* 获取所有的dex文件路径</span><br><span class="line">                 ** 1. ApplicationInfo.sourceDir</span><br><span class="line">                 ** 2. 如果不支持Multidex,需要包含所有的次dex文件</span><br><span class="line">                 *&#x2F;</span><br><span class="line">                routerMap &#x3D; ClassUtils.getFileNameByPackageName(mContext, ROUTE_ROOT_PAKCAGE);</span><br><span class="line">                if (!routerMap.isEmpty()) &#123;</span><br><span class="line">                    &#x2F;&#x2F; 保存到缓存文件之中</span><br><span class="line">                    context.getSharedPreferences(AROUTER_SP_CACHE_KEY, Context.MODE_PRIVATE).edit().putStringSet(AROUTER_SP_KEY_MAP, routerMap).apply();</span><br><span class="line">                &#125;</span><br><span class="line">                PackageUtils.updateVersion(context);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                routerMap &#x3D; new HashSet&lt;&gt;(context.getSharedPreferences(AROUTER_SP_CACHE_KEY, Context.MODE_PRIVATE).getStringSet(AROUTER_SP_KEY_MAP, new HashSet&lt;String&gt;()));</span><br><span class="line">            &#125;</span><br><span class="line">            &#x2F;&#x2F; 反射调用注解生成的类方法loadInto</span><br><span class="line">            &#x2F;&#x2F; Class.forName和ClassLoader加载类有何不同？</span><br><span class="line">            for (String className : routerMap) &#123;</span><br><span class="line">                if (className.startsWith(ROUTE_ROOT_PAKCAGE + DOT + SDK_NAME + SEPARATOR + SUFFIX_ROOT)) &#123;</span><br><span class="line">                    ((IRouteRoot) (Class.forName(className).getConstructor().newInstance())).loadInto(Warehouse.groupsIndex);</span><br><span class="line">                &#125; else if (className.startsWith(ROUTE_ROOT_PAKCAGE + DOT + SDK_NAME + SEPARATOR + SUFFIX_INTERCEPTORS)) &#123;</span><br><span class="line">                    ((IInterceptorGroup) (Class.forName(className).getConstructor().newInstance())).loadInto(Warehouse.interceptorsIndex);</span><br><span class="line">                &#125; else if (className.startsWith(ROUTE_ROOT_PAKCAGE + DOT + SDK_NAME + SEPARATOR + SUFFIX_PROVIDERS)) &#123;</span><br><span class="line">                    ((IProviderGroup) (Class.forName(className).getConstructor().newInstance())).loadInto(Warehouse.providersIndex);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public synchronized static void completion(Postcard postcard) &#123;</span><br><span class="line">        RouteMeta routeMeta &#x3D; Warehouse.routes.get(postcard.getPath());</span><br><span class="line">        if (null &#x3D;&#x3D; routeMeta) &#123;</span><br><span class="line">            Class&lt;? extends IRouteGroup&gt; groupMeta &#x3D; Warehouse.groupsIndex.get(postcard.getGroup()); </span><br><span class="line">            if (null &#x3D;&#x3D; groupMeta) &#123;</span><br><span class="line">                throw new NoRouteFoundException(TAG + &quot;There is no route match the path [&quot; + postcard.getPath() + &quot;], in group [&quot; + postcard.getGroup() + &quot;]&quot;);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                 &#x2F;&#x2F; Load route and cache it into memory, then delete from metas.</span><br><span class="line">                try &#123;</span><br><span class="line">                    IRouteGroup iGroupInstance &#x3D; groupMeta.getConstructor().newInstance();</span><br><span class="line">                    iGroupInstance.loadInto(Warehouse.routes);</span><br><span class="line">                    Warehouse.groupsIndex.remove(postcard.getGroup());</span><br><span class="line">                &#125; catch (Exception e) &#123;</span><br><span class="line">                    throw new HandlerException(TAG + &quot;Fatal exception when loading group meta. [&quot; + e.getMessage() + &quot;]&quot;);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                completion(postcard);   &#x2F;&#x2F; Reload</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            postcard.setDestination(routeMeta.getDestination());</span><br><span class="line">            postcard.setType(routeMeta.getType());</span><br><span class="line">            postcard.setPriority(routeMeta.getPriority());</span><br><span class="line">            postcard.setExtra(routeMeta.getExtra());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Warehouse 全局数据仓库</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">class Warehouse &#123;</span><br><span class="line">    &#x2F;&#x2F; Cache route and metas</span><br><span class="line">    static Map&lt;String, Class&lt;? extends IRouteGroup&gt;&gt; groupsIndex &#x3D; new HashMap&lt;&gt;();</span><br><span class="line">    static Map&lt;String, RouteMeta&gt; routes &#x3D; new HashMap&lt;&gt;();  </span><br><span class="line">    &#x2F;&#x2F; Cache provider</span><br><span class="line">    static Map&lt;Class, IProvider&gt; providers &#x3D; new HashMap&lt;&gt;();</span><br><span class="line">    static Map&lt;String, RouteMeta&gt; providersIndex &#x3D; new HashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; Cache interceptor</span><br><span class="line">    static Map&lt;Integer, Class&lt;? extends IInterceptor&gt;&gt; interceptorsIndex &#x3D; new UniqueKeyTreeMap&lt;&gt;(&quot;More than one interceptors use same priority [%s]&quot;);</span><br><span class="line">    static List&lt;IInterceptor&gt; interceptors &#x3D; new ArrayList&lt;&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="四、思考"><a href="#四、思考" class="headerlink" title="四、思考"></a>四、思考</h4>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E5%BC%80%E6%BA%90%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># Android开源框架源码分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/26/22%20Android%20%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BHook%E6%9C%BA%E5%88%B6/" rel="prev" title="22 Android 插件化之Hook机制">
+      <i class="fa fa-chevron-left"></i> 22 Android 插件化之Hook机制
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/15/VirtualAPK%20%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/" rel="next" title="VirtualAPK 原理剖析">
+      VirtualAPK 原理剖析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、简介"><span class="nav-number">1.</span> <span class="nav-text">一、简介</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、使用方法"><span class="nav-number">2.</span> <span class="nav-text">二、使用方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#三、源码剖析"><span class="nav-number">3.</span> <span class="nav-text">三、源码剖析</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#3-1-annotation注解模块"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 annotation注解模块</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-2-compiler注解处理模块"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 compiler注解处理模块</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-3-api接口模块"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 api接口模块</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#四、思考"><span class="nav-number">4.</span> <span class="nav-text">四、思考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
