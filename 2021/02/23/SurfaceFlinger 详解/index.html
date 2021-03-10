@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="SurfaceFlinger 启动过程SurfaceFlinger 进程是由 init 进程创建的，运行在独立的 SurfaceFlinger 进程中。init 进程读取 init.rc 文件启动 SurfaceFlinger。 123456service surfaceflinger &#x2F;system&#x2F;bin&#x2F;surfaceflinger    class core">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SurfaceFlinger详解">
+<meta property="og:url" content="http://yoursite.com/2021/02/23/SurfaceFlinger%20%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="SurfaceFlinger 启动过程SurfaceFlinger 进程是由 init 进程创建的，运行在独立的 SurfaceFlinger 进程中。init 进程读取 init.rc 文件启动 SurfaceFlinger。 123456service surfaceflinger &#x2F;system&#x2F;bin&#x2F;surfaceflinger    class core">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-02-23T02:55:52.061Z">
+<meta property="article:modified_time" content="2021-02-23T07:45:03.181Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android系统">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2021/02/23/SurfaceFlinger%20%E8%AF%A6%E8%A7%A3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>SurfaceFlinger详解 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/02/23/SurfaceFlinger%20%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          SurfaceFlinger详解
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-02-23 10:55:52 / 修改时间：15:45:03" itemprop="dateCreated datePublished" datetime="2021-02-23T10:55:52+08:00">2021-02-23</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="SurfaceFlinger-启动过程"><a href="#SurfaceFlinger-启动过程" class="headerlink" title="SurfaceFlinger 启动过程"></a>SurfaceFlinger 启动过程</h2><p>SurfaceFlinger 进程是由 init 进程创建的，运行在独立的 SurfaceFlinger 进程中。init 进程读取 init.rc 文件启动 SurfaceFlinger。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">service surfaceflinger &#x2F;system&#x2F;bin&#x2F;surfaceflinger</span><br><span class="line">    class core</span><br><span class="line">    user system</span><br><span class="line">    group graphics drmrpc</span><br><span class="line">    onrestart restart zygote</span><br><span class="line">    writepid &#x2F;dev&#x2F;cpuset&#x2F;system-background&#x2F;tasks</span><br></pre></td></tr></table></figure>
+
+<p>SurfaceFlinger 的创建会执行 main_surfaceflinger.cpp 里面的main方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">int main(int, char**) &#123;</span><br><span class="line">    &#x2F;&#x2F; 设置 surfaceflinger 进程的 binder 线程池数最多为4，然后启动 binder 线程池</span><br><span class="line">    ProcessState::self()-&gt;setThreadPoolMaxThreadCount(4);</span><br><span class="line">    sp&lt;ProcessState&gt; ps(ProcessState::self());</span><br><span class="line">    ps-&gt;startThreadPool();</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 创建 SurfaceFlinger 对象，将 surfaceflinger 进程设置为高优先级及使用前台调度策略</span><br><span class="line">    sp&lt;SurfaceFlinger&gt; flinger &#x3D; new SurfaceFlinger();</span><br><span class="line">    setpriority(PRIO_PROCESS, 0, PRIORITY_URGENT_DISPLAY);</span><br><span class="line">    set_sched_policy(0, SP_FOREGROUND);</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;初始化</span><br><span class="line">    flinger-&gt;init();</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 发布 surface flinger，注册到 ServiceManager</span><br><span class="line">    sp&lt;IServiceManager&gt; sm(defaultServiceManager());</span><br><span class="line">    sm-&gt;addService(String16(SurfaceFlinger::getServiceName()), flinger, false);</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 启动DisplayService</span><br><span class="line">    startDisplayService();</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 运行在当前线程</span><br><span class="line">    flinger-&gt;run();</span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>SurfaceFlinger 的实例化会执行到：onFirstRef()</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void SurfaceFlinger::onFirstRef() &#123;</span><br><span class="line">    mEventQueue.init(this);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void MessageQueue::init(const sp&lt;SurfaceFlinger&gt;&amp; flinger) &#123;</span><br><span class="line">    mFlinger &#x3D; flinger;</span><br><span class="line">    mLooper &#x3D; new Looper(true);</span><br><span class="line">    mHandler &#x3D; new Handler(*this);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后会执行到 SurfaceFlinger::init()：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line">void SurfaceFlinger::init() &#123;</span><br><span class="line">    Mutex::Autolock _l(mStateLock);</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;初始化 EGL，作为默认的显示</span><br><span class="line">    mEGLDisplay &#x3D; eglGetDisplay(EGL_DEFAULT_DISPLAY);</span><br><span class="line">    eglInitialize(mEGLDisplay, NULL, NULL);</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 初始化硬件 composer 对象</span><br><span class="line">    mHwc &#x3D; new HWComposer(this, *static_cast&lt;HWComposer::EventHandler *&gt;(this));</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;获取 RenderEngine 引擎</span><br><span class="line">    mRenderEngine &#x3D; RenderEngine::create(mEGLDisplay, mHwc-&gt;getVisualID());</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;检索创建的 EGL 上下文</span><br><span class="line">    mEGLContext &#x3D; mRenderEngine-&gt;getEGLContext();</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;初始化非虚拟显示屏</span><br><span class="line">    for (size_t i&#x3D;0 ; i&lt;DisplayDevice::NUM_BUILTIN_DISPLAY_TYPES ; i++) &#123;</span><br><span class="line">        DisplayDevice::DisplayType type((DisplayDevice::DisplayType)i);</span><br><span class="line">        &#x2F;&#x2F;建立已连接的显示设备</span><br><span class="line">        if (mHwc-&gt;isConnected(i) || type&#x3D;&#x3D;DisplayDevice::DISPLAY_PRIMARY) &#123;</span><br><span class="line">            bool isSecure &#x3D; true;</span><br><span class="line">            createBuiltinDisplayLocked(type);</span><br><span class="line">            wp&lt;IBinder&gt; token &#x3D; mBuiltinDisplays[i];</span><br><span class="line"></span><br><span class="line">            sp&lt;IGraphicBufferProducer&gt; producer;</span><br><span class="line">            sp&lt;IGraphicBufferConsumer&gt; consumer;</span><br><span class="line">            &#x2F;&#x2F;创建 BufferQueue 的生产者和消费者</span><br><span class="line">            BufferQueue::createBufferQueue(&amp;producer, &amp;consumer,</span><br><span class="line">                    new GraphicBufferAlloc());</span><br><span class="line"></span><br><span class="line">            sp&lt;FramebufferSurface&gt; fbs &#x3D; new FramebufferSurface(*mHwc, i, consumer);</span><br><span class="line">            int32_t hwcId &#x3D; allocateHwcDisplayId(type);</span><br><span class="line">            &#x2F;&#x2F;创建显示设备</span><br><span class="line">            sp&lt;DisplayDevice&gt; hw &#x3D; new DisplayDevice(this,</span><br><span class="line">                    type, hwcId, mHwc-&gt;getFormat(hwcId), isSecure, token,</span><br><span class="line">                    fbs, producer,</span><br><span class="line">                    mRenderEngine-&gt;getEGLConfig());</span><br><span class="line">            if (i &gt; DisplayDevice::DISPLAY_PRIMARY) &#123;</span><br><span class="line">                hw-&gt;setPowerMode(HWC_POWER_MODE_NORMAL);</span><br><span class="line">            &#125;</span><br><span class="line">            mDisplays.add(token, hw);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    getDefaultDisplayDevice()-&gt;makeCurrent(mEGLDisplay, mEGLContext);</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;当应用和 sf 的 vsync 偏移量一致时，则只创建一个 EventThread 线程</span><br><span class="line">    if (vsyncPhaseOffsetNs !&#x3D; sfVsyncPhaseOffsetNs) &#123;</span><br><span class="line">        sp&lt;VSyncSource&gt; vsyncSrc &#x3D; new DispSyncSource(&amp;mPrimaryDispSync,</span><br><span class="line">                vsyncPhaseOffsetNs, true, &quot;app&quot;);</span><br><span class="line">        mEventThread &#x3D; new EventThread(vsyncSrc);</span><br><span class="line">        sp&lt;VSyncSource&gt; sfVsyncSrc &#x3D; new DispSyncSource(&amp;mPrimaryDispSync,</span><br><span class="line">                sfVsyncPhaseOffsetNs, true, &quot;sf&quot;);</span><br><span class="line">        mSFEventThread &#x3D; new EventThread(sfVsyncSrc);</span><br><span class="line">        mEventQueue.setEventThread(mSFEventThread);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        &#x2F;&#x2F;创建 DispSyncSource 对象</span><br><span class="line">        sp&lt;VSyncSource&gt; vsyncSrc &#x3D; new DispSyncSource(&amp;mPrimaryDispSync,</span><br><span class="line">                vsyncPhaseOffsetNs, true, &quot;sf-app&quot;);</span><br><span class="line">        &#x2F;&#x2F;创建线程 EventThread</span><br><span class="line">        mEventThread &#x3D; new EventThread(vsyncSrc);</span><br><span class="line">        &#x2F;&#x2F;设置 EventThread</span><br><span class="line">        mEventQueue.setEventThread(mEventThread);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;创建 EventControl</span><br><span class="line">    mEventControlThread &#x3D; new EventControlThread(this);</span><br><span class="line">    mEventControlThread-&gt;run(&quot;EventControl&quot;, PRIORITY_URGENT_DISPLAY);</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;当不存在 HWComposer 时，则设置软件 vsync</span><br><span class="line">    if (mHwc-&gt;initCheck() !&#x3D; NO_ERROR) &#123;</span><br><span class="line">        mPrimaryDispSync.setPeriod(16666667);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;初始化绘图状态</span><br><span class="line">    mDrawingState &#x3D; mCurrentState;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;初始化显示设备</span><br><span class="line">    initializeDisplays();</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;启动开机动画</span><br><span class="line">    startBootAnim();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法主要功能是：</p>
+<ol>
+<li>初始化 EGL</li>
+<li>创建 HWComposer</li>
+<li>初始化非虚拟显示屏</li>
+<li>启动 EventThread 线程</li>
+<li>启动开机动画</li>
+</ol>
+<h3 id="创建-HWComposer："><a href="#创建-HWComposer：" class="headerlink" title="创建 HWComposer："></a>创建 HWComposer：</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">HWComposer::HWComposer(const sp&lt;SurfaceFlinger&gt;&amp; flinger, EventHandler&amp; handler):mFlinger(flinger), mFbDev(0), mHwc(0), mNumDisplays(1), mCBContext(new cb_context), mEventHandler(handler), mDebugForceFakeVSync(false) &#123;</span><br><span class="line">    ...</span><br><span class="line">    bool needVSyncThread &#x3D; true;</span><br><span class="line">    int fberr &#x3D; loadFbHalModule(); &#x2F;&#x2F;加载 framebuffer 的 HAL 层模块</span><br><span class="line">    loadHwcModule(); &#x2F;&#x2F;加载 HWComposer 模块</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;标记已分配的 display ID</span><br><span class="line">    for (size_t i&#x3D;0 ; i&lt;NUM_BUILTIN_DISPLAYS ; i++) &#123;</span><br><span class="line">        mAllocatedDisplayIDs.markBit(i);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (mHwc) &#123;</span><br><span class="line">        if (mHwc-&gt;registerProcs) &#123;</span><br><span class="line">            mCBContext-&gt;hwc &#x3D; this;</span><br><span class="line">            mCBContext-&gt;procs.invalidate &#x3D; &amp;hook_invalidate;</span><br><span class="line">            &#x2F;&#x2F;VSYNC 信号的回调方法</span><br><span class="line">            mCBContext-&gt;procs.vsync &#x3D; &amp;hook_vsync;</span><br><span class="line">            if (hwcHasApiVersion(mHwc, HWC_DEVICE_API_VERSION_1_1))</span><br><span class="line">                mCBContext-&gt;procs.hotplug &#x3D; &amp;hook_hotplug;</span><br><span class="line">            else</span><br><span class="line">                mCBContext-&gt;procs.hotplug &#x3D; NULL;</span><br><span class="line">            memset(mCBContext-&gt;procs.zero, 0, sizeof(mCBContext-&gt;procs.zero));</span><br><span class="line">            &#x2F;&#x2F;注册回调函数</span><br><span class="line">            mHwc-&gt;registerProcs(mHwc, &amp;mCBContext-&gt;procs);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;进入此处，说明已成功打开硬件 composer 设备，则不再需要 vsync 线程</span><br><span class="line">        needVSyncThread &#x3D; false;</span><br><span class="line">        eventControl(HWC_DISPLAY_PRIMARY, HWC_EVENT_VSYNC, 0);</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">    if (needVSyncThread) &#123;</span><br><span class="line">        &#x2F;&#x2F;不支持硬件的 VSYNC，则会创建线程来模拟定时 VSYNC 信号</span><br><span class="line">        mVSyncThread &#x3D; new VSyncThread(*this);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>HWComposer代表着硬件显示设备，注册了VSYNC信号的回调。VSYNC信号本身是由显示驱动产生的，在不支持硬件的VSYNC，则会创建“VSyncThread”线程来模拟定时 VSYNC 信号。</p>
+<p>当硬件产生VSYNC信号时，则会发送消息，handler 收到消息进行处理。当 SurfaceFlinger 进程收到 VSync 信号后经层层调用，最终调用到该对象的 handleMessageRefresh() 方法。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">void SurfaceFlinger::handleMessageRefresh() &#123;</span><br><span class="line">    ATRACE_CALL();</span><br><span class="line">    preComposition();&#x2F;&#x2F;处理显示设备与 layers 的改变，更新光标</span><br><span class="line">    rebuildLayerStacks();&#x2F;&#x2F;重建所有可见 Layer 列表，根据Z轴排序</span><br><span class="line">    setUpHWComposer();&#x2F;&#x2F;更新 HWComposer 图层</span><br><span class="line">    doDebugFlashRegions(); </span><br><span class="line">    doComposition();&#x2F;&#x2F;生成 OpenGL 纹理图像</span><br><span class="line">    postComposition();&#x2F;&#x2F;将图像传递到物理屏幕</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Surface-创建过程"><a href="#Surface-创建过程" class="headerlink" title="Surface 创建过程"></a>Surface 创建过程</h2><h3 id="1-WMS-addWindow"><a href="#1-WMS-addWindow" class="headerlink" title="1. WMS.addWindow"></a>1. WMS.addWindow</h3><p>Surface 创建的过程就是 Activity 显示的过程，在 ActivityThread.handleResumeActivity() 中调用了 Activity.makeVisible()，我们接着看下 Activity 是怎么显示出来的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;[Activity.java]</span><br><span class="line">void makeVisible() &#123;</span><br><span class="line">    if (!mWindowAdded) &#123;</span><br><span class="line">        ViewManager wm &#x3D; getWindowManager();&#x2F;&#x2F;此处 getWindowManager 获取的是 WindowManagerImpl 对象</span><br><span class="line">        wm.addView(mDecor, getWindow().getAttributes());</span><br><span class="line">        mWindowAdded &#x3D; true;</span><br><span class="line">    &#125;</span><br><span class="line">    mDecor.setVisibility(View.VISIBLE);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;[WindowManagerImpl.java]</span><br><span class="line">public void addView(@NonNull View view, @NonNull ViewGroup.LayoutParams params) &#123;</span><br><span class="line">    applyDefaultToken(params);</span><br><span class="line">    mGlobal.addView(view, params, mDisplay, mParentWindow);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;[WindowManagerGlobal.java]</span><br><span class="line">public void addView(View view, ViewGroup.LayoutParams params, Display display, Window parentWindow) &#123;</span><br><span class="line">    ...</span><br><span class="line">    final WindowManager.LayoutParams wparams &#x3D; (WindowManager.LayoutParams) params;</span><br><span class="line">    &#x2F;&#x2F;创建 ViewRootImpl</span><br><span class="line">    ViewRootImpl root &#x3D; new ViewRootImpl(view.getContext(), display);</span><br><span class="line">    view.setLayoutParams(wparams);</span><br><span class="line">    mViews.add(view);</span><br><span class="line">    mRoots.add(root);</span><br><span class="line">    mParams.add(wparams);</span><br><span class="line">    &#x2F;&#x2F;设置 View</span><br><span class="line">    root.setView(view, wparams, panelParentView);</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;[ViewRootImpl.java]</span><br><span class="line">public final class ViewRootImpl implements ViewParent,</span><br><span class="line">        View.AttachInfo.Callbacks, ThreadedRenderer.DrawCallbacks &#123;</span><br><span class="line">    ...</span><br><span class="line">    &#x2F;&#x2F; 创建 Surface，此时 Surface 创建完什么都没有</span><br><span class="line">    final Surface mSurface &#x3D; new Surface();</span><br><span class="line">    ...</span><br><span class="line">    public ViewRootImpl(Context context, Display display) &#123;</span><br><span class="line">        mContext &#x3D; context;</span><br><span class="line">        &#x2F;&#x2F;获取 IWindowSession 的代理类</span><br><span class="line">        mWindowSession &#x3D; WindowManagerGlobal.getWindowSession();</span><br><span class="line">        mDisplay &#x3D; display;</span><br><span class="line">        mThread &#x3D; Thread.currentThread(); &#x2F;&#x2F;主线程</span><br><span class="line">        mWindow &#x3D; new W(this);</span><br><span class="line">        mChoreographer &#x3D; Choreographer.getInstance();</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public void setView(View view, WindowManager.LayoutParams attrs, View panelParentView) &#123;</span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            requestLayout();</span><br><span class="line">            ...</span><br><span class="line">            &#x2F;&#x2F;通过 Binder调用，进入 system 进程的 Session</span><br><span class="line">            res &#x3D; mWindowSession.addToDisplay(mWindow, mSeq, mWindowAttributes,</span><br><span class="line">                  getHostVisibility(), mDisplay.getDisplayId(),</span><br><span class="line">                  mAttachInfo.mContentInsets, mAttachInfo.mStableInsets,</span><br><span class="line">                  mAttachInfo.mOutsets, mInputChannel);</span><br><span class="line">            ...</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    final class Session extends IWindowSession.Stub implements IBinder.DeathRecipient &#123;</span><br><span class="line">        public int addToDisplay(IWindow window, int seq, WindowManager.LayoutParams attrs, int viewVisibility, int displayId, Rect outContentInsets, Rect outStableInsets, Rect outOutsets, InputChannel outInputChannel) &#123;</span><br><span class="line">            &#x2F;&#x2F;调用 WMS.addWindow</span><br><span class="line">            return mService.addWindow(this, window, seq, attrs, viewVisibility, displayId,</span><br><span class="line">                    outContentInsets, outStableInsets, outOutsets, outInputChannel);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;[WindowManagerService.java]</span><br><span class="line">public int addWindow(Session session, IWindow client, int seq, WindowManager.LayoutParams attrs, int viewVisibility, int displayId, Rect outContentInsets, Rect outStableInsets, Rect outOutsets, InputChannel outInputChannel) &#123;</span><br><span class="line">    ...</span><br><span class="line">    WindowToken token &#x3D; mTokenMap.get(attrs.token);</span><br><span class="line">    &#x2F;&#x2F;创建 WindowState</span><br><span class="line">    WindowState win &#x3D; new WindowState(this, session, client, token,</span><br><span class="line">                attachedWindow, appOp[0], seq, attrs, viewVisibility, displayContent);</span><br><span class="line">    ...</span><br><span class="line">    &#x2F;&#x2F;调整 WindowManager 的 LayoutParams 参数</span><br><span class="line">    mPolicy.adjustWindowParamsLw(win.mAttrs);</span><br><span class="line">    res &#x3D; mPolicy.prepareAddWindowLw(win, attrs);</span><br><span class="line">    addWindowToListInOrderLocked(win, true);</span><br><span class="line">    &#x2F;&#x2F; 设置 input</span><br><span class="line">    mInputManager.registerInputChannel(win.mInputChannel, win.mInputWindowHandle);</span><br><span class="line">    &#x2F;&#x2F;详见下面分析</span><br><span class="line">    win.attach();</span><br><span class="line">    mWindowMap.put(client.asBinder(), win);</span><br><span class="line">    </span><br><span class="line">    if (win.canReceiveKeys()) &#123;</span><br><span class="line">        &#x2F;&#x2F;当该窗口能接收按键事件，则更新聚焦窗口</span><br><span class="line">        focusChanged &#x3D; updateFocusedWindowLocked(UPDATE_FOCUS_WILL_ASSIGN_LAYERS,</span><br><span class="line">                false &#x2F;*updateInputWindows*&#x2F;);</span><br><span class="line">    &#125;</span><br><span class="line">    assignLayersLocked(displayContent.getWindowList());</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;[WindowState.java]</span><br><span class="line">void attach() &#123;</span><br><span class="line">    mSession.windowAddedLocked();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;[Session.java]</span><br><span class="line">void windowAddedLocked(String packageName) &#123;</span><br><span class="line">    if (mSurfaceSession &#x3D;&#x3D; null) &#123;</span><br><span class="line">        mSurfaceSession &#x3D; new SurfaceSession();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;[SurfaceSession.java]</span><br><span class="line">private long mNativeClient; &#x2F;&#x2F; SurfaceComposerClient*</span><br><span class="line"></span><br><span class="line">public SurfaceSession() &#123;</span><br><span class="line">    mNativeClient &#x3D; nativeCreate();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; frameworks&#x2F;base&#x2F;core&#x2F;jni&#x2F;android_view_SurfaceSession.cpp</span><br><span class="line">static jlong nativeCreate(JNIEnv* env, jclass clazz) &#123;</span><br><span class="line">    SurfaceComposerClient* client &#x3D; new SurfaceComposerClient();</span><br><span class="line">    client-&gt;incStrong((void*)nativeCreate);</span><br><span class="line">    return reinterpret_cast&lt;jlong&gt;(client);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到 SurfaceSession 构造方法中通过 nativeCreate 方法返回了一个 SurfaceComposerClient 指针，它表示一个跟 SurfaceFlinger 的连接。</p>
+<p>当其第一次被使用时会调用如下函数：创建了一个实现 ISurfaceComposerClient 接口的 Client 对象。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">void SurfaceComposerClient::onFirstRef() &#123;</span><br><span class="line">    sp&lt;ISurfaceComposerClient&gt; conn &#x3D; (rootProducer !&#x3D; nullptr) ? sf-&gt;createScopedConnection(rootProducer) : sf-&gt;createConnection();</span><br><span class="line">    if (conn !&#x3D; 0) &#123;</span><br><span class="line">        mClient &#x3D; conn;</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">sp&lt;ISurfaceComposerClient&gt; SurfaceFlinger::createConnection() &#123;</span><br><span class="line">    return initClient(new Client(this)); &#x2F;&#x2F; initClient方法只是调用initCheck检查了一下</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>总结一下上面 WMS 中的相关操作：WMS 创建了一个 WindowState 对象表示客户端的一个 Window, 接着调用 WindowState.attach 方法创建了一个 SurfaceSession 对象，SurfaceSession 表示一个跟 SurfaceFlinger 的连接，它创建了一个 SurfaceComposerClient 对象，然后 SurfaceComposerClient 又创建了一个 Client 对象。</p>
+<h3 id="2"><a href="#2" class="headerlink" title="2."></a>2.</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br></pre></td><td class="code"><pre><span class="line">private void performTraversals() &#123;</span><br><span class="line">    relayoutWindow(params, viewVisibility, insetsPending)</span><br><span class="line">    &#x2F;&#x2F; measure, layout, draw</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private int relayoutWindow(...) throws RemoteException &#123;</span><br><span class="line">    &#x2F;&#x2F; 注意最后一个参数 mSurface 便是之前创建的 Surface 对象</span><br><span class="line">    &#x2F;&#x2F; 会调用 WMS.relayoutWindow 方法</span><br><span class="line">    mWindowSession.relayout(mWindow, ..., mSurface);</span><br><span class="line">    &#x2F;&#x2F; ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; WMS</span><br><span class="line">public int relayoutWindow(Session session, ..., Surface outSurface) &#123;</span><br><span class="line">    result &#x3D; createSurfaceControl(outSurface, result, win, winAnimator);</span><br><span class="line">    &#x2F;&#x2F; ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private int createSurfaceControl(Surface outSurface, int result, WindowState win, WindowStateAnimator winAnimator) &#123;</span><br><span class="line">    WindowSurfaceController surfaceController &#x3D; winAnimator.createSurfaceLocked(win.mAttrs.type, win.mOwnerUid);</span><br><span class="line">    if (surfaceController !&#x3D; null) &#123;</span><br><span class="line">        surfaceController.getSurfaceControl(outSurface);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        outSurface.release();</span><br><span class="line">    &#125;</span><br><span class="line">    return result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void getSurface(Surface outSurface) &#123;</span><br><span class="line">    outSurface.copyFrom(mSurfaceControl);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; Surface.java</span><br><span class="line">public void copyFrom(SurfaceControl other) &#123;</span><br><span class="line">    &#x2F;&#x2F; 即上面返回的 native SurfaceControl 指针</span><br><span class="line">    long surfaceControlPtr &#x3D; other.mNativeObject;</span><br><span class="line">    long newNativeObject &#x3D; nativeGetFromSurfaceControl(surfaceControlPtr);</span><br><span class="line"></span><br><span class="line">    synchronized (mLock) &#123;</span><br><span class="line">        if (mNativeObject !&#x3D; 0) &#123;</span><br><span class="line">            nativeRelease(mNativeObject);</span><br><span class="line">        &#125;</span><br><span class="line">        setNativeObjectLocked(newNativeObject);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private void setNativeObjectLocked(long ptr) &#123;</span><br><span class="line">    if (mNativeObject !&#x3D; ptr) &#123;</span><br><span class="line">        mNativeObject &#x3D; ptr;</span><br><span class="line">        if (mHwuiContext !&#x3D; null) &#123;</span><br><span class="line">            mHwuiContext.updateSurface();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; frameworks&#x2F;base&#x2F;core&#x2F;jni&#x2F;android_view_Surface.cpp</span><br><span class="line">static jlong nativeGetFromSurfaceControl(JNIEnv* env, jclass clazz, jlong surfaceControlNativeObj) &#123;</span><br><span class="line">    &#x2F;&#x2F; ctrl 是前面创建的 SurfaceControl 对象</span><br><span class="line">    sp&lt;SurfaceControl&gt; ctrl(reinterpret_cast&lt;SurfaceControl *&gt;(surfaceControlNativeObj));</span><br><span class="line">    sp&lt;Surface&gt; surface(ctrl-&gt;getSurface());</span><br><span class="line">    if (surface !&#x3D; NULL) &#123;</span><br><span class="line">        surface-&gt;incStrong(&amp;sRefBaseOwner);</span><br><span class="line">    &#125;</span><br><span class="line">    return reinterpret_cast&lt;jlong&gt;(surface.get());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">sp&lt;Surface&gt; SurfaceControl::getSurface() const</span><br><span class="line">&#123;</span><br><span class="line">    Mutex::Autolock _l(mLock);</span><br><span class="line">    if (mSurfaceData &#x3D;&#x3D; 0) &#123;</span><br><span class="line">        return generateSurfaceLocked();</span><br><span class="line">    &#125;</span><br><span class="line">    return mSurfaceData;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">sp&lt;Surface&gt; SurfaceControl::generateSurfaceLocked() const</span><br><span class="line">&#123;</span><br><span class="line">    &#x2F;&#x2F; mGraphicBufferProducer 是上面创建的 gbp 对象</span><br><span class="line">    mSurfaceData &#x3D; new Surface(mGraphicBufferProducer, false);</span><br><span class="line">    return mSurfaceData;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;[WindowSurfaceController.java]</span><br><span class="line">class WindowSurfaceController &#123;</span><br><span class="line">    public WindowSurfaceController(...) &#123;</span><br><span class="line">        final SurfaceControl.Builder b &#x3D; win.makeSurface()</span><br><span class="line">                .setParent(win.getSurfaceControl())</span><br><span class="line">                .setName(name)</span><br><span class="line">                .setBufferSize(w, h)</span><br><span class="line">                .setFormat(format)</span><br><span class="line">                .setFlags(flags)</span><br><span class="line">                .setMetadata(METADATA_WINDOW_TYPE, windowType)</span><br><span class="line">                .setMetadata(METADATA_OWNER_UID, ownerUid);</span><br><span class="line">        mSurfaceControl &#x3D; b.build();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">private SurfaceControl(...) &#123;</span><br><span class="line">    &#x2F;&#x2F; 返回 native SurfaceControl 指针</span><br><span class="line">    mNativeObject &#x3D; nativeCreate(session, name, w, h, format, flags, parent !&#x3D; null ? parent.mNativeObject : 0, windowType, ownerUid);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; frameworks&#x2F;base&#x2F;core&#x2F;jni&#x2F;android_view_SurfaceControl.cpp</span><br><span class="line">static jlong nativeCreate(...) &#123;</span><br><span class="line">    &#x2F;&#x2F; client 即上面创建的 SurfaceComposerClient 对象</span><br><span class="line">    sp&lt;SurfaceComposerClient&gt; client(android_view_SurfaceSession_getClient(env, sessionObj));</span><br><span class="line">    sp&lt;SurfaceControl&gt; surface;</span><br><span class="line">    client-&gt;createSurfaceChecked(String8(name.c_str()), w, h, format, &amp;surface, flags, parent, windowType, ownerUid);</span><br><span class="line">    return reinterpret_cast&lt;jlong&gt;(surface.get());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">status_t SurfaceComposerClient::createSurfaceChecked(..., sp&lt;SurfaceControl&gt;* outSurface, ...) &#123;</span><br><span class="line">    &#x2F;&#x2F; ...</span><br><span class="line">    sp&lt;IGraphicBufferProducer&gt; gbp;</span><br><span class="line">    err &#x3D; mClient-&gt;createSurface(name, w, h, format, flags, parentHandle, windowType, ownerUid, &amp;handle, &amp;gbp);</span><br><span class="line">    if (err &#x3D;&#x3D; NO_ERROR) &#123;</span><br><span class="line">        *outSurface &#x3D; new SurfaceControl(this, handle, gbp, true &#x2F;* owned *&#x2F;);</span><br><span class="line">    &#125;</span><br><span class="line">    return err;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">status_t Client::createSurface(...) &#123;</span><br><span class="line">    &#x2F;&#x2F; ...</span><br><span class="line">    flinger-&gt;createLayer(name, client, w, h, format, flags, windowType, ownerUid, handle, gbp, parent);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E7%B3%BB%E7%BB%9F/" rel="tag"># Android系统</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/02/07/JSBridge%20%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" rel="prev" title="JsBridge 源码解析">
+      <i class="fa fa-chevron-left"></i> JsBridge 源码解析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/02/23/RemoteViews%20%E8%AF%A6%E8%A7%A3/" rel="next" title="RemoteViews 详解">
+      RemoteViews 详解 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#SurfaceFlinger-启动过程"><span class="nav-number">1.</span> <span class="nav-text">SurfaceFlinger 启动过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#创建-HWComposer："><span class="nav-number">1.1.</span> <span class="nav-text">创建 HWComposer：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Surface-创建过程"><span class="nav-number">2.</span> <span class="nav-text">Surface 创建过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-WMS-addWindow"><span class="nav-number">2.1.</span> <span class="nav-text">1. WMS.addWindow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2"><span class="nav-number">2.2.</span> <span class="nav-text">2.</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">112</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

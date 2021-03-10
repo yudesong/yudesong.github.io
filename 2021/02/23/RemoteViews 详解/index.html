@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="RemoteViews 简介一、什么是RemoteViewsRemoteViews翻译过来就是远程视图.顾名思义,RemoteViews不是当前进程的View,是属于SystemServer进程.应用程序与RemoteViews之间依赖Binder实现了进程间通信. 二、RemoteViews的用法RemoteViews使用最多的场合是通知栏和桌面小插件. 以通知栏为例,讲解下它的用法. 1、新建">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RemoteViews 详解">
+<meta property="og:url" content="http://yoursite.com/2021/02/23/RemoteViews%20%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="RemoteViews 简介一、什么是RemoteViewsRemoteViews翻译过来就是远程视图.顾名思义,RemoteViews不是当前进程的View,是属于SystemServer进程.应用程序与RemoteViews之间依赖Binder实现了进程间通信. 二、RemoteViews的用法RemoteViews使用最多的场合是通知栏和桌面小插件. 以通知栏为例,讲解下它的用法. 1、新建">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-02-23T08:38:38.168Z">
+<meta property="article:modified_time" content="2021-02-23T09:34:18.287Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android系统">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2021/02/23/RemoteViews%20%E8%AF%A6%E8%A7%A3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>RemoteViews 详解 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/02/23/RemoteViews%20%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          RemoteViews 详解
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-02-23 16:38:38 / 修改时间：17:34:18" itemprop="dateCreated datePublished" datetime="2021-02-23T16:38:38+08:00">2021-02-23</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="RemoteViews-简介"><a href="#RemoteViews-简介" class="headerlink" title="RemoteViews 简介"></a>RemoteViews 简介</h2><h3 id="一、什么是RemoteViews"><a href="#一、什么是RemoteViews" class="headerlink" title="一、什么是RemoteViews"></a>一、什么是RemoteViews</h3><p>RemoteViews翻译过来就是远程视图.顾名思义,RemoteViews不是当前进程的View,是属于SystemServer进程.应用程序与RemoteViews之间依赖Binder实现了进程间通信.</p>
+<h3 id="二、RemoteViews的用法"><a href="#二、RemoteViews的用法" class="headerlink" title="二、RemoteViews的用法"></a>二、RemoteViews的用法</h3><p>RemoteViews使用最多的场合是<strong>通知栏和桌面小插件</strong>. 以通知栏为例,讲解下它的用法.</p>
+<p>1、新建一个Notification</p>
+<p>在3.0之后官方推荐使用建造者模式创建Notification.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Notification mNotification &#x3D; new Notification.Builder(this)</span><br><span class="line">        .setContentTitle(&quot;这是标题 &quot;)    </span><br><span class="line">        .setContentText(&quot;这是内容&quot;)        </span><br><span class="line">        .setSmallIcon(R.drawable.ic_launcher)                </span><br><span class="line">        .build();</span><br></pre></td></tr></table></figure>
+
+<p>Notification有很多属性,这里列举一些</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">- setContentTitle       设置标题</span><br><span class="line">- setContentText        设置内容</span><br><span class="line">- setLargeIcon          设置通知栏大图标</span><br><span class="line">- setSmallIcon          设置通知栏小图标</span><br><span class="line">- setContent            设置RemoteViews</span><br><span class="line">- setContentIntent      当通知条目被点击，就执行这个被设置的Intent.</span><br><span class="line">- setDeleteIntent       当用户点击&quot;Clear All Notifications&quot;按钮区删除所有的通知的时候，这个被设置的Intent被执行</span><br><span class="line">- setLights             设置闪光灯</span><br><span class="line">- setSound              设置声音</span><br><span class="line">- setPriority           设置优先级</span><br></pre></td></tr></table></figure>
+
+<p>2、设置Notification的RemoteViews</p>
+<p>如果要给通知栏使用自定义布局就要使用RemoteViews了,传入包名和相应的布局.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RemoteViews mRemoteViews&#x3D;new RemoteViews(&quot;com.example.remoteviewdemo&quot;, R.layout.remoteview_layout);</span><br></pre></td></tr></table></figure>
+<p>然后通过setContent()传入RemoteViews 对象即可.</p>
+<p>这里顺便讲一下PendingIntent,PendingIntent是”延迟意图”的意思,就是当满足某一条件时出触发这个Intent.通过PendingIntent的getActivity、getBroadcast、getService等分别构建一个打开对应组件的延迟Intent.<br>传入四个参数，context、intent、requestCode(自定义)、flag.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Intent intent&#x3D;new Intent(MainActivity.this,MainActivity.class);</span><br><span class="line">PendingIntent mPendingIntent&#x3D;PendingIntent.getActivity(MainActivity.this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);</span><br></pre></td></tr></table></figure>
+
+<p>PendingIntent有4种flag.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">- FLAG_ONE_SHOT                只执行一次</span><br><span class="line">- FLAG_NO_CREATE               若描述的Intent不存在则返回NULL值</span><br><span class="line">- FLAG_CANCEL_CURRENT          如果描述的PendingIntent已经存在，则在产生新的Intent之前会先取消掉当前的</span><br><span class="line">- FLAG_UPDATE_CURRENT          总是执行,这个flag用的最多</span><br></pre></td></tr></table></figure>
+
+<p>3、获取通知管理者</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">NotificationManager manager &#x3D; (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);</span><br></pre></td></tr></table></figure>
+
+<p>4、弹出通知</p>
+<p>调用notify方法,传入一个id(自定义)和通知实例即可.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">manager.notify(1, mNotification);</span><br></pre></td></tr></table></figure>
+
+<p>5、改变RemoteViews的布局</p>
+<p>RemoteViews并不能直接获得控件实例,然后对控件进行操作.它提供了<br>setTextViewText(viewId, text)、setImageViewResource(viewId, srcId)等方法进行操作,传入控件id和相应的修改内容.<br>列举一下常用的属性</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">- setTextViewText(viewId, text)                     设置文本</span><br><span class="line">- setTextColor(viewId, color)                       设置文本颜色</span><br><span class="line">- setTextViewTextSize(viewId, units, size)          设置文本大小 </span><br><span class="line">- setImageViewBitmap(viewId, bitmap)                设置图片</span><br><span class="line">- setImageViewResource(viewId, srcId)               根据图片资源设置图片</span><br><span class="line">- setViewPadding(viewId, left, top, right, bottom)  设置Padding间距</span><br><span class="line">- setOnClickPendingIntent(viewId, pendingIntent)    设置点击事件</span><br></pre></td></tr></table></figure>
+
+<ol start="6">
+<li>案例</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">PendingIntent pi &#x3D; PendingIntent.getActivity(MainActivity.this, 0x001,</span><br><span class="line">        new Intent(MainActivity.this, TargetActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);</span><br><span class="line">RemoteViews remoteView &#x3D; new RemoteViews(getPackageName(), R.layout.remoteview_main);</span><br><span class="line">remoteView.setTextViewText(R.id.remoteview_main_title, &quot;Title&quot;);</span><br><span class="line">remoteView.setTextViewText(R.id.remoteview_main_content, &quot;ContentContentContent&quot;);</span><br><span class="line">remoteView.setImageViewResource(R.id.remoteview_main_icon, R.mipmap.ic_launcher_round);</span><br><span class="line">remoteView.setOnClickPendingIntent(R.id.remoteview_main_view, pi);</span><br><span class="line">Notification.Builder nb &#x3D; new Notification.Builder(MainActivity.this)</span><br><span class="line">        .setSmallIcon(R.mipmap.ic_launcher) &#x2F;&#x2F; 小图标</span><br><span class="line">        .setCustomContentView(remoteView) &#x2F;&#x2F; 设置自定义的RemoteView，需要API最低为24</span><br><span class="line">        .setWhen(System.currentTimeMillis()) &#x2F;&#x2F; 设置通知发送的时间戳</span><br><span class="line">        .setAutoCancel(true) &#x2F;&#x2F; 点击通知后通知在通知栏上消失</span><br><span class="line">        .setDefaults(Notification.DEFAULT_ALL); &#x2F;&#x2F; 设置默认的提示音、振动方式、灯光等</span><br><span class="line">((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).notify(1, nb.build()); &#x2F;&#x2F; build()方法需要的最低API为16</span><br></pre></td></tr></table></figure>
+
+<h3 id="三、RemoteViews的改变原理"><a href="#三、RemoteViews的改变原理" class="headerlink" title="三、RemoteViews的改变原理"></a>三、RemoteViews的改变原理</h3><p>1.setTextViewText方法代码如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">public class RemoteViews implements Parcelable, Filter &#123;</span><br><span class="line">    private final class ReflectionAction extends Action &#123;</span><br><span class="line">        ReflectionAction(int viewId, String methodName, int type, Object value) &#123;</span><br><span class="line">            this.viewId &#x3D; viewId;</span><br><span class="line">            this.methodName &#x3D; methodName;</span><br><span class="line">            this.type &#x3D; type;</span><br><span class="line">            this.value &#x3D; value;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public void setTextViewText(int viewId, CharSequence text) &#123;</span><br><span class="line">        setCharSequence(viewId, &quot;setText&quot;, text);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public void setCharSequence(int viewId, String methodName, CharSequence value) &#123;</span><br><span class="line">        addAction(new ReflectionAction(viewId, methodName, ReflectionAction.CHAR_SEQUENCE, value));</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    private void addAction(Action a) &#123;</span><br><span class="line">        if (mActions &#x3D;&#x3D; null) &#123;</span><br><span class="line">            mActions &#x3D; new ArrayList&lt;&gt;();</span><br><span class="line">        &#125;</span><br><span class="line">        mActions.add(a);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public void reapply(Context context, View v) &#123;</span><br><span class="line">        reapply(context, v, null);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public void reapply(Context context, View v, OnClickHandler handler) &#123;</span><br><span class="line">        RemoteViews rvToApply &#x3D; getRemoteViewsToApply(context);</span><br><span class="line">        rvToApply.performApply(v, (ViewGroup) v.getParent(), handler);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    private void performApply(View v, ViewGroup parent, OnClickHandler handler) &#123;</span><br><span class="line">        if (mActions !&#x3D; null) &#123;</span><br><span class="line">            handler &#x3D; handler &#x3D;&#x3D; null ? DEFAULT_ON_CLICK_HANDLER : handler;</span><br><span class="line">            final int count &#x3D; mActions.size();</span><br><span class="line">            for (int i &#x3D; 0; i &lt; count; i++) &#123;</span><br><span class="line">                Action a &#x3D; mActions.get(i);</span><br><span class="line">                a.apply(v, parent, handler);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public View apply(Context context, ViewGroup parent, OnClickHandler handler) &#123;</span><br><span class="line">        RemoteViews rvToApply &#x3D; getRemoteViewsToApply(context);</span><br><span class="line">        View result &#x3D; inflateView(context, rvToApply, parent);</span><br><span class="line">        rvToApply.performApply(result, parent, handler);</span><br><span class="line">        return result;</span><br><span class="line">    &#125;    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>manager.notify(1, mNotification)</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">public class NotificationManager &#123;</span><br><span class="line">    public void notify(int id, Notification notification) &#123;</span><br><span class="line">        notify(null, id, notification);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public void notify(String tag, int id, Notification notification) &#123;</span><br><span class="line">        notifyAsUser(tag, id, notification, mContext.getUser());</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public void notifyAsUser(String tag, int id, Notification notification, UserHandle user) &#123;</span><br><span class="line">        INotificationManager service &#x3D; getService();</span><br><span class="line">        String pkg &#x3D; mContext.getPackageName();</span><br><span class="line">        try &#123;</span><br><span class="line">            service.enqueueNotificationWithTag(pkg, mContext.getOpPackageName(), tag, id,</span><br><span class="line">                    fixNotification(notification), user.getIdentifier());</span><br><span class="line">        &#125; catch (RemoteException e) &#123;</span><br><span class="line">            throw e.rethrowFromSystemServer();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    static public INotificationManager getService() &#123;</span><br><span class="line">        if (sService !&#x3D; null) &#123;</span><br><span class="line">            return sService;</span><br><span class="line">        &#125;</span><br><span class="line">        IBinder b &#x3D; ServiceManager.getService(&quot;notification&quot;);</span><br><span class="line">        sService &#x3D; INotificationManager.Stub.asInterface(b);</span><br><span class="line">        return sService;</span><br><span class="line">    &#125;    </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;[NotificationManagerService.java]</span><br><span class="line">public class NotificationManagerService extends SystemService &#123;</span><br><span class="line">    void enqueueNotificationInternal(...) &#123;</span><br><span class="line">        final StatusBarNotification n &#x3D; new StatusBarNotification(</span><br><span class="line">                pkg, opPkg, id, tag, notificationUid, callingPid, notification,</span><br><span class="line">                user, null, System.currentTimeMillis());</span><br><span class="line">        ...        </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/itgungnir/p/6923949.html" target="_blank" rel="noopener">【Android - 进阶】之RemoteViews简介</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E7%B3%BB%E7%BB%9F/" rel="tag"># Android系统</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/02/23/SurfaceFlinger%20%E8%AF%A6%E8%A7%A3/" rel="prev" title="SurfaceFlinger详解">
+      <i class="fa fa-chevron-left"></i> SurfaceFlinger详解
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/02/23/startActivityForResult%E5%92%8CsetResult%E8%AF%A6%E8%A7%A3/" rel="next" title="startActivityForResult和setResult详解">
+      startActivityForResult和setResult详解 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#RemoteViews-简介"><span class="nav-number">1.</span> <span class="nav-text">RemoteViews 简介</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一、什么是RemoteViews"><span class="nav-number">1.1.</span> <span class="nav-text">一、什么是RemoteViews</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二、RemoteViews的用法"><span class="nav-number">1.2.</span> <span class="nav-text">二、RemoteViews的用法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#三、RemoteViews的改变原理"><span class="nav-number">1.3.</span> <span class="nav-text">三、RemoteViews的改变原理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">2.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">112</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

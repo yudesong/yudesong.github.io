@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Java 8 (又称为 jdk 1.8) 是 Java 语言开发的一个主要版本。 Oracle 公司于 2014 年 3 月 18 日发布 Java 8 ，它支持函数式编程，新的 JavaScript 引擎，新的日期 API，新的Stream API 等。 新特性Java8 新增了非常多的特性，我们主要讨论以下几个：  Lambda 表达式 − Lambda 允许把函数作为一个方法的参数（函数作为">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JDK-Java 8 新特性总结">
+<meta property="og:url" content="http://yoursite.com/2021/03/03/JDK-Java%208%20%E6%96%B0%E7%89%B9%E6%80%A7%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Java 8 (又称为 jdk 1.8) 是 Java 语言开发的一个主要版本。 Oracle 公司于 2014 年 3 月 18 日发布 Java 8 ，它支持函数式编程，新的 JavaScript 引擎，新的日期 API，新的Stream API 等。 新特性Java8 新增了非常多的特性，我们主要讨论以下几个：  Lambda 表达式 − Lambda 允许把函数作为一个方法的参数（函数作为">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-03-03T07:49:39.431Z">
+<meta property="article:modified_time" content="2021-03-03T08:56:08.288Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="JDK源码分析">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2021/03/03/JDK-Java%208%20%E6%96%B0%E7%89%B9%E6%80%A7%E6%80%BB%E7%BB%93/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>JDK-Java 8 新特性总结 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/03/03/JDK-Java%208%20%E6%96%B0%E7%89%B9%E6%80%A7%E6%80%BB%E7%BB%93/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JDK-Java 8 新特性总结
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-03-03 15:49:39 / 修改时间：16:56:08" itemprop="dateCreated datePublished" datetime="2021-03-03T15:49:39+08:00">2021-03-03</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Java 8 (又称为 jdk 1.8) 是 Java 语言开发的一个主要版本。 Oracle 公司于 2014 年 3 月 18 日发布 Java 8 ，它支持函数式编程，新的 JavaScript 引擎，新的日期 API，新的Stream API 等。</p>
+<h2 id="新特性"><a href="#新特性" class="headerlink" title="新特性"></a>新特性</h2><p>Java8 新增了非常多的特性，我们主要讨论以下几个：</p>
+<ul>
+<li>Lambda 表达式 − Lambda 允许把函数作为一个方法的参数（函数作为参数传递到方法中）。</li>
+<li>方法引用 − 方法引用提供了非常有用的语法，可以直接引用已有Java类或对象（实例）的方法或构造器。与lambda联合使用，方法引用可以使语言的构造更紧凑简洁，减少冗余代码。</li>
+<li>默认方法 − 默认方法就是一个在接口里面有了一个实现的方法。</li>
+<li>新工具 − 新的编译工具，如：Nashorn引擎 jjs、 类依赖分析器jdeps。</li>
+<li>Stream API −新添加的Stream API（java.util.stream） 把真正的函数式编程风格引入到Java中。</li>
+<li>Date Time API − 加强对日期与时间的处理。</li>
+<li>Optional 类 − Optional 类已经成为 Java 8 类库的一部分，用来解决空指针异常。</li>
+<li>Nashorn, JavaScript 引擎 − Java 8提供了一个新的Nashorn javascript引擎，它允许我们在JVM上运行特定的javascript应用。</li>
+</ul>
+<h2 id="1-Optional类"><a href="#1-Optional类" class="headerlink" title="1. Optional类"></a>1. Optional类</h2><p>Optional 类是一个可以为null的容器对象。如果值存在则isPresent()方法会返回true，调用get()方法会返回该对象。<br>Optional 是个容器：它可以保存类型T的值，或者仅仅保存null。Optional提供很多有用的方法，这样我们就不用显式进行空值检测。<br>Optional 类的引入很好的解决空指针异常。</p>
+<p>我们看看Optional的源码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">public final class Optional&lt;T&gt; &#123;</span><br><span class="line">    </span><br><span class="line">    private static final Optional&lt;?&gt; EMPTY &#x3D; new Optional&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    public static&lt;T&gt; Optional&lt;T&gt; empty() &#123;</span><br><span class="line">        Optional&lt;T&gt; t &#x3D; (Optional&lt;T&gt;) EMPTY;</span><br><span class="line">        return t;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    private Optional(T value) &#123;</span><br><span class="line">        this.value &#x3D; Objects.requireNonNull(value);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 允许传递为 null 参数</span><br><span class="line">    public static &lt;T&gt; Optional&lt;T&gt; ofNullable(T value) &#123;</span><br><span class="line">        return value &#x3D;&#x3D; null ? empty() : of(value);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 不允许传递 null 参数</span><br><span class="line">    public static &lt;T&gt; Optional&lt;T&gt; of(T value) &#123;</span><br><span class="line">        return new Optional&lt;&gt;(value);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; value !&#x3D;null 返回true</span><br><span class="line">    public boolean isPresent() &#123;</span><br><span class="line">        return value !&#x3D; null;</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; 如果值存在，返回它，否则返回默认值</span><br><span class="line">    public T orElse(T other) &#123;</span><br><span class="line">        return value !&#x3D; null ? value : other;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-默认方法"><a href="#2-默认方法" class="headerlink" title="2. 默认方法"></a>2. 默认方法</h2><p>简单说，默认方法就是接口可以有实现方法，而且不需要实现类去实现其方法。<br>我们只需在方法名前面加个 default 关键字即可实现默认方法。</p>
+<blockquote>
+<p>为什么要有这个特性？</p>
+<p>首先，之前的接口是个双刃剑，好处是面向抽象而不是面向具体编程，缺陷是，当需要修改接口时候，需要修改全部实现该接口的类，目前的 java 8 之前的集合框架没有 foreach 方法，通常能想到的解决办法是在JDK里给相关的接口添加新的方法及实现。然而，对于已经发布的版本，是没法在给接口添加新方法的同时不影响已有的实现。所以引进的默认方法。他们的目的是为了解决接口的修改与现有的实现不兼容的问题。</p>
+</blockquote>
+<h2 id="3-方法引用"><a href="#3-方法引用" class="headerlink" title="3. 方法引用"></a>3. 方法引用</h2><p>方法引用使用一对冒号 :: </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 构造器引用：它的语法是Class::new，或者更一般的Class&lt; T &gt;::new实例如下：</span><br><span class="line">final Car car &#x3D; Car.create(Car::new );</span><br><span class="line">final List&lt; Car &gt; cars &#x3D; Arrays.asList( car );</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 静态方法引用：它的语法是Class::static_method，实例如下：</span><br><span class="line">cars.forEach( Car::collide );</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 特定类的任意对象的方法引用：它的语法是Class::method实例如下：</span><br><span class="line">cars.forEach( Car::repair );</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 特定对象的方法引用：它的语法是instance::method实例如下：</span><br><span class="line">final Car police &#x3D; Car.create( Car::new );</span><br><span class="line">cars.forEach( police::follow );</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-日期时间-API"><a href="#4-日期时间-API" class="headerlink" title="4. 日期时间 API"></a>4. 日期时间 API</h2><p>Java 8通过发布新的Date-Time API (JSR 310)来进一步加强对日期与时间的处理。</p>
+<p>在旧版的 Java 中，日期时间 API 存在诸多问题，其中有：</p>
+<ul>
+<li>非线程安全 − java.util.Date 是非线程安全的，所有的日期类都是可变的，这是Java日期类最大的问题之一。<br>设计很差 − Java的日期/时间类的定义并不一致，在java.util和java.sql的包中都有日期类，此外用于格式化和解析的类在java.text包中定义。java.util.Date同时包含日期和时间，而java.sql.Date仅包含日期，将其纳入java.sql包并不合理。另外这两个类都有相同的名字，这本身就是一个非常糟糕的设计。<br>时区处理麻烦 − 日期类并不提供国际化，没有时区支持，因此Java引入了java.util.Calendar和java.util.TimeZone类，但他们同样存在上述所有的问题。</li>
+<li>Java 8 在 java.time 包下提供了很多新的 API。以下为两个比较重要的 API：</li>
+<li>Local(本地) − 简化了日期时间的处理，没有时区的问题。</li>
+<li>Zoned(时区) − 通过制定的时区处理日期时间。</li>
+</ul>
+<p>新的java.time包涵盖了所有处理日期，时间，日期/时间，时区，时刻（instants），过程（during）与时钟（clock）的操作。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">LocalDateTime currentTime &#x3D; LocalDateTime.now();</span><br><span class="line">LocalDate date1 &#x3D; currentTime.toLocalDate();</span><br><span class="line">Month month &#x3D; currentTime.getMonth();</span><br><span class="line"></span><br><span class="line">ZonedDateTime date1 &#x3D; ZonedDateTime.parse(&quot;2015-12-03T10:15:30+05:30[Asia&#x2F;Shanghai]&quot;);</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-Lambda-表达式"><a href="#5-Lambda-表达式" class="headerlink" title="5. Lambda 表达式"></a>5. Lambda 表达式</h2><p>Lambda 允许把函数作为一个方法的参数（函数作为参数传递进方法中）。<br>使用 Lambda 表达式可以使代码变的更加简洁紧凑。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">MathOperation addition &#x3D; (int a, int b) -&gt; a + b;</span><br><span class="line">MathOperation subtraction &#x3D; (a, b) -&gt; a - b;</span><br><span class="line">MathOperation multiplication &#x3D; (int a, int b) -&gt; &#123; return a * b; &#125;;</span><br><span class="line">MathOperation division &#x3D; (int a, int b) -&gt; a &#x2F; b;</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-Stream"><a href="#6-Stream" class="headerlink" title="6. Stream"></a>6. Stream</h2><p>Java 8 API添加了一个新的抽象称为流Stream，可以让你以一种声明的方式处理数据。<br>Stream API可以极大提高Java程序员的生产力，让程序员写出高效率、干净、简洁的代码。</p>
+<p>Stream（流）是一个来自数据源的元素队列并支持聚合操作</p>
+<ul>
+<li><strong>元素是特定类型的对象，形成一个队列。</strong> Java中的Stream并不会存储元素，而是按需计算。</li>
+<li><strong>数据源 流的来源。</strong> 可以是集合，数组，I/O channel， 产生器generator 等。</li>
+<li>*<em>聚合操作 *</em>类似SQL语句一样的操作， 比如filter, map, reduce, find, match, sorted等。</li>
+</ul>
+<p>和以前的Collection操作不同， Stream操作还有两个基础的特征：</p>
+<ul>
+<li>Pipelining: 中间操作都会返回流对象本身。 这样多个操作可以串联成一个管道， 如同流式风格（fluent style）。 这样做可以对操作进行优化， 比如延迟执行(laziness)和短路( short-circuiting)。</li>
+<li>内部迭代： 以前对集合遍历都是通过Iterator或者For-Each的方式, 显式的在集合外部进行迭代， 这叫做外部迭代。 Stream提供了内部迭代的方式， 通过访问者模式(Visitor)实现。</li>
+</ul>
+<p><strong>生成流</strong></p>
+<ul>
+<li>stream() − 为集合创建串行流。</li>
+<li>parallelStream() − 为集合创建并行流。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; strings &#x3D; Arrays.asList(&quot;abc&quot;, &quot;&quot;, &quot;bc&quot;, &quot;efg&quot;, &quot;abcd&quot;,&quot;&quot;, &quot;jkl&quot;);</span><br><span class="line">List&lt;String&gt; filtered &#x3D; strings.stream().filter(string -&gt; !string.isEmpty()).collect(Collectors.toList());</span><br></pre></td></tr></table></figure>
+
+<p><strong>forEach</strong><br>Stream 提供了新的方法 ‘forEach’ 来迭代流中的每个数据。以下代码片段使用 forEach 输出了10个随机数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Random random &#x3D; new Random();</span><br><span class="line">random.ints().limit(10).forEach(System.out::println);</span><br><span class="line"></span><br><span class="line">List&lt;String&gt; strList &#x3D; Arrays.asList(&quot;a&quot;, &quot;ba&quot;, &quot;bb&quot;, &quot;abc&quot;, &quot;cbb&quot;, &quot;bba&quot;, &quot;cab&quot;);</span><br><span class="line">Map&lt;Integer, String&gt; strMap &#x3D; new HashMap&lt;Integer, String&gt;();</span><br><span class="line"></span><br><span class="line">strMap &#x3D; strList.stream()</span><br><span class="line">         .collect( Collectors.toMap( str -&gt; strList.indexOf(str), str -&gt; str ) );</span><br><span class="line">strMap.forEach((key, value) -&gt; &#123;</span><br><span class="line">    System.out.println(key+&quot;::&quot;+value);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>** map **方法用于映射每个元素到对应的结果，以下代码片段使用 map 输出了元素对应的平方数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Integer&gt; numbers &#x3D; Arrays.asList(3, 2, 2, 3, 7, 3, 5);</span><br><span class="line">&#x2F;&#x2F; 获取对应的平方数</span><br><span class="line">List&lt;Integer&gt; squaresList &#x3D; numbers.stream().map( i -&gt; i*i).distinct().collect(Collectors.toList());</span><br></pre></td></tr></table></figure>
+
+<p>** filter **方法用于通过设置的条件过滤出元素。以下代码片段使用 filter 方法过滤出空字符串：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt;strings &#x3D; Arrays.asList(&quot;abc&quot;, &quot;&quot;, &quot;bc&quot;, &quot;efg&quot;, &quot;abcd&quot;,&quot;&quot;, &quot;jkl&quot;);</span><br><span class="line">&#x2F;&#x2F; 获取空字符串的数量</span><br><span class="line">long count &#x3D; strings.stream().filter(string -&gt; string.isEmpty()).count();</span><br></pre></td></tr></table></figure>
+
+<p>** limit **方法用于获取指定数量的流。 以下代码片段使用 limit 方法打印出 10 条数据：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Random random &#x3D; new Random();</span><br><span class="line">random.ints().limit(10).forEach(System.out::println);</span><br></pre></td></tr></table></figure>
+
+<p>*<em>sorted *</em>方法用于对流进行排序。以下代码片段使用 sorted 方法对输出的 10 个随机数进行排序：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Random random &#x3D; new Random();</span><br><span class="line">random.ints().limit(10).sorted().forEach(System.out::println);</span><br></pre></td></tr></table></figure>
+
+<p>*<em>Collectors *</em>类实现了很多归约操作，例如将流转换成集合和聚合元素。Collectors 可用于返回列表或字符串：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt;strings &#x3D; Arrays.asList(&quot;abc&quot;, &quot;&quot;, &quot;bc&quot;, &quot;efg&quot;, &quot;abcd&quot;,&quot;&quot;, &quot;jkl&quot;);</span><br><span class="line">List&lt;String&gt; filtered &#x3D; strings.stream().filter(string -&gt; !string.isEmpty()).collect(Collectors.toList());</span><br><span class="line"> </span><br><span class="line">System.out.println(&quot;筛选列表: &quot; + filtered);</span><br><span class="line">String mergedString &#x3D; strings.stream().filter(string -&gt; !string.isEmpty()).collect(Collectors.joining(&quot;, &quot;));</span><br><span class="line">System.out.println(&quot;合并字符串: &quot; + mergedString);</span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/JDK%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># JDK源码分析</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/03/02/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-HashMap%E3%80%81ConcurrentHashMap%20-%20%E5%89%AF%E6%9C%AC/" rel="prev" title="JDK 源码解析 -- HashMap、ConcurrentHashMap">
+      <i class="fa fa-chevron-left"></i> JDK 源码解析 -- HashMap、ConcurrentHashMap
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/03/04/LeakCanary2.0/" rel="next" title="LeakCanary2.0">
+      LeakCanary2.0 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#新特性"><span class="nav-number">1.</span> <span class="nav-text">新特性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Optional类"><span class="nav-number">2.</span> <span class="nav-text">1. Optional类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-默认方法"><span class="nav-number">3.</span> <span class="nav-text">2. 默认方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-方法引用"><span class="nav-number">4.</span> <span class="nav-text">3. 方法引用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-日期时间-API"><span class="nav-number">5.</span> <span class="nav-text">4. 日期时间 API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-Lambda-表达式"><span class="nav-number">6.</span> <span class="nav-text">5. Lambda 表达式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-Stream"><span class="nav-number">7.</span> <span class="nav-text">6. Stream</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">112</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879808182838485868788899091929394959697989910010110210">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android中View的绘制流程">
+<meta property="og:url" content="http://yoursite.com/2021/02/24/Android%E4%B8%ADView%E7%9A%84%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879808182838485868788899091929394959697989910010110210">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-02-24T02:23:02.095Z">
+<meta property="article:modified_time" content="2021-02-24T02:32:43.370Z">
+<meta property="article:author" content="yudesong">
+<meta property="article:tag" content="Android系统">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2021/02/24/Android%E4%B8%ADView%E7%9A%84%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Android中View的绘制流程 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/02/24/Android%E4%B8%ADView%E7%9A%84%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Android中View的绘制流程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-02-24 10:23:02 / 修改时间：10:32:43" itemprop="dateCreated datePublished" datetime="2021-02-24T10:23:02+08:00">2021-02-24</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br></pre></td><td class="code"><pre><span class="line">private void performTraversals() &#123;</span><br><span class="line">    &#x2F;&#x2F;这个mView是通过setView方法传进来的,也就是Activity的根布局DecorView，使用final修饰，以防在遍历过程中被修改</span><br><span class="line">    final View host &#x3D; mView;</span><br><span class="line">    &#x2F;&#x2F;mAdded在setView方法修改为true，表明Decorview已经添加到了PhoneWindow</span><br><span class="line">    if (host &#x3D;&#x3D; null || !mAdded)</span><br><span class="line">        return;</span><br><span class="line">    &#x2F;&#x2F;是否正在遍历</span><br><span class="line">    mIsInTraversal &#x3D; true;</span><br><span class="line">    &#x2F;&#x2F;是否需要马上绘制</span><br><span class="line">    mWillDrawSoon &#x3D; true;</span><br><span class="line">    &#x2F;&#x2F;视图大小改变</span><br><span class="line">    boolean windowSizeMayChange &#x3D; false;</span><br><span class="line">    &#x2F;&#x2F;新视图</span><br><span class="line">    boolean newSurface &#x3D; false;</span><br><span class="line">    &#x2F;&#x2F;视图改变</span><br><span class="line">    boolean surfaceChanged &#x3D; false;</span><br><span class="line">    WindowManager.LayoutParams lp &#x3D; mWindowAttributes;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;Activity窗口的宽度和高度</span><br><span class="line">    int desiredWindowWidth;</span><br><span class="line">    int desiredWindowHeight;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F;DecorView是否可见</span><br><span class="line">    final int viewVisibility &#x3D; getHostVisibility();</span><br><span class="line">    final boolean viewVisibilityChanged &#x3D; !mFirst</span><br><span class="line">            &amp;&amp; (mViewVisibility !&#x3D; viewVisibility || mNewSurfaceNeeded);</span><br><span class="line">    WindowManager.LayoutParams params &#x3D; null;</span><br><span class="line">    if (mWindowAttributesChanged) &#123;</span><br><span class="line">        mWindowAttributesChanged &#x3D; false;</span><br><span class="line">        surfaceChanged &#x3D; true;</span><br><span class="line">        params &#x3D; lp;</span><br><span class="line">    &#125;</span><br><span class="line">    CompatibilityInfo compatibilityInfo &#x3D;</span><br><span class="line">            mDisplay.getDisplayAdjustments().getCompatibilityInfo();</span><br><span class="line">    if (compatibilityInfo.supportsScreen() &#x3D;&#x3D; mLastInCompatMode) &#123;</span><br><span class="line">        params &#x3D; lp;</span><br><span class="line">        mFullRedrawNeeded &#x3D; true;</span><br><span class="line">        mLayoutRequested &#x3D; true;</span><br><span class="line">        if (mLastInCompatMode) &#123;</span><br><span class="line">            params.privateFlags &amp;&#x3D; ~WindowManager.LayoutParams.PRIVATE_FLAG_COMPATIBLE_WINDOW;</span><br><span class="line">            mLastInCompatMode &#x3D; false;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            params.privateFlags |&#x3D; WindowManager.LayoutParams.PRIVATE_FLAG_COMPATIBLE_WINDOW;</span><br><span class="line">            mLastInCompatMode &#x3D; true;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">        mWindowAttributesChangesFlag &#x3D; 0;</span><br><span class="line">		&#x2F;&#x2F;用来保存窗口宽度和高度，来自于全局变量mWinFrame，这个mWinFrame保存了窗口最新尺寸</span><br><span class="line">        Rect frame &#x3D; mWinFrame;</span><br><span class="line">        &#x2F;&#x2F;构造方法里mFirst赋值为true，意思是第一次执行遍历吗	</span><br><span class="line">        if (mFirst) &#123;</span><br><span class="line">        	&#x2F;&#x2F;是否需要重绘</span><br><span class="line">            mFullRedrawNeeded &#x3D; true;</span><br><span class="line">            &#x2F;&#x2F;是否需要重新确定Layout</span><br><span class="line">            mLayoutRequested &#x3D; true;</span><br><span class="line">            &#x2F;&#x2F;判断要绘制的窗口是否包含状态栏，有就去掉，然后确定要绘制的Decorview的高度和宽度</span><br><span class="line">            if (shouldUseDisplaySize(lp)) &#123;</span><br><span class="line">                &#x2F;&#x2F; NOTE -- system code, won&#39;t try to do compat mode.</span><br><span class="line">                Point size &#x3D; new Point();</span><br><span class="line">                mDisplay.getRealSize(size);</span><br><span class="line">                desiredWindowWidth &#x3D; size.x;</span><br><span class="line">                desiredWindowHeight &#x3D; size.y;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                &#x2F;&#x2F;宽度和高度为整个屏幕的值</span><br><span class="line">                Configuration config &#x3D; mContext.getResources().getConfiguration();</span><br><span class="line">                desiredWindowWidth &#x3D; dipToPx(config.screenWidthDp);</span><br><span class="line">                desiredWindowHeight &#x3D; dipToPx(config.screenHeightDp);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;**</span><br><span class="line">             * 因为第一次遍历，View树第一次显示到窗口</span><br><span class="line">             * 然后对mAttachinfo进行一些赋值</span><br><span class="line">             * AttachInfo是View类中的静态内部类AttachInfo类的对象</span><br><span class="line">             * 它主要储存一组当View attach到它的父Window的时候视图信息</span><br><span class="line">             *&#x2F;</span><br><span class="line">            mAttachInfo.mUse32BitDrawingCache &#x3D; true;&#x2F;&#x2F;使用32位绘图缓存</span><br><span class="line">            mAttachInfo.mHasWindowFocus &#x3D; false;&#x2F;&#x2F;视图窗口当前不具有焦点。</span><br><span class="line">            mAttachInfo.mWindowVisibility &#x3D; viewVisibility;&#x2F;&#x2F;当前窗口不可见</span><br><span class="line">            mAttachInfo.mRecomputeGlobalAttributes &#x3D; false;&#x2F;&#x2F;ViewAncestor应在下次执行遍历时触发全局布局更改</span><br><span class="line">            mLastSystemUiVisibility &#x3D; mAttachInfo.mSystemUiVisibility;</span><br><span class="line">            &#x2F;&#x2F; 如果之前未设置布局方向，则设置布局方向（View.LAYOUT_DIRECTION_INHERIT 是默认值）</span><br><span class="line">            if (mViewLayoutDirectionInitial &#x3D;&#x3D; View.LAYOUT_DIRECTION_INHERIT) &#123;</span><br><span class="line">                host.setLayoutDirection(mLastConfiguration.getLayoutDirection());</span><br><span class="line">            &#125;</span><br><span class="line">            host.dispatchAttachedToWindow(mAttachInfo, 0);</span><br><span class="line">            mAttachInfo.mTreeObserver.dispatchOnWindowAttachedChange(true);</span><br><span class="line">            dispatchApplyInsets(host);</span><br><span class="line">            &#x2F;&#x2F;Log.i(mTag, &quot;Screen on initialized: &quot; + attachInfo.mKeepScreenOn);</span><br><span class="line"></span><br><span class="line">        &#125; else &#123;</span><br><span class="line">         		&#x2F;&#x2F;如果不是第一次进来这个方法，它的当前宽度和高度就从之前的mWinFrame获取</span><br><span class="line">            desiredWindowWidth &#x3D; frame.width();</span><br><span class="line">            desiredWindowHeight &#x3D; frame.height();</span><br><span class="line">            &#x2F;**</span><br><span class="line">             * mWidth和mHeight是由WindowManagerService服务计算出的窗口大小，</span><br><span class="line">             * 如果这次测量的窗口大小与这两个值不同，说明WMS单方面改变了窗口的尺寸</span><br><span class="line">             *&#x2F;</span><br><span class="line">            if (desiredWindowWidth !&#x3D; mWidth || desiredWindowHeight !&#x3D; mHeight) &#123;</span><br><span class="line">                if (DEBUG_ORIENTATION) Log.v(mTag, &quot;View &quot; + host + &quot; resized to: &quot; + frame);</span><br><span class="line">                &#x2F;&#x2F;需要进行完整的重绘以适应新的窗口尺寸</span><br><span class="line">                mFullRedrawNeeded &#x3D; true;</span><br><span class="line">                &#x2F;&#x2F;需要对控件树进行重新布局</span><br><span class="line">                mLayoutRequested &#x3D; true;</span><br><span class="line">                &#x2F;&#x2F;window窗口大小改变</span><br><span class="line">                windowSizeMayChange &#x3D; true;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">       </span><br><span class="line">		&#x2F;&#x2F;如果窗口可见性变了，进行判断</span><br><span class="line">        if (viewVisibilityChanged) &#123;</span><br><span class="line">            mAttachInfo.mWindowVisibility &#x3D; viewVisibility;</span><br><span class="line">            host.dispatchWindowVisibilityChanged(viewVisibility);</span><br><span class="line">            host.dispatchVisibilityAggregated(viewVisibility &#x3D;&#x3D; View.VISIBLE);</span><br><span class="line">            if (viewVisibility !&#x3D; View.VISIBLE || mNewSurfaceNeeded) &#123;</span><br><span class="line">            	&#x2F;&#x2F;不可见就结束调整大小事件，释放相关硬件资源</span><br><span class="line">                endDragResizing();</span><br><span class="line">                destroyHardwareResources();</span><br><span class="line">            &#125;</span><br><span class="line">            &#x2F;&#x2F;如果窗口不可见，就修改标志位</span><br><span class="line">            if (viewVisibility &#x3D;&#x3D; View.GONE) &#123;</span><br><span class="line">                &#x2F;&#x2F; After making a window gone, we will count it as being</span><br><span class="line">                &#x2F;&#x2F; shown for the first time the next time it gets focus.</span><br><span class="line">                mHasHadWindowFocus &#x3D; false;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; 如果窗口不可见了，去掉可访问性焦点</span><br><span class="line">        if (mAttachInfo.mWindowVisibility !&#x3D; View.VISIBLE) &#123;</span><br><span class="line">            host.clearAccessibilityFocus();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        &#x2F;**</span><br><span class="line">         * 执行HandlerActionQueue中HandlerAction数组保存的Runnable</span><br><span class="line">         * 我们平时会通过View.post()或View.postDelayed()方法将一个Runnable对象发送到主线程执行</span><br><span class="line">         * 其实就是通过这个mHandler去执行</span><br><span class="line">         * public void executeActions(Handler handler) &#123;</span><br><span class="line">             synchronized (this) &#123;</span><br><span class="line">                 final HandlerAction[] actions &#x3D; mActions;</span><br><span class="line">                 for (int i &#x3D; 0, count &#x3D; mCount; i &lt; count; i++) &#123;</span><br><span class="line">                     final HandlerAction handlerAction &#x3D; actions[i];</span><br><span class="line">                     handler.postDelayed(handlerAction.action, handlerAction.delay);</span><br><span class="line">                 &#125;</span><br><span class="line">                 mActions &#x3D; null;</span><br><span class="line">                 mCount &#x3D; 0;</span><br><span class="line">             &#125;</span><br><span class="line">           &#125;</span><br><span class="line">         *&#x2F;</span><br><span class="line">        getRunQueue().executeActions(mAttachInfo.mHandler);</span><br><span class="line"></span><br><span class="line">        boolean insetsChanged &#x3D; false;</span><br><span class="line"></span><br><span class="line">        boolean layoutRequested &#x3D; mLayoutRequested &amp;&amp; (!mStopped || mReportNextDraw);</span><br><span class="line">        &#x2F;&#x2F;进行预测量</span><br><span class="line">        if (layoutRequested) &#123;</span><br><span class="line">            final Resources res &#x3D; mView.getContext().getResources();</span><br><span class="line">            if (mFirst) &#123;</span><br><span class="line">                &#x2F;&#x2F; 视图窗口当前是否处于触摸模式。</span><br><span class="line">                mAttachInfo.mInTouchMode &#x3D; !mAddedTouchMode;</span><br><span class="line">                &#x2F;&#x2F;确保这个Window的触摸模式已经被设置</span><br><span class="line">                ensureTouchModeLocally(mAddedTouchMode);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">            		&#x2F;**</span><br><span class="line">                 * 判断一下几个insects的值和上一次相比有没有什么变化，不同的话就改变insetsChanged</span><br><span class="line">                 * mOverscanInsets 记录屏幕中的 overscan 区域               见贴图中相应描述区域</span><br><span class="line">                 * mContentInsets  记录了屏幕中的控件在布局时必须预留的空间   见贴图中相应描述区域</span><br><span class="line">                 * mStableInsets   记录了Stable区域，比mContentInsets区域大  见贴图中相应描述区域</span><br><span class="line">                 * mVisibleInsets  记录了被遮挡的区域，如正在进行输入的TextView等不被遮挡，这样VisibleInsets的变化并不会导致重新布局，</span><br><span class="line">                 *                 所以这里仅仅是将VisibleInsets保存到mAttachInfo中，以便绘制时使用</span><br><span class="line">                 *&#x2F;</span><br><span class="line">                if (!mPendingOverscanInsets.equals(mAttachInfo.mOverscanInsets)) &#123;</span><br><span class="line">                    insetsChanged &#x3D; true;</span><br><span class="line">                &#125;</span><br><span class="line">                if (!mPendingContentInsets.equals(mAttachInfo.mContentInsets)) &#123;</span><br><span class="line">                    insetsChanged &#x3D; true;</span><br><span class="line">                &#125;</span><br><span class="line">                if (!mPendingStableInsets.equals(mAttachInfo.mStableInsets)) &#123;</span><br><span class="line">                    insetsChanged &#x3D; true;</span><br><span class="line">                &#125;</span><br><span class="line">                if (!mPendingVisibleInsets.equals(mAttachInfo.mVisibleInsets)) &#123;</span><br><span class="line">                    mAttachInfo.mVisibleInsets.set(mPendingVisibleInsets);</span><br><span class="line">                    if (DEBUG_LAYOUT) Log.v(mTag, &quot;Visible insets changing to: &quot;</span><br><span class="line">                            + mAttachInfo.mVisibleInsets);</span><br><span class="line">                &#125;</span><br><span class="line">                if (!mPendingOutsets.equals(mAttachInfo.mOutsets)) &#123;</span><br><span class="line">                    insetsChanged &#x3D; true;</span><br><span class="line">                &#125;</span><br><span class="line">                if (mPendingAlwaysConsumeNavBar !&#x3D; mAttachInfo.mAlwaysConsumeNavBar) &#123;</span><br><span class="line">                    insetsChanged &#x3D; true;</span><br><span class="line">                &#125;</span><br><span class="line">                 &#x2F;**</span><br><span class="line">                 * 如果当前窗口的根布局的width或height被指定为WRAP_CONTENT时，</span><br><span class="line">                 * 比如Dialog，那我们还是给它尽量大的长宽，这里是将屏幕长宽赋值给它</span><br><span class="line">                 *&#x2F;</span><br><span class="line">                if (lp.width &#x3D;&#x3D; ViewGroup.LayoutParams.WRAP_CONTENT</span><br><span class="line">                        || lp.height &#x3D;&#x3D; ViewGroup.LayoutParams.WRAP_CONTENT) &#123;</span><br><span class="line">                    windowSizeMayChange &#x3D; true;</span><br><span class="line"> 					&#x2F;&#x2F;判断要绘制的窗口是否包含状态栏，有就去掉，然后确定要绘制的Decorview的高度和宽度</span><br><span class="line">                    if (shouldUseDisplaySize(lp)) &#123;</span><br><span class="line">                        &#x2F;&#x2F; NOTE -- system code, won&#39;t try to do compat mode.</span><br><span class="line">                        Point size &#x3D; new Point();</span><br><span class="line">                        mDisplay.getRealSize(size);</span><br><span class="line">                        desiredWindowWidth &#x3D; size.x;</span><br><span class="line">                        desiredWindowHeight &#x3D; size.y;</span><br><span class="line">                    &#125; else &#123;</span><br><span class="line">                        Configuration config &#x3D; res.getConfiguration();</span><br><span class="line">                        desiredWindowWidth &#x3D; dipToPx(config.screenWidthDp);</span><br><span class="line">                        desiredWindowHeight &#x3D; dipToPx(config.screenHeightDp);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F; 进行预测量窗口大小，以达到更好的显示大小</span><br><span class="line">            windowSizeMayChange |&#x3D; measureHierarchy(host, lp, res,</span><br><span class="line">                    desiredWindowWidth, desiredWindowHeight);</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line">private boolean measureHierarchy(final View host, final WindowManager.LayoutParams lp,</span><br><span class="line">            final Resources res, final int desiredWindowWidth, final int desiredWindowHeight) &#123;</span><br><span class="line">        &#x2F;&#x2F;用于描述宽度的MeasureSpec</span><br><span class="line">        int childWidthMeasureSpec;</span><br><span class="line">        &#x2F;&#x2F;用于描述高度的MeasureSpec</span><br><span class="line">        int childHeightMeasureSpec;</span><br><span class="line">        &#x2F;&#x2F;表示测量结果是否可能导致窗口的尺寸发生变化</span><br><span class="line">        boolean windowSizeMayChange &#x3D; false;</span><br><span class="line"></span><br><span class="line">        if (DEBUG_ORIENTATION || DEBUG_LAYOUT) Log.v(mTag,</span><br><span class="line">                &quot;Measuring &quot; + host + &quot; in display &quot; + desiredWindowWidth</span><br><span class="line">                + &quot;x&quot; + desiredWindowHeight + &quot;...&quot;);</span><br><span class="line">        &#x2F;&#x2F;表示测量是否能满足控件树充分显示内容的要求</span><br><span class="line">        boolean goodMeasure &#x3D; false;</span><br><span class="line">        &#x2F;&#x2F;其实测量协商仅仅发生在width被指定为WRAP_CONTENT情况</span><br><span class="line">        if (lp.width &#x3D;&#x3D; ViewGroup.LayoutParams.WRAP_CONTENT) &#123;</span><br><span class="line">            &#x2F;&#x2F; 进入到这里就让窗口的大小不以屏幕大小去布局，而是给一个固定的值看看是否合适</span><br><span class="line">            final DisplayMetrics packageMetrics &#x3D; res.getDisplayMetrics();</span><br><span class="line">            res.getValue(com.android.internal.R.dimen.config_prefDialogWidth, mTmpValue, true);</span><br><span class="line">            int baseSize &#x3D; 0;</span><br><span class="line">            if (mTmpValue.type &#x3D;&#x3D; TypedValue.TYPE_DIMENSION) &#123;</span><br><span class="line">                &#x2F;&#x2F;取出一个固定值来用，来自于config_prefDialogWidth</span><br><span class="line">                baseSize &#x3D; (int)mTmpValue.getDimension(packageMetrics);</span><br><span class="line">            &#125;</span><br><span class="line">            if (DEBUG_DIALOG) Log.v(mTag, &quot;Window &quot; + mView + &quot;: baseSize&#x3D;&quot; + baseSize</span><br><span class="line">                    + &quot;, desiredWindowWidth&#x3D;&quot; + desiredWindowWidth);</span><br><span class="line"></span><br><span class="line">            &#x2F;&#x2F;假设上面config_prefDialogWidth值是320dp</span><br><span class="line">            if (baseSize !&#x3D; 0 &amp;&amp; desiredWindowWidth &gt; baseSize) &#123;</span><br><span class="line">                &#x2F;&#x2F;使用getRootMeasureSpec()函数组合SPEC_MODE与SPEC_SIZE为一个MeasureSpec</span><br><span class="line">                childWidthMeasureSpec &#x3D; getRootMeasureSpec(baseSize, lp.width);</span><br><span class="line">                childHeightMeasureSpec &#x3D; getRootMeasureSpec(desiredWindowHeight, lp.height);</span><br><span class="line">                &#x2F;&#x2F;第一次测量</span><br><span class="line">                performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);</span><br><span class="line"></span><br><span class="line">                if (DEBUG_DIALOG) Log.v(mTag, &quot;Window &quot; + mView + &quot;: measured (&quot;</span><br><span class="line">                        + host.getMeasuredWidth() + &quot;,&quot; + host.getMeasuredHeight()</span><br><span class="line">                        + &quot;) from width spec: &quot; + MeasureSpec.toString(childWidthMeasureSpec)</span><br><span class="line">                        + &quot; and height spec: &quot; + MeasureSpec.toString(childHeightMeasureSpec));</span><br><span class="line"></span><br><span class="line">                &#x2F;**</span><br><span class="line">                 * 控件树的测量结果可以通过mView的getmeasuredWidthAndState()方法获取。</span><br><span class="line">                 * 如果控件树对这个测量结果不满意，则会在返回值中添加MEASURED_STATE_TOO_SMALL位</span><br><span class="line">                 *&#x2F;</span><br><span class="line">                if ((host.getMeasuredWidthAndState()&amp;View.MEASURED_STATE_TOO_SMALL) &#x3D;&#x3D; 0) &#123;</span><br><span class="line">                    goodMeasure &#x3D; true;</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    &#x2F;**</span><br><span class="line">                     * 走到这里说明上面的尺寸不适合View树</span><br><span class="line">                     * 需要对宽度再进行放松，使用上面的预期值与最大值的平均值作为新的宽度</span><br><span class="line">                     *&#x2F;</span><br><span class="line">                    baseSize &#x3D; (baseSize+desiredWindowWidth)&#x2F;2;</span><br><span class="line">                    if (DEBUG_DIALOG) Log.v(mTag, &quot;Window &quot; + mView + &quot;: next baseSize&#x3D;&quot;</span><br><span class="line">                            + baseSize);</span><br><span class="line">                    &#x2F;&#x2F;重新获取MeasureSpec</span><br><span class="line">                    childWidthMeasureSpec &#x3D; getRootMeasureSpec(baseSize, lp.width);</span><br><span class="line">                    &#x2F;&#x2F;第二次测量</span><br><span class="line">                    performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);</span><br><span class="line">                    if (DEBUG_DIALOG) Log.v(mTag, &quot;Window &quot; + mView + &quot;: measured (&quot;</span><br><span class="line">                            + host.getMeasuredWidth() + &quot;,&quot; + host.getMeasuredHeight() + &quot;)&quot;);</span><br><span class="line">                    &#x2F;&#x2F;再次判断View树对新的结果是否满意</span><br><span class="line">                    if ((host.getMeasuredWidthAndState()&amp;View.MEASURED_STATE_TOO_SMALL) &#x3D;&#x3D; 0) &#123;</span><br><span class="line">                        if (DEBUG_DIALOG) Log.v(mTag, &quot;Good!&quot;);</span><br><span class="line">                        goodMeasure &#x3D; true;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        &#x2F;**</span><br><span class="line">         * 如果上面两次尝试测量结果，View树都不满意</span><br><span class="line">         * 那老哥也没办法了，做不了优化了，只能以屏幕宽高去给View树测量了</span><br><span class="line">         * 这是第三次也是最后一次测量了</span><br><span class="line">         *&#x2F;</span><br><span class="line">        if (!goodMeasure) &#123;</span><br><span class="line">            childWidthMeasureSpec &#x3D; getRootMeasureSpec(desiredWindowWidth, lp.width);</span><br><span class="line">            childHeightMeasureSpec &#x3D; getRootMeasureSpec(desiredWindowHeight, lp.height);</span><br><span class="line">            performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);</span><br><span class="line">            &#x2F;&#x2F;如果测量得出的结果与当前窗口值不一样，就需要调整窗口大小了</span><br><span class="line">            if (mWidth !&#x3D; host.getMeasuredWidth() || mHeight !&#x3D; host.getMeasuredHeight()) &#123;</span><br><span class="line">                windowSizeMayChange &#x3D; true;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (DBG) &#123;</span><br><span class="line">            System.out.println(&quot;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&quot;);</span><br><span class="line">            System.out.println(&quot;performTraversals -- after measure&quot;);</span><br><span class="line">            host.debug();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        return windowSizeMayChange;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">private static int getRootMeasureSpec(int windowSize, int rootDimension) &#123;</span><br><span class="line">        int measureSpec;</span><br><span class="line">        switch (rootDimension) &#123;</span><br><span class="line"></span><br><span class="line">        case ViewGroup.LayoutParams.MATCH_PARENT:</span><br><span class="line">            &#x2F;&#x2F; Window can&#39;t resize. Force root view to be windowSize.</span><br><span class="line">            measureSpec &#x3D; MeasureSpec.makeMeasureSpec(windowSize, MeasureSpec.EXACTLY);</span><br><span class="line">            break;</span><br><span class="line">        case ViewGroup.LayoutParams.WRAP_CONTENT:</span><br><span class="line">            &#x2F;&#x2F; Window can resize. Set max size for root view.</span><br><span class="line">            measureSpec &#x3D; MeasureSpec.makeMeasureSpec(windowSize, MeasureSpec.AT_MOST);</span><br><span class="line">            break;</span><br><span class="line">        default:</span><br><span class="line">            &#x2F;&#x2F; Window wants to be an exact size. Force root view to be that size.</span><br><span class="line">            measureSpec &#x3D; MeasureSpec.makeMeasureSpec(rootDimension, MeasureSpec.EXACTLY);</span><br><span class="line">            break;</span><br><span class="line">        &#125;</span><br><span class="line">        return measureSpec;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>详情：<a href="https://blog.csdn.net/qq_30993595/article/details/80931556" target="_blank" rel="noopener">https://blog.csdn.net/qq_30993595/article/details/80931556</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android%E7%B3%BB%E7%BB%9F/" rel="tag"># Android系统</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/02/23/startActivityForResult%E5%92%8CsetResult%E8%AF%A6%E8%A7%A3/" rel="prev" title="startActivityForResult和setResult详解">
+      <i class="fa fa-chevron-left"></i> startActivityForResult和setResult详解
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/02/26/InputManagerService%20%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/" rel="next" title="InputManagerService 工作原理">
+      InputManagerService 工作原理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">112</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

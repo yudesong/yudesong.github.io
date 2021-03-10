@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Android6.0系统触摸事件工作原理——InputManagerServiceAndroid的事件处理是在Linux基础上完成的。事件的最开始是由硬件监听到，然后通过硬件分到Kernel，Kernel在分到框架层，最后最后框架层把事件分布到应用程序的UI中。下面就以触摸事件为例进行分析。当有事件发生的时候，硬件首先监听到，然后InputDriver起作用，而框架层的EventHub类一直在In">
+<meta property="og:type" content="article">
+<meta property="og:title" content="InputManagerService 工作原理">
+<meta property="og:url" content="http://yoursite.com/2021/02/26/InputManagerService%20%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Android6.0系统触摸事件工作原理——InputManagerServiceAndroid的事件处理是在Linux基础上完成的。事件的最开始是由硬件监听到，然后通过硬件分到Kernel，Kernel在分到框架层，最后最后框架层把事件分布到应用程序的UI中。下面就以触摸事件为例进行分析。当有事件发生的时候，硬件首先监听到，然后InputDriver起作用，而框架层的EventHub类一直在In">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-02-26T08:35:39.452Z">
+<meta property="article:modified_time" content="2021-02-26T08:41:32.904Z">
+<meta property="article:author" content="yudesong">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2021/02/26/InputManagerService%20%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>InputManagerService 工作原理 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/02/26/InputManagerService%20%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          InputManagerService 工作原理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-02-26 16:35:39 / 修改时间：16:41:32" itemprop="dateCreated datePublished" datetime="2021-02-26T16:35:39+08:00">2021-02-26</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Android6-0系统触摸事件工作原理——InputManagerService"><a href="#Android6-0系统触摸事件工作原理——InputManagerService" class="headerlink" title="Android6.0系统触摸事件工作原理——InputManagerService"></a>Android6.0系统触摸事件工作原理——InputManagerService</h2><p>Android的事件处理是在Linux基础上完成的。事件的最开始是由硬件监听到，然后通过硬件分到Kernel，Kernel在分到框架层，最后最后框架层把事件分布到应用程序的UI中。下面就以触摸事件为例进行分析。<br>当有事件发生的时候，硬件首先监听到，然后InputDriver起作用，而框架层的EventHub类一直在InputDriver中读事件；当EventHub类读到事件之后，EventHub就会通过NativeInputManager类首先分发事件到Java层的InputManager，而Java层的InputManager又会把这个事件分发到服务WindowManagerService(WMS)，之后又分发到PhoneWindowManager中，最后分发到ViewRootImpl中，ViewRootImpl将事件分发到应用程序的Activity和View中。</p>
+<p>具体流程：首先有一个线程在不断的监听屏幕，一旦有触摸事件，就将其事件捕获；其次，还应该存在某种方式可以找到目标窗口，因为可能有多个APP的多个界面为用户可见，必须确定这个事件究竟通知哪个窗口；最后才是目标窗口如何消费事件的问题。<br>总体来说，Android事件投递(主要以触摸事件为主)的工作流程分为4个部分，如图所示：<br>这里写图片描述<br>(1) 采集<br>即对“硬件源”所产生的原始信息进行收集的过程。它需要Linux内核驱动的支持，Android系统则是通过/dev/input/下的节点来访问当前发生的事件。<br>(2) 前期处理<br>上一步采集到的信息为“原始数据”，这其中一部分内容对应程序而言并不是“必须”的，而且格式上也相对烦琐，所以需要先经过前期的提炼和转化。<br>(3)WMS分配<br>WindowManagerService是窗口的大主管，同时也是InputEvent的派发者。WMS记录了当前系统中所有窗口的完整状态信息，所以只有它才能判断出应该把事件投递给哪一个具体的应用进程进行处理。其派发策略也因事件类型的不同而有所差异，以触摸消息为例，则要先计算出触摸点落在哪个区域，然后才能传递给相应的窗口单元。<br>(4)应用程序处理<br>应用开发人员的工作主要体现在这一部分。经过前面的几个步骤的传递，应用程序端收到的事件已经相对“可理解”“好处理”了，接下来要做的就是充分利用这些事件来实现软件的功能。</p>
+<p>1、InputManagerService(IMS)诞生<br>IMS服务的创建过程是在SystemServer进程启动的时候实例化的，并注册到ServiceManager中去，这个服务对外主要是用来提供一些输入设备的信息的作用。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;frameworks&#x2F;base&#x2F;services&#x2F;java&#x2F;com&#x2F;android&#x2F;server&#x2F;SystemServer.java</span><br><span class="line">private void startOtherServices() &#123;</span><br><span class="line">    ...</span><br><span class="line">    &#x2F;&#x2F;新建IMS对象</span><br><span class="line">    inputManager &#x3D; new InputManagerService(context);</span><br><span class="line">    wm &#x3D; WindowManagerService.main(context, inputManager,</span><br><span class="line">            mFactoryTestMode !&#x3D; FactoryTest.FACTORY_TEST_LOW_LEVEL,</span><br><span class="line">            !mFirstBoot, mOnlyCore);</span><br><span class="line">    ServiceManager.addService(Context.WINDOW_SERVICE, wm);</span><br><span class="line">    &#x2F;&#x2F;将IMS发布给ServiceManager，以便其他人可以访问IMS提供的接口</span><br><span class="line">    ServiceManager.addService(Context.INPUT_SERVICE, inputManager);</span><br><span class="line">    mActivityManagerService.setWindowManager(wm);</span><br><span class="line">    &#x2F;&#x2F;设置向WMS发起回调Callback对象</span><br><span class="line">    inputManager.setWindowManagerCallbacks(wm.getInputMonitor());</span><br><span class="line">    &#x2F;&#x2F;启动IMS</span><br><span class="line">    inputManager.start();</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>InputManagerService和WindowManagerService有密切的联系，也是触摸事件处理的时候同时涉及两个服务，InputManagerService主要负责事件(以触摸事件为例)的采集，而WindowManagerService负责找到目标窗口。接下来，继续分析InputManagerService如何完成触摸事件的采集。</p>
+<p>2、事件的采集</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;frameworks&#x2F;base&#x2F;services&#x2F;core&#x2F;jni&#x2F;com_android_server_input_InputManagerService.cpp</span><br><span class="line">NativeInputManager::NativeInputManager(jobject contextObj,</span><br><span class="line">        jobject serviceObj, const sp&lt;Looper&gt;&amp; looper) :</span><br><span class="line">        mLooper(looper), mInteractive(true) &#123;</span><br><span class="line">    ...</span><br><span class="line">    &#x2F;&#x2F;NativeInputManager创建了EventHub</span><br><span class="line">    sp&lt;EventHub&gt; eventHub &#x3D; new EventHub();</span><br><span class="line">    &#x2F;&#x2F;继续创建Native层的InputManager</span><br><span class="line">    mInputManager &#x3D; new InputManager(eventHub, this, this);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的EventHub，可以看作是事件集线器，是利用Linux的inotify和epoll机制，对设备节点增删事件以及可读状态的监听，例如，各种触摸、按钮事件等等，主要面向的是/dev/input目录下的设备节点，比如说/dev/input/event0上的事件就是输入事件，通过EventHub的getEvents就可以监听并获取该事件。在InputManager创建的时候，同时也会再创建一个InputReader对象及InputReaderThread Loop线程，这个loop线程的主要作用就是像一台水泵一样，通过EventHub的getEvents获取Input事件。<br>/frameworks/native/services/inputflinger/InputManager.cpp</p>
+<p>InputManager::InputManager(<br>        const sp<EventHubInterface>&amp; eventHub,<br>        const sp<InputReaderPolicyInterface>&amp; readerPolicy,<br>        const sp<InputDispatcherPolicyInterface>&amp; dispatcherPolicy) {<br>    //创建InputDispatcher，事件分发执行类<br>    mDispatcher = new InputDispatcher(dispatcherPolicy);<br>    //创建InputReader，事件读取执行类<br>    mReader = new InputReader(eventHub, readerPolicy, mDispatcher);<br>    //将InputReader与InputDispatcher建立关联<br>    initialize();<br>}<br>void InputManager::initialize() {<br>    //创建供InputReader运行的线程InputReaderThread<br>    mReaderThread = new InputReaderThread(mReader);<br>    //创建供InputDispatcher运行的线程InputDispatcherThread<br>    mDispatcherThread = new InputDispatcherThread(mDispatcher);<br>}<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>/frameworks/native/services/inputflinger/InputReader.cpp</p>
+<p>void InputReader::loopOnce() {<br>    int32_t oldGeneration;<br>    int32_t timeoutMillis;<br>    bool inputDevicesChanged = false;<br>    Vector<InputDeviceInfo> inputDevices;<br>    …<br>    //监听事件<br>    size_t count = mEventHub-&gt;getEvents(timeoutMillis, mEventBuffer, EVENT_BUFFER_SIZE);<br>    …<br>            //处理事件<br>            processEventsLocked(mEventBuffer, count);<br>    …<br>     //通知派发(对上面mDispatcher的进一步封装)<br>    mQueuedListener-&gt;flush();<br>}<br>bool InputReaderThread::threadLoop() {<br>    mReader-&gt;loopOnce();<br>    return true;<br>}<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>18<br>19<br>上面代码的流程，输入事件就可以被读取，经过processEventsLocked被初步封装成RawEvent，最后发通知，请求派发消息。</p>
+<p>3、派发事件<br>在新建InputManager的时候，不但创建了一个事件读取线程(InputReaderThread)，而且还创建了一个事件派发线程()InputDispatcherThread，虽然也可以直接在读取线程中派发，但是这样肯定会增加耗时，不利于事件的及时读取，因此，事件读取完毕后，直接向派发线程发个通知，请派发线程去处理，这样读取线程就可以更加敏捷，防止事件丢失。<br>InputReader的mQueuedListener其实就是InputDispatcher对象，因此mQueuedListener-&gt;flush()就是通知InputDispatcher事件读取完毕，可以派发事件了, InputDispatcherThread是一个典型Looper线程，基于native的Looper实现了Hanlder消息处理模型，如果有Input事件到来就被唤醒处理事件，处理完毕后继续睡眠等待。<br>/frameworks/native/services/inputflinger/InputDispatcher.cpp</p>
+<p>bool InputDispatcherThread::threadLoop() {<br>    mDispatcher-&gt;dispatchOnce();<br>    return true;<br>}<br>void InputDispatcher::dispatchOnce() {<br>    nsecs_t nextWakeupTime = LONG_LONG_MAX;<br>    { …<br>        //被唤醒 ，处理Input消息<br>        if (!haveCommandsLocked()) {<br>            dispatchOnceInnerLocked(&amp;nextWakeupTime);<br>        }<br>    …<br>    } </p>
+<pre><code>nsecs_t currentTime = now();
+int timeoutMillis = toMillisecondTimeoutDelay(currentTime, nextWakeupTime);
+//睡眠等待input事件
+mLooper-&gt;pollOnce(timeoutMillis);</code></pre><p>}<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>18<br>19<br>上面代码是派发线程的模型，dispatchOnceInnerLocked是具体的派发处理逻辑，里面有很多的分支，以触摸事件为例：</p>
+<p>void InputDispatcher::dispatchOnceInnerLocked(nsecs_t* nextWakeupTime) {<br>     case EventEntry::TYPE_MOTION: {<br>        MotionEntry* typedEntry = static_cast&lt;MotionEntry<em>&gt;(mPendingEvent);<br>        …<br>        done = dispatchMotionLocked(currentTime, typedEntry,<br>                &amp;dropReason, nextWakeupTime);<br>        break;<br>    }<br>}<br>bool InputDispatcher::dispatchMotionLocked(<br>        nsecs_t currentTime, MotionEntry</em> entry, DropReason* dropReason, nsecs_t* nextWakeupTime) {<br>    …<br>    Vector<InputTarget> inputTargets;</p>
+<pre><code>bool conflictingPointerActions = false;
+int32_t injectionResult;
+if (isPointerEvent) {
+    //关键点1: 找到目标Window
+    injectionResult = findTouchedWindowTargetsLocked(currentTime,
+            entry, inputTargets, nextWakeupTime, &amp;conflictingPointerActions);
+} else {
+    // Non touch event.  (eg. trackball)
+    injectionResult = findFocusedWindowTargetsLocked(currentTime,
+            entry, inputTargets, nextWakeupTime);
+}
+...
+//关键点2: 消息派发到目标窗口中
+dispatchEventLocked(currentTime, entry, inputTargets);
+return true;</code></pre><p>}<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>18<br>19<br>20<br>21<br>22<br>23<br>24<br>25<br>26<br>27<br>28<br>29<br>30<br>触摸事件会首先通过findTouchedWindowTargetsLocked()函数找到目标Window，进而通过dispatchEventLocked()将消息发送到目标窗口。</p>
+<p>4、触摸事件找到对应目标窗口<br>根据触摸事件的位置及窗口的属性来确定将事件发送到哪个窗口<br>/frameworks/native/services/inputflinger/InputDispatcher.cpp</p>
+<p>int32_t InputDispatcher::findTouchedWindowTargetsLocked(nsecs_t currentTime,<br>        const MotionEntry* entry, Vector<InputTarget>&amp; inputTargets, nsecs_t* nextWakeupTime,<br>        bool* outConflictingPointerActions) {<br>        …<br>        sp<InputWindowHandle> newTouchedWindowHandle;<br>        bool isTouchModal = false;<br>        //遍历所有窗口<br>        size_t numWindows = mWindowHandles.size();<br>        for (size_t i = 0; i &lt; numWindows; i++) {<br>            sp<InputWindowHandle> windowHandle = mWindowHandles.itemAt(i);<br>            const InputWindowInfo* windowInfo = windowHandle-&gt;getInfo();<br>            if (windowInfo-&gt;displayId != displayId) {<br>                continue; // wrong display<br>            }</p>
+<pre><code>int32_t flags = windowInfo-&gt;layoutParamsFlags;
+if (windowInfo-&gt;visible) {
+    if (! (flags &amp; InputWindowInfo::FLAG_NOT_TOUCHABLE)) {
+        isTouchModal = (flags &amp; (InputWindowInfo::FLAG_NOT_FOCUSABLE
+                | InputWindowInfo::FLAG_NOT_TOUCH_MODAL)) == 0;
+        //找到目标窗口       
+        if (isTouchModal || windowInfo-&gt;touchableRegionContainsPoint(x, y)) {
+            newTouchedWindowHandle = windowHandle;
+            break; // found touched window, exit window loop
+        }
+     }
+...     </code></pre><p>}<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>18<br>19<br>20<br>21<br>22<br>23<br>24<br>25<br>26<br>27<br>28<br>mWindowHandles代表着所有窗口，findTouchedWindowTargetsLocked的就是从mWindowHandles中找到目标窗口。mWindowHandles是怎么来的呢，窗口增删的时候怎样才能保持最新的？这里就引进来WindowManagerService交互问题了，接着分析：</p>
+<p>void InputDispatcher::setInputWindows(const Vector&lt;sp<InputWindowHandle> &gt;&amp; inputWindowHandles) {<br>…<br>mWindowHandles = inputWindowHandles;<br>…<br>1<br>2<br>3<br>4<br>WindowManagerService中的InputMonitor，会间接调用InputDispatcher::setInputWindows，这个主要是跟窗口增改删除等逻辑相关。</p>
+<p>5、发送事件到目标窗口<br>找到了目标窗口，事件也封装完毕，剩下的就是通知目标窗口。目前所有的操作都是在SystemServer进程完成的，如何才能通知窗口位于APP端的用户进程呢？接下来Socket的通信方式出场了，它是处理input事件的。Socket是怎么来的呢？在当APP端向WMS请求添加窗口的时候，会伴随着Input通道的创建，窗口的添加一定会调用ViewRootImpl中的setView函数：<br>/frameworks/native/services/inputflinger/ViewRootImpl.cpp</p>
+<p>public void setView(View view, WindowManager.LayoutParams attrs, View panelParentView) {<br>                …<br>                requestLayout();<br>                if ((mWindowAttributes.inputFeatures<br>                        &amp; WindowManager.LayoutParams.INPUT_FEATURE_NO_INPUT_CHANNEL) == 0) {<br>                    //创建InputChannel容器<br>                    mInputChannel = new InputChannel();<br>                }<br>                try {<br>                    mOrigWindowType = mWindowAttributes.type;<br>                    mAttachInfo.mRecomputeGlobalAttributes = true;<br>                    collectViewAttributes();<br>                    //添加窗口，并请求开辟Socket Input通信通道<br>                    res = mWindowSession.addToDisplay(mWindow, mSeq, mWindowAttributes,<br>                            getHostVisibility(), mDisplay.getDisplayId(),<br>                            mAttachInfo.mContentInsets, mAttachInfo.mStableInsets,<br>                            mAttachInfo.mOutsets, mInputChannel);<br>                } …<br>                //监听，开启Input信道<br>                if (mInputChannel != null) {<br>                    if (mInputQueueCallback != null) {<br>                        mInputQueue = new InputQueue();<br>                        mInputQueueCallback.onInputQueueCreated(mInputQueue);<br>                    }<br>                    mInputEventReceiver = new WindowInputEventReceiver(mInputChannel,<br>                            Looper.myLooper());<br>                }<br>                …<br>}                </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>public int addWindow(Session session, IWindow client, int seq,<br>        WindowManager.LayoutParams attrs, int viewVisibility, int displayId,<br>        Rect outContentInsets, Rect outStableInsets, Rect outOutsets,<br>        InputChannel outInputChannel) {<br>    if (outInputChannel != null &amp;&amp; (attrs.inputFeatures<br>            &amp; WindowManager.LayoutParams.INPUT_FEATURE_NO_INPUT_CHANNEL) == 0) {<br>        String name = win.makeInputChannelName();<br>        //关键点1创建通信信道<br>        InputChannel[] inputChannels = InputChannel.openInputChannelPair(name);<br>        //本地用<br>        win.setInputChannel(inputChannels[0]);<br>        //APP端用<br>        inputChannels[1].transferTo(outInputChannel);<br>        //注册信道与窗口<br>        mInputManager.registerInputChannel(win.mInputChannel, win.mInputWindowHandle);<br>    }<br>}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">WMS首先创建socketpair作为全双工通道，并分别填充到Client与Server的InputChannel中去；再让InputManager将Input通信信道与当前的窗口ID绑定，这样就能知道哪个窗口用哪个信道通信了；最后通过Binder将outInputChannel回传到APP端，以下是SocketPair的创建代码：</span><br><span class="line">frameworks&#x2F;native&#x2F;libs&#x2F;Input&#x2F;tests&#x2F;InputTransport.cpp</span><br><span class="line"></span><br><span class="line">status_t InputChannel::openInputChannelPair(const String8&amp; name,</span><br><span class="line">        sp&lt;InputChannel&gt;&amp; outServerChannel, sp&lt;InputChannel&gt;&amp; outClientChannel) &#123;</span><br><span class="line">    int sockets[2];</span><br><span class="line">    if (socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sockets)) &#123;</span><br><span class="line">        status_t result &#x3D; -errno;</span><br><span class="line">        ...</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    int bufferSize &#x3D; SOCKET_BUFFER_SIZE;</span><br><span class="line">    setsockopt(sockets[0], SOL_SOCKET, SO_SNDBUF, &amp;bufferSize, sizeof(bufferSize));</span><br><span class="line">    setsockopt(sockets[0], SOL_SOCKET, SO_RCVBUF, &amp;bufferSize, sizeof(bufferSize));</span><br><span class="line">    setsockopt(sockets[1], SOL_SOCKET, SO_SNDBUF, &amp;bufferSize, sizeof(bufferSize));</span><br><span class="line">    setsockopt(sockets[1], SOL_SOCKET, SO_RCVBUF, &amp;bufferSize, sizeof(bufferSize));</span><br><span class="line">    &#x2F;&#x2F;填充到server inputchannel</span><br><span class="line">    String8 serverChannelName &#x3D; name;</span><br><span class="line">    serverChannelName.append(&quot; (server)&quot;);</span><br><span class="line">    outServerChannel &#x3D; new InputChannel(serverChannelName, sockets[0]);</span><br><span class="line">    &#x2F;&#x2F;填充到client inputchannel</span><br><span class="line">    String8 clientChannelName &#x3D; name;</span><br><span class="line">    clientChannelName.append(&quot; (client)&quot;);</span><br><span class="line">    outClientChannel &#x3D; new InputChannel(clientChannelName, sockets[1]);</span><br><span class="line">    return OK;</span><br><span class="line">&#125;</span><br><span class="line">socketpair的创建与访问还是借助文件描述符(Fd)，WMS需要借助Binder通信向APP端回传文件描述符，在内核层面实现两个进程的转换，窗口添加成功后，socketpair被创建，被传递到了APP端，但是信道并未完全建立，还需要一个主动的监听，当消息到来的时候是需要通知的。APP端的监听消息的手段是：将socket添加到Looper线程的epoll数组中去，当有消息到来时，Looper线程就会被唤醒，并获取事件内容，通信信道的打开是伴随WindowInputEventReceiver的创建来完成的。</span><br><span class="line">信息到来，Looper根据文件描述符(Fd)找到对应的监听器：NativeInputEventReceiver，并调用handleEvent处理对应事件：</span><br><span class="line">&#x2F;frameworks&#x2F;base&#x2F;native&#x2F;android&#x2F;android_view_InputEventReceiver.cpp</span><br><span class="line"></span><br><span class="line">int NativeInputEventReceiver::handleEvent(int receiveFd, int events, void* data) &#123;</span><br><span class="line">   ...</span><br><span class="line">   if (events &amp; ALOOPER_EVENT_INPUT) &#123;</span><br><span class="line">        JNIEnv* env &#x3D; AndroidRuntime::getJNIEnv();</span><br><span class="line">        status_t status &#x3D; consumeEvents(env, false &#x2F;*consumeBatches*&#x2F;, -1, NULL);</span><br><span class="line">        mMessageQueue-&gt;raiseAndClearException(env, &quot;handleReceiveCallback&quot;);</span><br><span class="line">        return status &#x3D;&#x3D; OK || status &#x3D;&#x3D; NO_MEMORY ? 1 : 0;</span><br><span class="line">    &#125;</span><br><span class="line">...</span><br><span class="line">&#125;</span><br><span class="line">进一步读取事件，并封装成Java层对象，传递给Java层，进行相应的回调：</span><br><span class="line"></span><br><span class="line">status_t NativeInputEventReceiver::consumeEvents(JNIEnv* env,</span><br><span class="line">        bool consumeBatches, nsecs_t frameTime, bool* outConsumedBatch) &#123;</span><br><span class="line">     ...</span><br><span class="line">     for (;;) &#123;</span><br><span class="line">        uint32_t seq;</span><br><span class="line">        InputEvent* inputEvent;</span><br><span class="line">        &#x2F;&#x2F;获取事件</span><br><span class="line">        status_t status &#x3D; mInputConsumer.consume(&amp;mInputEventFactory,</span><br><span class="line">                consumeBatches, frameTime, &amp;seq, &amp;inputEvent);   </span><br><span class="line">     ...</span><br><span class="line">     &#x2F;&#x2F;处理touch事件</span><br><span class="line">     case AINPUT_EVENT_TYPE_MOTION: </span><br><span class="line">                ...</span><br><span class="line">                MotionEvent* motionEvent &#x3D; static_cast&lt;MotionEvent*&gt;(inputEvent);</span><br><span class="line">                if ((motionEvent-&gt;getAction() &amp; AMOTION_EVENT_ACTION_MOVE) &amp;&amp; outConsumedBatch) &#123;</span><br><span class="line">                    *outConsumedBatch &#x3D; true;</span><br><span class="line">                &#125;</span><br><span class="line">                inputEventObj &#x3D; android_view_MotionEvent_obtainAsCopy(env, motionEvent);</span><br><span class="line">                break;</span><br><span class="line">            &#125;</span><br><span class="line">              ...</span><br><span class="line">              &#x2F;&#x2F;回调处理函数</span><br><span class="line">               if (inputEventObj) &#123;</span><br><span class="line">                ...</span><br><span class="line">                   env-&gt;CallVoidMethod(receiverObj.get(),</span><br><span class="line">                      gInputEventReceiverClassInfo.dispatchInputEvent, seq, inputEventObj);              </span><br><span class="line"></span><br><span class="line">最后就是触摸事件被封装成了inputEvent，并通过InputEventReceiver的dispatchInputEvent（WindowInputEventReceiver）进行处理，这里就返回到我们常见的Java世界了。</span><br><span class="line">6、在目标窗口中处理事件</span><br><span class="line">&#x2F;frameworks&#x2F;base&#x2F;core&#x2F;java&#x2F;android&#x2F;view&#x2F;ViewRootImpl.java</span><br><span class="line"></span><br><span class="line"> final class WindowInputEventReceiver extends InputEventReceiver &#123;</span><br><span class="line">        public WindowInputEventReceiver(InputChannel inputChannel, Looper looper)&#123; </span><br><span class="line">            super(inputChannel, looper);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void onInputEvent(InputEvent event) &#123;</span><br><span class="line">         enqueueInputEvent(event, this, 0, true);</span><br><span class="line">        &#125;</span><br><span class="line">   ...     </span><br><span class="line">  &#125;</span><br><span class="line">  void enqueueInputEvent(InputEvent event,</span><br><span class="line">            InputEventReceiver receiver, int flags, boolean processImmediately) &#123;</span><br><span class="line">       ...</span><br><span class="line">        if (processImmediately) &#123;</span><br><span class="line">            doProcessInputEvents();</span><br><span class="line">        &#125;</span><br><span class="line">        ...</span><br><span class="line">  &#125;</span><br><span class="line">  void doProcessInputEvents() &#123;</span><br><span class="line">      ...</span><br><span class="line">      deliverInputEvent(q);</span><br><span class="line">      ...</span><br><span class="line">  &#125;</span><br><span class="line">  private void deliverInputEvent(QueuedInputEvent q) &#123;</span><br><span class="line">        ...</span><br><span class="line">        InputStage stage;</span><br><span class="line">        if (q.shouldSendToSynthesizer()) &#123;</span><br><span class="line">            stage &#x3D; mSyntheticInputStage;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            stage &#x3D; q.shouldSkipIme() ? mFirstPostImeInputStage : mFirstInputStage;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (stage !&#x3D; null) &#123;</span><br><span class="line">            stage.deliver(q);</span><br><span class="line">        &#125; </span><br><span class="line">        ...</span><br><span class="line">   &#125;</span><br><span class="line">   final class ViewPostImeInputStage extends InputStage &#123;</span><br><span class="line">        ...</span><br><span class="line">        @Override</span><br><span class="line">        protected int onProcess(QueuedInputEvent q) &#123;</span><br><span class="line">            if (q.mEvent instanceof KeyEvent) &#123;</span><br><span class="line">                return processKeyEvent(q);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                &#x2F;&#x2F; If delivering a new non-key event, make sure the window is</span><br><span class="line">                &#x2F;&#x2F; now allowed to start updating.</span><br><span class="line">                handleDispatchWindowAnimationStopped();</span><br><span class="line">                final int source &#x3D; q.mEvent.getSource();</span><br><span class="line">                if ((source &amp; InputDevice.SOURCE_CLASS_POINTER) !&#x3D; 0) &#123;</span><br><span class="line">                    return processPointerEvent(q);</span><br><span class="line">                &#125;</span><br><span class="line">                ...</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        ...</span><br><span class="line">        private int processPointerEvent(QueuedInputEvent q) &#123;</span><br><span class="line">            ...</span><br><span class="line">            boolean handled &#x3D; mView.dispatchPointerEvent(event);</span><br><span class="line">            ...</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>processPointerEvent()方法通过调用mView的dispatchPointerEvent()方法来做进一步的操作，变量mView是一个DecorView类型的对象，它的父类View来实现这个方法，这个调用最终就会进入它的父类View的dispatchPointerEvent()方法中。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;frameworks&#x2F;base&#x2F;core&#x2F;java&#x2F;android&#x2F;view&#x2F;View.java</span><br><span class="line">public final boolean dispatchPointerEvent(MotionEvent event) &#123;</span><br><span class="line">    if (event.isTouchEvent()) &#123;</span><br><span class="line">        return dispatchTouchEvent(event);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        return dispatchGenericMotionEvent(event);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>View的dispatchPointerEvent()方法首先通过MotionEvent的isTouchEvent()方法来判断当前的事件是不是TouchEvent事件，若当前是TouchEvent事件，就用dispatchTouchEvent()方法来做分发事件的处理，这个分发过程分为两种情况：<br>(1)若目前的View是普通的View，就会调用View.java的dispatchTouchEvent()方法来处理。普通的View，比如TextView里面并没有实现dispatchTouchEvent()方法，由于它又是继承View，所有在View的dispatchPointerEvent()方法中调用dispatchTouchEvent()方法或者进入View的dispatchTouchEvent()方法。<br>(2)若目前的View是容器类View，比如DecorView，由于它实现了dispatchTouchEvent()方法，所以View的dispatchPointerEvent()方法中调用dispatchTouchEvent()方法就会进入DecorView的dispatchTouchEvent()方法。<br>这两种分发过程在下篇文章《Android6.0系统View事件分发》中继续分析。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/02/24/Android%E4%B8%ADView%E7%9A%84%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/" rel="prev" title="Android中View的绘制流程">
+      <i class="fa fa-chevron-left"></i> Android中View的绘制流程
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/03/01/LocalBroadcastManager%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" rel="next" title="LocalBroadcastManager源码剖析">
+      LocalBroadcastManager源码剖析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Android6-0系统触摸事件工作原理——InputManagerService"><span class="nav-number">1.</span> <span class="nav-text">Android6.0系统触摸事件工作原理——InputManagerService</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yudesong</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">112</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yudesong</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

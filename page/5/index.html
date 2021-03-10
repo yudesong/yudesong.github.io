@@ -160,7 +160,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/05/JVM%E5%B8%B8%E8%A7%81%E5%8F%82%E6%95%B0/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/21/19%20Android-IPC-Binder%E6%9C%BA%E5%88%B6/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -174,7 +174,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/06/05/JVM%E5%B8%B8%E8%A7%81%E5%8F%82%E6%95%B0/" class="post-title-link" itemprop="url">JVM常见参数</a>
+            <a href="/2020/06/21/19%20Android-IPC-Binder%E6%9C%BA%E5%88%B6/" class="post-title-link" itemprop="url">19 Android-IPC-Binder机制</a>
         </h2>
 
         <div class="post-meta">
@@ -183,8 +183,26 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
+              
 
-              <time title="创建时间：2020-06-05 23:56:34" itemprop="dateCreated datePublished" datetime="2020-06-05T23:56:34+08:00">2020-06-05</time>
+              <time title="创建时间：2020-06-21 16:16:56 / 修改时间：17:29:45" itemprop="dateCreated datePublished" datetime="2020-06-21T16:16:56+08:00">2020-06-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/" itemprop="url" rel="index"><span itemprop="name">源码</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/Binder%E6%9C%BA%E5%88%B6/" itemprop="url" rel="index"><span itemprop="name">Binder机制</span></a>
+                </span>
             </span>
 
           
@@ -198,99 +216,262 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p><strong>先从一道笔试题开始</strong></p>
+          <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>Android为什么要采用Binder作为IPC方式：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/06/21/19%20Android-IPC-Binder%E6%9C%BA%E5%88%B6/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/21/18%20SharePreference%20%E6%B7%B1%E5%85%A5%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/06/21/18%20SharePreference%20%E6%B7%B1%E5%85%A5%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" class="post-title-link" itemprop="url">18 SharePreference 深入原理分析</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-21 15:40:51" itemprop="dateCreated datePublished" datetime="2020-06-21T15:40:51+08:00">2020-06-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/" itemprop="url" rel="index"><span itemprop="name">源码</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/SharePreference/" itemprop="url" rel="index"><span itemprop="name">SharePreference</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h4 id="一、简介"><a href="#一、简介" class="headerlink" title="一、简介"></a>一、简介</h4><p>SharePreference 是Android 系统中的持久化存储工具其基于XML文件(/data/data/<package name>/shared_prefs/目录下面)，一次性将数据读取到内存中，适合单个进程、数据量较小的情况。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/06/21/18%20SharePreference%20%E6%B7%B1%E5%85%A5%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/21/17%20Android%E6%B8%B2%E6%9F%93%E6%9C%BA%E5%88%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/06/21/17%20Android%E6%B8%B2%E6%9F%93%E6%9C%BA%E5%88%B6/" class="post-title-link" itemprop="url">17 Android渲染机制</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-06-21 11:30:53 / 修改时间：16:45:32" itemprop="dateCreated datePublished" datetime="2020-06-21T11:30:53+08:00">2020-06-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/" itemprop="url" rel="index"><span itemprop="name">源码</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/Android%E6%B8%B2%E6%9F%93%E6%9C%BA%E5%88%B6/" itemprop="url" rel="index"><span itemprop="name">Android渲染机制</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>优化性能一般从渲染，运算与内存，电量三个方面进行，今天开始说聊一聊Android的渲染机制，我们要知道Android系统每隔16ms就重新绘制一次Activity，也就是说，我们的应用必须在16ms内完成屏幕刷新的全部逻辑操作，即每一帧只能停留16ms，渲染机制说完之后，然后在说如何去优化UI。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/06/21/17%20Android%E6%B8%B2%E6%9F%93%E6%9C%BA%E5%88%B6/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/20/16%20Android%20Context%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/06/20/16%20Android%20Context%E8%AF%A6%E8%A7%A3/" class="post-title-link" itemprop="url">16 Android Context详解</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-20 22:44:20" itemprop="dateCreated datePublished" datetime="2020-06-20T22:44:20+08:00">2020-06-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/" itemprop="url" rel="index"><span itemprop="name">源码</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/Context/" itemprop="url" rel="index"><span itemprop="name">Context</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h4 id="Context类结构"><a href="#Context类结构" class="headerlink" title="Context类结构"></a>Context类结构</h4><img src="/2020/06/20/16%20Android%20Context%E8%AF%A6%E8%A7%A3/Context%E7%BB%93%E6%9E%84.png" class="" title="[Context结构]">
+
+<p>问题：一个应用程序中到底有多少个Context呢？</p>
 <blockquote>
-<p>对于JVM内存配置参数：-Xmx10240m -Xms10240m -Xmn5120m -XXSurvivorRatio=3<br>,其最小内存值和Survivor区总大小分别是多少？</p>
+<p>Context数量 = Activity数量 + Service数量 + 1</p>
 </blockquote>
-<p>如果对JVM参数不了解，基本就可以歇歇了。本题主要考察的就是Java堆内存的参数：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">-Xmx  最大堆大小</span><br><span class="line">-Xms  初始堆大小</span><br><span class="line">-Xmn  年轻代大小</span><br><span class="line">-XX:NewRatio  年轻代（年轻代包括：Eden和两个Surivor）与年老代（年老代不包括持久代）的比值</span><br><span class="line">-XX:SurvivorRatio  年轻代中Eden区与Survivor区的大小比值</span><br><span class="line">年轻代5120m， Eden：Survivor&#x3D;3，Survivor区大小&#x3D;1024m（Survivor区有两个，即将年轻代分为5份，每个Survivor区占一份），总大小为2048m。</span><br><span class="line">-Xms初始堆大小即最小内存值为10240m</span><br><span class="line">新生代大部分要回收，采用Copying算法，快！</span><br><span class="line">老年代 大部分不需要回收，采用Mark-Compact算法</span><br></pre></td></tr></table></figure>
-
-<img src="/2020/06/05/JVM%E5%B8%B8%E8%A7%81%E5%8F%82%E6%95%B0/Java-Memory-Model.png" class="" title="[Java-Memory-Model]">
-
-<p><strong>永久区分配</strong></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-XX:PermSize    设置永久区的初始空间</span><br><span class="line">-XX:MaxPermSize 设置永久区的最大空间</span><br></pre></td></tr></table></figure>
-
-<p><strong>栈的分配</strong></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-Xss 设置栈空间的大小,通常只有几百K</span><br></pre></td></tr></table></figure>
-
-<p><strong>GC参数</strong></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-XX:+PrintGCDetails  打印GC详细日志</span><br><span class="line">-Xloggc:log&#x2F;gc.log   指定GClog的位置</span><br></pre></td></tr></table></figure>
-
-<p><a href="https://www.cnblogs.com/loveer/p/11522493.html" target="_blank" rel="noopener">JVM参数配置</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/05/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8812%EF%BC%89ReentrantLock%E5%8E%9F%E7%90%86/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yudesong">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/06/05/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8812%EF%BC%89ReentrantLock%E5%8E%9F%E7%90%86/" class="post-title-link" itemprop="url">啃碎并发（12）ReentrantLock原理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-06-05 11:02:41" itemprop="dateCreated datePublished" datetime="2020-06-05T11:02:41+08:00">2020-06-05</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/JAVA%E5%B9%B6%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">JAVA并发</span></a>
-                </span>
-                  ，
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/JAVA%E5%B9%B6%E5%8F%91/ReentrantLock/" itemprop="url" rel="index"><span itemprop="name">ReentrantLock</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h5 id="ReentrantLock-简介"><a href="#ReentrantLock-简介" class="headerlink" title="ReentrantLock 简介"></a>ReentrantLock 简介</h5><p>ReentrantLock是一个继承Lock接口并且是基于CAS操作来实现的Java锁，ReentrantLock还支持公平锁和非公平锁两种方式。 </p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2020/06/05/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8812%EF%BC%89ReentrantLock%E5%8E%9F%E7%90%86/#more" rel="contents">
+              <a class="btn" href="/2020/06/20/16%20Android%20Context%E8%AF%A6%E8%A7%A3/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -314,7 +495,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/04/Android%E5%9F%BA%E7%A1%80%E4%B9%8BBitmap%20%E8%AF%A6%E8%A7%A3/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/20/15%20%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%B5%81%E7%A8%8B/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -328,7 +509,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/06/04/Android%E5%9F%BA%E7%A1%80%E4%B9%8BBitmap%20%E8%AF%A6%E8%A7%A3/" class="post-title-link" itemprop="url">Android Bitmap 详解</a>
+            <a href="/2020/06/20/15%20%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%B5%81%E7%A8%8B/" class="post-title-link" itemprop="url">15 事件分发流程</a>
         </h2>
 
         <div class="post-meta">
@@ -338,7 +519,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2020-06-04 14:35:15" itemprop="dateCreated datePublished" datetime="2020-06-04T14:35:15+08:00">2020-06-04</time>
+              <time title="创建时间：2020-06-20 21:51:51" itemprop="dateCreated datePublished" datetime="2020-06-20T21:51:51+08:00">2020-06-20</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -346,130 +527,15 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" itemprop="url" rel="index"><span itemprop="name">性能优化</span></a>
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/Bitmap/" itemprop="url" rel="index"><span itemprop="name">Bitmap</span></a>
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/" itemprop="url" rel="index"><span itemprop="name">源码</span></a>
                 </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h4 id="0-Bitmap"><a href="#0-Bitmap" class="headerlink" title="0. Bitmap"></a>0. Bitmap</h4><p>Bitmap位图包括<strong>像素以及长、宽、颜色等描述信息</strong>。长宽和像素位数是用来描述图片的，可以通过这些信息计算出图片的像素占用内存的大小。</p>
-<p>Android中创建Bitmap对象的方法主要是依赖<strong>BitmapFactory</strong></p>
-<ul>
-<li>public static Bitmap decodeFile(String pathName, Options opts)</li>
-<li>public static Bitmap decodeFile(String pathName)</li>
-<li>public static Bitmap decodeStream(InputStream is)</li>
-<li>public static Bitmap decodeFileDescriptor(FileDescriptor fd)</li>
-<li>public static Bitmap decodeResource(Resources res, int id)</li>
-</ul>
-<p>里面重载了很多带有<strong>Options opts</strong>参数的函数</p>
-<h5 id="0-1-Config属性"><a href="#0-1-Config属性" class="headerlink" title="0.1. Config属性"></a>0.1. Config属性</h5><p>表示图片像素类型，包括ALPHA_8、RGB_565、ARGB_4444、ARGB_8888 A：透明度；RGB分别是Red、Green、Blue，三种原色</p>
-<ul>
-<li>ARGB_8888：四个通道都是8位，每个像素占用4个字节，图片质量是最高的，但是占用的内存也是最大的；</li>
-<li>ARGB_4444：四个通道都是4位，每个像素占用2个字节，图片的失真比较严重；</li>
-<li>RGB_565：没有A通道，每个像素占用2个字节，图片失真小，但是没有透明度；</li>
-<li>ALPHA_8：只有A通道，每个像素占用1个字节大大小，只有透明度，没有颜色值。</li>
-</ul>
-<p>使用场景总结：ARGB_4444失真严重，基本不用；ALPHA_8使用场景特殊，比如设置遮盖效果等；不需要设置透明度，RGB_565是个不错的选择；既要设置透明度，对图片质量要求又高，就用ARGB_8888。</p>
-<h5 id="0-2-CompressFormat"><a href="#0-2-CompressFormat" class="headerlink" title="0.2. CompressFormat"></a>0.2. CompressFormat</h5><p>图片的压缩格式总共有三种：Bitmap.CompressFormat.JPEG、Bitmap.CompressFormat.PNG、Bitmap.CompressFormat.WEBP</p>
-<ul>
-<li>JPEG：一种有损压缩（JPEG2000既可以有损也可以无损），”.jpg”或者”.jpeg”; 优点：采用了直接色，有丰富的色彩，适合存储照片和生动图像效果；缺点：有损，不适合用来存储logo、线框类图。</li>
-<li>PNG: 一种无损压缩，”.png”; 优点：支持透明、无损，主要用于小图标，透明背景等；缺点：若色彩复杂，则图片生成后文件很大；</li>
-<li>WEBP:以WebP算法进行压缩；Google开发的新的图片格式，同时支持无损和有损压缩，使用直接色。无损压缩，相同质量的webp比PNG小大约26%；有损压缩，相同质量的webp比JPEG小25%-34% 支持动图，基本取代gif</li>
-</ul>
-<h4 id="1-BitmapFactory-Options"><a href="#1-BitmapFactory-Options" class="headerlink" title="1. BitmapFactory.Options"></a>1. BitmapFactory.Options</h4><p><strong>BitmapFactory.Options 定义</strong></p>
-<p>Options是BitmapFactory 的静态内部类，定义如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">public class BitmapFactory &#123;</span><br><span class="line">    private static final int DECODE_BUFFER_SIZE &#x3D; 16 * 1024;</span><br><span class="line">    public static class Options &#123;</span><br><span class="line">		public Bitmap inBitmap;</span><br><span class="line">		public boolean inMutable;</span><br><span class="line">		public boolean inJustDecodeBounds;</span><br><span class="line">		public int inSampleSize;</span><br><span class="line">		&#x2F;&#x2F; 设置彩色模式</span><br><span class="line">		public Bitmap.Config inPreferredConfig &#x3D; Bitmap.Config.ARGB_8888;</span><br><span class="line">		public ColorSpace inPreferredColorSpace &#x3D; null;</span><br><span class="line">		public int outWidth;</span><br><span class="line">		public int outHeight;</span><br><span class="line">		&#x2F;&#x2F; 获取图像的Mime类型</span><br><span class="line">		public String outMimeType;</span><br><span class="line">		public int inDensity;</span><br><span class="line">		public int inTargetDensity;</span><br><span class="line">		public int inScreenDensity;</span><br><span class="line">		public boolean inScaled;</span><br><span class="line">		&#x2F;&#x2F; 设置缓存区,如果不设置默认为16M</span><br><span class="line">		public byte[] inTempStorage</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>BitmapFactory.Options options = new BitmapFactory.Options();</p>
-</blockquote>
-<p><strong>Options 常用的参数含义</strong></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;默认值为false，如果设置成true，那么在解码的时候就不会返回bitmap，即bitmap &#x3D; null。</span><br><span class="line">options.inJustDecodeBounds &#x3D; false;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;可以复用之前用过的bitmap</span><br><span class="line">options.inBitmap &#x3D; null;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;是该bitmap缓存是否可变，如果设置为true，将可被inBitmap复用</span><br><span class="line">options.inMutable &#x3D; true;</span><br><span class="line"></span><br><span class="line">DisplayMetrics dm &#x3D; getResources().getDisplayMetrics();</span><br><span class="line">&#x2F;&#x2F;表示这个bitmap的像素密度，当inDensity为0时，系统默认赋值为屏幕当前像素密度</span><br><span class="line">options.inDensity &#x3D; dm.densityDpi;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;表示要被画出来时的目标像素密度，当inTargetDensity为0时，系统默认赋值为屏幕当前像素密度</span><br><span class="line">options.inTargetDensity &#x3D; options.inDensity;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;表示实际设备的像素密度</span><br><span class="line">options.inScreenDensity &#x3D; 0;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;这个参数可以改变bitmap分辨率大小，inSampleSize &gt;&#x3D; 1。</span><br><span class="line">&#x2F;&#x2F;当inSampleSize &lt; 1时，inSampleSize就默认是1。</span><br><span class="line">&#x2F;&#x2F;假如：图片的宽和高分别是width、height，那么图片解码生成的bitmap的宽度是：width &#x2F; inSampleSize，高度是：height &#x2F; inSampleSize</span><br><span class="line">&#x2F;&#x2F;inSampleSize影响bitmap的分辨率，从而影响bitmap占用内存的大小。</span><br><span class="line">options.inSampleSize &#x3D; 1;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;设置这个Bitmap是否可以被缩放，默认值是true，表示可以被缩放。</span><br><span class="line">options.inScaled &#x3D; true;</span><br></pre></td></tr></table></figure>
-
-<p>这里重点讲解一下<strong>inBitmap参数</strong></p>
-<p>这个参数用来实现Bitmap内存的复用，但复用存在一些限制，具体体现在：<strong>在Android 4.4之前只能重用相同大小的Bitmap的内存，而Android 4.4及以后版本则只要后来的Bitmap比之前的小即可。</strong>使用inBitmap参数前，每创建一个Bitmap对象都会分配一块内存供其使用，而使用了inBitmap参数后，多个Bitmap可以复用一块内存，这样可以提高性能。<br>关于这个复用Bitmap内存的详细方法以及注意事项Android Developer网站已给出了详细的说明（Managing Bitmap Memory）。这里简单的贴出部分示例代码了解下它的大致用法：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">private static void addInBitmapOptions(BitmapFactory.Options options, ImageCache cache) &#123; </span><br><span class="line">  &#x2F;&#x2F; inBitmap only works with mutable bitmaps, so force the decoder to </span><br><span class="line">  &#x2F;&#x2F; return mutable bitmaps. </span><br><span class="line">  options.inMutable &#x3D; true; </span><br><span class="line">  if (cache !&#x3D; null) &#123; </span><br><span class="line">    &#x2F;&#x2F; Try to find a bitmap to use for inBitmap. </span><br><span class="line">    Bitmap inBitmap &#x3D; cache.getBitmapFromReusableSet(options); </span><br><span class="line">    if (inBitmap !&#x3D; null) &#123; </span><br><span class="line">      &#x2F;&#x2F; If a suitable bitmap has been found, </span><br><span class="line">      &#x2F;&#x2F; set it as the value of inBitmap. </span><br><span class="line">      options.inBitmap &#x3D; inBitmap; </span><br><span class="line">    &#125; </span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">static boolean canUseForInBitmap( Bitmap candidate, </span><br><span class="line">    BitmapFactory.Options targetOptions) &#123; </span><br><span class="line">  if (Build.VERSION.SDK_INT &gt;&#x3D; Build.VERSION_CODES.KITKAT) &#123; </span><br><span class="line">    &#x2F;&#x2F; From Android 4.4 (KitKat) onward we can re-use </span><br><span class="line">    &#x2F;&#x2F; if the byte size of the new bitmap is smaller than </span><br><span class="line">    &#x2F;&#x2F; the reusable bitmap candidate </span><br><span class="line">    &#x2F;&#x2F; allocation byte count. </span><br><span class="line">    int width &#x3D; targetOptions.outWidth &#x2F; targetOptions.inSampleSize; </span><br><span class="line">    int height &#x3D; targetOptions.outHeight &#x2F; targetOptions.inSampleSize; </span><br><span class="line">    int byteCount &#x3D; width * height * getBytesPerPixel(candidate.getConfig()); </span><br><span class="line">    return byteCount &lt;&#x3D; candidate.getAllocationByteCount(); </span><br><span class="line">  &#125; </span><br><span class="line">  &#x2F;&#x2F; On earlier versions, </span><br><span class="line">  &#x2F;&#x2F; the dimensions must match exactly and the inSampleSize must be 1 </span><br><span class="line">  return candidate.getWidth() &#x3D;&#x3D; targetOptions.outWidth </span><br><span class="line">      &amp;&amp; candidate.getHeight() &#x3D;&#x3D; targetOptions.outHeight </span><br><span class="line">      &amp;&amp; targetOptions.inSampleSize &#x3D;&#x3D; 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>图片加载之前先计算图片大小</strong></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Bitmap bitmap &#x3D; BitmapFactory.decodeFile(FileDirUtil.getInstance().getExternalStorageDirectory() + File.separator + &quot;temp.jpg&quot;);</span><br></pre></td></tr></table></figure>
-
-<p>我们看一下上面的代码，那是解码一张本地图片，解码之后bitmap将占用内存空间，如果bitmap太大导致app性能降低，甚至导致OOM发生，为了防止这种现象，我们可以先计算本地图片的分辨率：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">BitmapFactory.Options options &#x3D; new BitmapFactory.Options();</span><br><span class="line">options.inJustDecodeBounds &#x3D; true;</span><br><span class="line">Bitmap bitmap &#x3D; BitmapFactory.decodeFile(FileDirUtil.getInstance().getExternalStorageDirectory() + File.separator + &quot;temp.jpg&quot;, options );</span><br><span class="line">int imageHeight &#x3D; options.outHeight;</span><br><span class="line">Log.d(TAG, &quot;图片的高度：&quot;+imageHeight);</span><br><span class="line">int imageWidth &#x3D; options.outWidth;</span><br><span class="line">Log.d(TAG, &quot;图片的宽度：&quot;+imageWidth);</span><br></pre></td></tr></table></figure>
-
-<p>当inJustDecodeBounds设置true时，本地图片解码之后bitmap为null，只计算图片的宽度和高度。拿到图片宽度和高度之后可以根据我们自己的策略是否放大或缩小图片分辨率。</p>
-<p><strong>像素密度分析</strong><br>BitmapFactory.Options中与像素密度有关的主要有三个参数：<strong>inDensity、inTargetDensity、inScreenDensity</strong>，配合inScaled参数可以控制图像缩放。</p>
-<p>我们先看一下源码</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">private static void setDensityFromOptions(Bitmap outputBitmap, Options opts) &#123;</span><br><span class="line">    if (outputBitmap &#x3D;&#x3D; null || opts &#x3D;&#x3D; null) return;</span><br><span class="line"></span><br><span class="line">    final int density &#x3D; opts.inDensity;</span><br><span class="line">    if (density !&#x3D; 0) &#123;</span><br><span class="line">        outputBitmap.setDensity(density);</span><br><span class="line">        final int targetDensity &#x3D; opts.inTargetDensity;</span><br><span class="line">        if (targetDensity &#x3D;&#x3D; 0 || density &#x3D;&#x3D; targetDensity || density &#x3D;&#x3D; opts.inScreenDensity) &#123;</span><br><span class="line">            return;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        byte[] np &#x3D; outputBitmap.getNinePatchChunk();</span><br><span class="line">        final boolean isNinePatch &#x3D; np !&#x3D; null &amp;&amp; NinePatch.isNinePatchChunk(np);</span><br><span class="line">        if (opts.inScaled || isNinePatch) &#123;</span><br><span class="line">			&#x2F;&#x2F; 如果图片可以伸缩或者是9Patch，则设置图片的像素密度为targetDensity</span><br><span class="line">            outputBitmap.setDensity(targetDensity);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else if (opts.inBitmap !&#x3D; null) &#123;</span><br><span class="line">        &#x2F;&#x2F; bitmap复用过, 重新设置density值为屏幕默认像素密度</span><br><span class="line">		&#x2F;&#x2F; 相当于DisplayMetrics dm &#x3D; getResources().getDisplayMetrics(); </span><br><span class="line">		&#x2F;&#x2F; 获取屏幕像素密度：dm.densityDpi</span><br><span class="line">        outputBitmap.setDensity(Bitmap.getDefaultDensity());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>inDensity、inTargetDensity、inScreenDensity、inScaled配合使用可以对图片进行缩放，缩放的比例是targetDensity / density</p>
-<h5 id="采样压缩示例"><a href="#采样压缩示例" class="headerlink" title="采样压缩示例"></a>采样压缩示例</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">BitmapFactory.Options options &#x3D; new BitmapFactory.Options();  </span><br><span class="line">&#x2F;&#x2F;inJustDecodeBounds为true，不返回bitmap，只返回这个bitmap的尺寸  </span><br><span class="line">options.inJustDecodeBounds &#x3D; true; </span><br><span class="line">BitmapFactory.decodeResource(getResources(), images[position], options);  </span><br><span class="line">&#x2F;&#x2F;利用返回的原图片的宽高，我们就可以计算出缩放比inSampleSize（只能是2的整数次幂）</span><br><span class="line">options.inSampleSize &#x3D; caluelateInSampleSize(options, reqWidth, reqHeight);&#x2F;&#x2F;使用RGB_565减少图片大小  </span><br><span class="line">options.inPreferredConfig &#x3D; Bitmap.Config.RGB_565;  </span><br><span class="line">&#x2F;&#x2F;释放内存，共享引用（21版本后失效）  </span><br><span class="line">options.inPurgeable &#x3D; true;  </span><br><span class="line">options.inInputShareable &#x3D; true;  </span><br><span class="line">             </span><br><span class="line">&#x2F;&#x2F;inJustDecodeBounds为false，返回bitmap  </span><br><span class="line">options.inJustDecodeBounds &#x3D; false;  </span><br><span class="line">Bitmap bitmap &#x3D; BitmapFactory.decodeResource(getResources(), images[position], options);  </span><br><span class="line"></span><br><span class="line">private int calculateSampleSize(BitmapFactory.Options options,int reqWidth,int reqHeight)&#123;</span><br><span class="line">	int width &#x3D; options.outWidth;</span><br><span class="line">    int height &#x3D;options.outHeight;int inSampleSize &#x3D; 1;</span><br><span class="line">    int halfWidth &#x3D; width &#x2F; 2;</span><br><span class="line">    int halfHeight &#x3D; height &#x2F; 2;</span><br><span class="line">    while((halfWidth &#x2F; inSampleSize) &gt;&#x3D; reqWidth &amp;&amp; (halfHeight &#x2F; inSampleSize) &gt;&#x3D; reqHeight)&#123;</span><br><span class="line">        inSampleSize *&#x3D; 2;</span><br><span class="line">    &#125;</span><br><span class="line">    return inSampleSize;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="利用BitmapRegionDecoder区域加载器加载大图"><a href="#利用BitmapRegionDecoder区域加载器加载大图" class="headerlink" title="利用BitmapRegionDecoder区域加载器加载大图"></a>利用BitmapRegionDecoder区域加载器加载大图</h4><p>最主要的就是BitmapRegionDecode.newInstance(…)获取一个对象，然后通过这个对象去调用decodeRegion（…）得到bitmap，最后就可以显示在屏幕上了。考虑到用户可以触摸移动图像，我们用手势控制器GestureDetector来控制图片显示的区域。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/04/Android%E5%9F%BA%E7%A1%80%E4%B9%8B%E8%87%AA%E5%AE%9A%E4%B9%89View/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yudesong">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/06/04/Android%E5%9F%BA%E7%A1%80%E4%B9%8B%E8%87%AA%E5%AE%9A%E4%B9%89View/" class="post-title-link" itemprop="url">Android基础之自定义View</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-06-04 10:53:39" itemprop="dateCreated datePublished" datetime="2020-06-04T10:53:39+08:00">2020-06-04</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
+                  ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Android%E5%9F%BA%E7%A1%80/" itemprop="url" rel="index"><span itemprop="name">Android基础</span></a>
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">事件分发</span></a>
                 </span>
             </span>
 
@@ -484,10 +550,14 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h4 id="View绘制onMeasure重载"><a href="#View绘制onMeasure重载" class="headerlink" title="View绘制onMeasure重载"></a>View绘制onMeasure重载</h4>
+          <h4 id="事件传递规则"><a href="#事件传递规则" class="headerlink" title="事件传递规则"></a>事件传递规则</h4><ul>
+<li>public boolean dispatchTouchEvent(MotionEvent ev):用来进行事件的分发。如果事件能够传递给当前 View ，一定会调用此方法，返回结果受当前 View 的 onTouchEvent 和下级 View 的 dispatchTouchEvent 方法的影响，表示是否消费当前事件。</li>
+<li>public boolean onInterceptTouchEvent(MotionEvent event):用来判断是否拦截某事件，如果当前 View 拦截了某事件，那么在同一事件序列当中，此方法不会被再次调用，返回结果表示是否拦截当前事件。</li>
+<li>public boolean onTouchEvent(MotionEvent event):在 dispatchTouchEvent 方法中调用，用来处理点击事件，返回结果表示是否消费当前事件，如果不消费，则在同一个事件序列中，当前 View 无法再次接收到事件。</li>
+</ul>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2020/06/04/Android%E5%9F%BA%E7%A1%80%E4%B9%8B%E8%87%AA%E5%AE%9A%E4%B9%89View/#more" rel="contents">
+              <a class="btn" href="/2020/06/20/15%20%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%B5%81%E7%A8%8B/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -511,7 +581,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/03/Java%E5%9F%BA%E7%A1%80%E4%B9%8Bwait%E3%80%81notify/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/20/14%20Android%20View%E7%BB%98%E5%88%B6/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -525,7 +595,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/06/03/Java%E5%9F%BA%E7%A1%80%E4%B9%8Bwait%E3%80%81notify/" class="post-title-link" itemprop="url">Java基础之wait、notify</a>
+            <a href="/2020/06/20/14%20Android%20View%E7%BB%98%E5%88%B6/" class="post-title-link" itemprop="url">14 Android View绘制</a>
         </h2>
 
         <div class="post-meta">
@@ -535,7 +605,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2020-06-03 20:44:23" itemprop="dateCreated datePublished" datetime="2020-06-03T20:44:23+08:00">2020-06-03</time>
+              <time title="创建时间：2020-06-20 18:55:10" itemprop="dateCreated datePublished" datetime="2020-06-20T18:55:10+08:00">2020-06-20</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -543,100 +613,15 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java%E5%9F%BA%E7%A1%80/" itemprop="url" rel="index"><span itemprop="name">Java基础</span></a>
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java%E5%9F%BA%E7%A1%80/wait%E3%80%81notify/" itemprop="url" rel="index"><span itemprop="name">wait、notify</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Java中的wait/notify/notifyAll可用来实现线程间通信，是Object类的方法，这三个方法都是native方法，是平台相关的，常用来实现生产者/消费者模式。先来我们来看下相关定义：</p>
-<ul>
-<li>wait() :调用该方法的线程进入WATTING状态，只有等待另外线程的通知或中断才会返回，调用wait()方法后，会释放对象的锁。</li>
-<li>wait(long):超时等待最多long毫秒，如果没有通知就超时返回。</li>
-<li>notify() : 通知一个在对象上等待的线程，使其从wait()方法返回，而返回的前提是该线程获取到了对象的锁。</li>
-<li>notifyAll()：通知所有等待在该对象上的线程。</li>
-</ul>
-<h4 id="2个线程交替打印123456789"><a href="#2个线程交替打印123456789" class="headerlink" title="2个线程交替打印123456789"></a>2个线程交替打印123456789</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">public class WaitNotifyDemo &#123;</span><br><span class="line">    private Object lock &#x3D; new Object();</span><br><span class="line"></span><br><span class="line">    private volatile int i &#x3D; 1;</span><br><span class="line">    </span><br><span class="line">    class Thread1 extends Thread &#123;</span><br><span class="line">        @Override</span><br><span class="line">        public void run() &#123;</span><br><span class="line">            synchronized (lock) &#123;</span><br><span class="line">                for (; i &lt; 10; ) &#123;</span><br><span class="line">                    System.out.println(Thread.currentThread().getName() + &quot; -&gt; &quot; + (i++));</span><br><span class="line">                    lock.notifyAll();</span><br><span class="line">                    try &#123;</span><br><span class="line">                        lock.wait();</span><br><span class="line">                    &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                        e.printStackTrace();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                lock.notifyAll();</span><br><span class="line">                System.out.println(Thread.currentThread().getName() + &quot;打印完毕&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public void test() &#123;</span><br><span class="line">        Thread1 t1 &#x3D; new Thread1();</span><br><span class="line">        t1.setName(&quot;线程A&quot;);</span><br><span class="line">        Thread1 t2 &#x3D; new Thread1();</span><br><span class="line">        t2.setName(&quot;线程B&quot;);</span><br><span class="line">        t1.start();</span><br><span class="line">        t2.start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="3个线程交替打印ABCABCABCABC"><a href="#3个线程交替打印ABCABCABCABC" class="headerlink" title="3个线程交替打印ABCABCABCABC"></a>3个线程交替打印ABCABCABCABC</h4><p>提示：采用3个lock对象锁</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="采用ArrayList-wait-notifyAll-实现生产者和消费者"><a href="#采用ArrayList-wait-notifyAll-实现生产者和消费者" class="headerlink" title="采用ArrayList + wait() + notifyAll() 实现生产者和消费者"></a>采用ArrayList + wait() + notifyAll() 实现生产者和消费者</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br></pre></td><td class="code"><pre><span class="line">public class ConsumerDemo &#123;</span><br><span class="line">    private static CountDownLatch countDownLatch &#x3D; new CountDownLatch(4);</span><br><span class="line"></span><br><span class="line">    static class Buffer &#123;</span><br><span class="line">        private final int SIZE &#x3D; 5;</span><br><span class="line">        private ArrayList&lt;Integer&gt; list &#x3D; new ArrayList&lt;&gt;();</span><br><span class="line"></span><br><span class="line">        public synchronized int get() &#123;</span><br><span class="line">            while (list.size() &#x3D;&#x3D; 0) &#123;</span><br><span class="line">                try &#123;</span><br><span class="line">                    System.out.println(&quot;消费者线程：&quot; + Thread.currentThread().getName()</span><br><span class="line">                            + &quot;进入阻塞状态，&quot; + &quot;当前缓冲区大小：&quot; + list.size());</span><br><span class="line">                    wait();</span><br><span class="line">                &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            Integer data &#x3D; list.remove(0);</span><br><span class="line">            System.out.println(&quot;消费者线程：&quot; + Thread.currentThread().getName()</span><br><span class="line">                    + &quot;正在消费value &#x3D; &quot; + data);</span><br><span class="line">            notifyAll();</span><br><span class="line">            return data;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public synchronized void put(Integer val) &#123;</span><br><span class="line">            while (list.size() &#x3D;&#x3D; SIZE) &#123;</span><br><span class="line">                try &#123;</span><br><span class="line">                    System.out.println(&quot;生产者线程：&quot; + Thread.currentThread().getName()</span><br><span class="line">                            + &quot;进入阻塞状态，&quot; + &quot;当前缓冲区大小：&quot; + list.size());</span><br><span class="line">                    wait();</span><br><span class="line">                &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            list.add(val);</span><br><span class="line">            System.out.println(&quot;生产者线程：&quot; + Thread.currentThread().getName()</span><br><span class="line">                    + &quot;正在生产数据value &#x3D; &quot; + val);</span><br><span class="line">            notifyAll();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    static class Consumer implements Runnable &#123;</span><br><span class="line">        Buffer buffer;</span><br><span class="line"></span><br><span class="line">        public Consumer(Buffer buffer) &#123;</span><br><span class="line">            this.buffer &#x3D; buffer;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void run() &#123;</span><br><span class="line">            for (int i &#x3D; 0; i &lt; 100; i++) &#123;</span><br><span class="line">                buffer.get();</span><br><span class="line">            &#125;</span><br><span class="line">            countDownLatch.countDown();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    static class Producer implements Runnable &#123;</span><br><span class="line">        Buffer buffer;</span><br><span class="line"></span><br><span class="line">        Producer(Buffer buffer) &#123;</span><br><span class="line">            this.buffer &#x3D; buffer;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void run() &#123;</span><br><span class="line">            for (int i &#x3D; 0; i &lt; 100; i++) &#123;</span><br><span class="line">                buffer.put(i);</span><br><span class="line">            &#125;</span><br><span class="line">            countDownLatch.countDown();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        Buffer buffer &#x3D; new Buffer();</span><br><span class="line">        Thread producer &#x3D; new Thread(new Producer(buffer), &quot;生产者&quot;);</span><br><span class="line">        Thread producer2 &#x3D; new Thread(new Producer(buffer), &quot;生产者2&quot;);</span><br><span class="line">        Thread consumer &#x3D; new Thread(new Consumer(buffer), &quot;消费者&quot;);</span><br><span class="line">        Thread consumer2 &#x3D; new Thread(new Consumer(buffer), &quot;消费者2&quot;);</span><br><span class="line">        producer.start();</span><br><span class="line">        consumer.start();</span><br><span class="line">        producer2.start();</span><br><span class="line">        consumer2.start();</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            countDownLatch.await();</span><br><span class="line">        &#125; catch (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        System.out.println(&quot;程序运行结束&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="LinkedBlockingQueue-实现"><a href="#LinkedBlockingQueue-实现" class="headerlink" title="LinkedBlockingQueue 实现"></a>LinkedBlockingQueue 实现</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line">public class Consumer extends Thread &#123;</span><br><span class="line">    private Storage storage;</span><br><span class="line">    public Consumer(Storage storage) &#123;</span><br><span class="line">        this.storage &#x3D; storage;</span><br><span class="line">    &#125;</span><br><span class="line">    @Override</span><br><span class="line">    public void run() &#123;</span><br><span class="line">        while (true) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                Storage.Goods goods &#x3D; storage.goods.take();</span><br><span class="line">                System.out.printf(String.valueOf(storage.goods.size())+&quot;\\n&quot;);</span><br><span class="line">                Thread.sleep(300);</span><br><span class="line">                System.out.println(&quot;消费&quot; + &quot; &quot; + goods.getName());</span><br><span class="line">            &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class Producer extends Thread &#123;</span><br><span class="line"></span><br><span class="line">    private Storage storage;</span><br><span class="line">    private int i &#x3D; 0;</span><br><span class="line">    public Producer(Storage storage) &#123;</span><br><span class="line">        this.storage &#x3D; storage;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void run() &#123;</span><br><span class="line"></span><br><span class="line">        while (true) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                storage.goods.put(new Storage.Goods(&quot;苹果&quot;+ i));</span><br><span class="line">                Thread.sleep(100);</span><br><span class="line">                i++;</span><br><span class="line">            &#125; catch (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class Storage &#123;</span><br><span class="line"></span><br><span class="line">    public static int MAX_COUNT &#x3D; 5;    &#x2F;&#x2F;容量为5</span><br><span class="line"></span><br><span class="line">    public BlockingQueue&lt;Goods&gt; goods &#x3D; new LinkedBlockingQueue&lt;Goods&gt;(MAX_COUNT);</span><br><span class="line">    public Storage() &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    public static class Goods &#123;</span><br><span class="line">        int id;</span><br><span class="line">        String name;</span><br><span class="line"></span><br><span class="line">        public Goods(String name) &#123;</span><br><span class="line">            this.name &#x3D; name;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public String getName() &#123;</span><br><span class="line">            return name;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public void setName(String name) &#123;</span><br><span class="line">            this.name &#x3D; name;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class TestThread &#123;</span><br><span class="line">    public static Object obj &#x3D; new Object();</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws InterruptedException &#123;</span><br><span class="line"></span><br><span class="line">        ExecutorService service &#x3D; Executors.newCachedThreadPool();</span><br><span class="line">        Storage storage &#x3D; new Storage();</span><br><span class="line">        Consumer consumer1 &#x3D; new Consumer(storage);</span><br><span class="line">        Consumer consumer2 &#x3D; new Consumer(storage);</span><br><span class="line">        Producer producer &#x3D; new Producer(storage);</span><br><span class="line"></span><br><span class="line">        service.submit(consumer1);</span><br><span class="line">        service.submit(consumer2);</span><br><span class="line">        service.submit(producer);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>参考博客<br><a href="http://www.cnblogs.com/chengxiao/p/7043529.html" target="_blank" rel="noopener">1.Java线程间通信之wait/notify</a><br><a href="http://blog.csdn.net/zhuqiuhui/article/details/52083821" target="_blank" rel="noopener">2. Java并发之生产者-消费者几种实现</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/03/Java%E5%9F%BA%E7%A1%80%E4%B9%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yudesong">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/06/03/Java%E5%9F%BA%E7%A1%80%E4%B9%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E6%9C%BA%E5%88%B6/" class="post-title-link" itemprop="url">Java基础之异常处理机制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-06-03 20:01:27" itemprop="dateCreated datePublished" datetime="2020-06-03T20:01:27+08:00">2020-06-03</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java%E5%9F%BA%E7%A1%80/" itemprop="url" rel="index"><span itemprop="name">Java基础</span></a>
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/" itemprop="url" rel="index"><span itemprop="name">源码</span></a>
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java%E5%9F%BA%E7%A1%80/%E5%BC%82%E5%B8%B8%E6%9C%BA%E5%88%B6/" itemprop="url" rel="index"><span itemprop="name">异常机制</span></a>
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/View%E7%BB%98%E5%88%B6/" itemprop="url" rel="index"><span itemprop="name">View绘制</span></a>
                 </span>
             </span>
 
@@ -651,250 +636,15 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h4 id="JAVA异常机制"><a href="#JAVA异常机制" class="headerlink" title="JAVA异常机制"></a>JAVA异常机制</h4><h5 id="一、基本概念"><a href="#一、基本概念" class="headerlink" title="一、基本概念"></a>一、基本概念</h5><p>在Java中这种在程序中运行时可能出现的一些错误称为异常。Java处理异常时，如果某个方法抛出异常，既可以在当前方法中进行捕捉，然后处理该异常，也可以将异常向上抛出，由方法调用者来处理。异常产生后，如果不做任何处理，程序就会被终止。</p>
-<h5 id="二、异常捕获和处理"><a href="#二、异常捕获和处理" class="headerlink" title="二、异常捕获和处理"></a>二、异常捕获和处理</h5><p><strong>1、Java异常处理涉及到五个关键字，分别是：try、catch、finally、throw、throws。</strong></p>
+          <h4 id="View绘制的三个流程"><a href="#View绘制的三个流程" class="headerlink" title="View绘制的三个流程"></a>View绘制的三个流程</h4><p>在自定义View的时候一般需要重写父类的onMeasure()、onLayout()、onDraw()三个方法，来完成视图的展示过程</p>
 <ul>
-<li>Try：可能发生异常的Java语句</li>
-<li>Catch：激发被捕获的异常</li>
-<li>finally：方法返回前总要执行的代码.</li>
-<li>throw：用于抛出一个异常对象</li>
-<li>throws：在声明方法时，用于指定该方法可能抛出的异常。</li>
+<li>measure：测量。系统会先根据xml布局文件和代码中对控件属性的设置，来获取或者计算出每个View和ViewGrop的尺寸，并将这些尺寸保存下来。</li>
+<li>layout：布局。根据测量出的结果以及对应的参数，来确定每一个控件应该显示的位置。</li>
+<li>draw：绘制。确定好位置后，就将这些控件绘制到屏幕上。</li>
 </ul>
-<p><strong>2、try、catch、finally三个语句块应注意的问题</strong></p>
-<ul>
-<li>第一、try、catch、finally三个语句块均不能单独使用，三者可以组成 try…catch…finally、try…catch、try…finally三种结构，catch语句可以有一个或多个，finally语句最多一个。</li>
-<li>第二、try、catch、finally三个代码块中变量的作用域为代码块内部，分别独立而不能相互访问。如果要在三个块中都可以访问，则需要将变量定义到这些块的外面。</li>
-<li>第三、多个catch块时候，只会匹配其中一个异常类并执行catch块代码，而不会再执行别的catch块，并且匹配catch语句的顺序是由上到下。</li>
-<li>第四、无论程序是否有异常，并且无论之间try-catch是否顺利执行完毕，都会执行finally语句。在以下特殊情况下，finally块不会执行：在finally语句块中发生异常；在前面代码中使用了System.exit()退出程序；程序所在线程死亡；关闭cpu。</li>
-<li>第五、当程序执行try块，catch块时遇到return语句或者throw语句，这两个语句都会导致该方法立即结束，所以系统并不会立即执行这两个语句，而是去寻找该异常处理流程中的finally块，如果没有finally块，程序立即执行return语句或者throw语句，方法终止。如果有finally块，系统立即开始执行finally块，只有当finally块执行完成后，系统才会再次跳回来执行try块、catch块里的return或throw语句，如果finally块里也使用了return或throw等导致方法终止的语句，则finally块已经终止了方法，不用再跳回去执行try块、catch块里的任何代码了。</li>
-</ul>
-<p><strong>3、throw与throws</strong></p>
-<p>1、throws出现在方法函数头；而throw出现在函数体。throws表示出现异常的一种可能性，并不一定会发生这些异常；throw则是抛出了异常，执行throw则一定抛出了某种异常对象。</p>
-<h5 id="三、异常结构"><a href="#三、异常结构" class="headerlink" title="三、异常结构"></a>三、异常结构</h5><p>Throwable类派生了两个子类。Error类用来描述Java运行系统中的内部错误以及资源耗尽的错误；Exception类为非致命性类，可以通过捕捉处理使程序继续执行。Exception类根据错误发生的原因分为运行时异常和检查异常。如图所示。</p>
-<p><strong>1、检查异常</strong></p>
-<p>检查异常是RuntimeException以外的异常（IOException、SQLException等），必须显示的地处理否则无法编译通过。处理方法有两种，一是用try…catch捕捉异常，二是使用throws声明抛出该异常。</p>
-<p><strong>2、运行时异常</strong></p>
-<p>运行时异常的特点是Java编译器不会检查它，程序中可以选择捕获处理，也可以不处理。</p>
-<p><strong>3、错误</strong></p>
-<p>Error（错误）:是程序无法处理的错误，表示代码运行时 JVM（Java 虚拟机）出现的问题。例如，Java虚拟机运行错误（Virtual MachineError），当 JVM 不再有继续执行操作所需的内存资源时，将出现 OutOfMemoryError。</p>
-<h5 id="四、自定义异常"><a href="#四、自定义异常" class="headerlink" title="四、自定义异常"></a>四、自定义异常</h5><p>自定义异常只需编写一个类继承Exception类（Throwable及其子类均可）即可。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/03/Java%E5%9F%BA%E7%A1%80%E4%B9%8B%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%8E%9F%E7%90%86/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yudesong">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/06/03/Java%E5%9F%BA%E7%A1%80%E4%B9%8B%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%8E%9F%E7%90%86/" class="post-title-link" itemprop="url">Java基础之线程池原理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-06-03 19:30:49" itemprop="dateCreated datePublished" datetime="2020-06-03T19:30:49+08:00">2020-06-03</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java%E5%9F%BA%E7%A1%80/" itemprop="url" rel="index"><span itemprop="name">Java基础</span></a>
-                </span>
-                  ，
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java%E5%9F%BA%E7%A1%80/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" itemprop="url" rel="index"><span itemprop="name">线程池</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>new Thread 的弊端：</p>
-<ul>
-<li>每次new Thread新建对象性能差</li>
-<li>线程缺乏统一管理，可能无限制新建线程、相互之间竞争，可能占用过多的系统资源导致死机活着OOM</li>
-<li>缺乏更多的功能，如定时执行、定期执行、线程中断</li>
-</ul>
-<p>线程池的好处：</p>
-<ul>
-<li>重用存在的线程、减少对象的创建、消亡的开销、性能佳</li>
-<li>可有控制最大并发线程数、提高系统资源的利用率，同时避免过多的资源竞争、避免堵塞</li>
-<li>提供定时、定期、单线程、并发数控制等功能</li>
-</ul>
-<h3 id="Java-线程池种类"><a href="#Java-线程池种类" class="headerlink" title="Java 线程池种类"></a>Java 线程池种类</h3><p>JDK 为我们内置了4种常见线程池的实现，均可以使用 Executors 工厂类创建。</p>
-<ul>
-<li>CachedThreadPool 用于并发执行大量短期的小任务，或者是负载较轻的服务器。</li>
-<li>FixedThreadPool 用于负载比较重的服务器，为了资源的合理利用，需要限制当前线程数量。</li>
-<li>SingleThreadExecutor 用于串行执行任务的场景，每个任务必须按顺序执行，不需要并发执行。</li>
-<li>ScheduledThreadPoolExecutor 用于需要多个后台线程执行周期任务，同时需要限制线程数量的场景。</li>
-<li>自定义线程池时，<ul>
-<li>如果任务是 CPU 密集型（需要进行大量计算、处理），则应该配置尽量少的线程，比如 CPU 个数 + 1，这样可以避免出现每个线程都需要使用很长时间但是有太多线程争抢资源的情况； </li>
-<li>如果任务是 IO密集型（主要时间都在 I/O，CPU 空闲时间比较多），则应该配置多一些线程，比如 CPU 数的两倍，这样可以更高地压榨 CPU。</li>
-</ul>
-</li>
-</ul>
-<p>为了错误避免创建过多线程导致系统奔溃，建议使用有界队列。因为它在无法添加更多任务时会拒绝任务，这样可以提前预警，避免影响整个系统。</p>
-<p>执行时间、顺序有要求的话可以选择优先级队列，同时也要保证低优先级的任务有机会被执行。</p>
-<p>创建线程池需要使用<strong>ThreadPoolExecutor</strong>类</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public ThreadPoolExecutor(int corePoolSize, &#x2F;&#x2F;核心线程的数量</span><br><span class="line">    int maximumPoolSize,    &#x2F;&#x2F;最大线程数量</span><br><span class="line">    long keepAliveTime,    &#x2F;&#x2F;超出核心线程数量以外的线程空余存活时间</span><br><span class="line">    TimeUnit unit,    &#x2F;&#x2F;存活时间的单位</span><br><span class="line">    BlockingQueue&lt;Runnable&gt; workQueue,    &#x2F;&#x2F;保存待执行任务的队列</span><br><span class="line">    ThreadFactory threadFactory,    &#x2F;&#x2F;创建新线程使用的工厂</span><br><span class="line">    RejectedExecutionHandler handler &#x2F;&#x2F; 当任务无法执行时的处理器</span><br><span class="line">    ) &#123;...&#125;</span><br></pre></td></tr></table></figure>
-<p>其核心的方法<strong>execute</strong></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">public void execute(Runnable command) &#123;</span><br><span class="line">    if (command &#x3D;&#x3D; null)</span><br><span class="line">        throw new NullPointerException();</span><br><span class="line"></span><br><span class="line">    int c &#x3D; ctl.get();</span><br><span class="line">    &#x2F;&#x2F;1.当前池中线程比核心数少，新建一个线程执行任务</span><br><span class="line">    if (workerCountOf(c) &lt; corePoolSize) &#123;   </span><br><span class="line">        if (addWorker(command, true))</span><br><span class="line">            return;</span><br><span class="line">        c &#x3D; ctl.get();</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F;2.核心池已满，但任务队列未满，添加到队列中</span><br><span class="line">    if (isRunning(c) &amp;&amp; workQueue.offer(command)) &#123;   </span><br><span class="line">        int recheck &#x3D; ctl.get();</span><br><span class="line">        if (! isRunning(recheck) &amp;&amp; remove(command))    </span><br><span class="line">        &#x2F;&#x2F;如果这时被关闭了，拒绝任务</span><br><span class="line">            reject(command);</span><br><span class="line">        else if (workerCountOf(recheck) &#x3D;&#x3D; 0)    </span><br><span class="line">        &#x2F;&#x2F;如果之前的线程已被销毁完，新建一个线程</span><br><span class="line">            addWorker(null, false);</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F;3.核心池已满，队列已满，试着创建一个新线程</span><br><span class="line">    else if (!addWorker(command, false))</span><br><span class="line">        reject(command);    </span><br><span class="line">        &#x2F;&#x2F;如果创建新线程失败了，说明线程池被关闭或者线程池完全满了，拒绝任务</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>以下线程池的主要工作流程：</p>
-
-
-<p>由于 1 和 3 新建线程时需要获取全局锁，这将严重影响性能。因此 ThreadPoolExecutor 这样的处理流程是为了在执行 execute() 方法时尽量少地执行 1 和 3，多执行 2。</p>
-<p>在 ThreadPoolExecutor 完成预热后（当前线程数不少于核心线程数），几乎所有的 execute() 都是在执行步骤 2。</p>
-<p>前面提到的 ThreadPoolExecutor 构造函数的参数，分别影响以下内容：</p>
-<ul>
-<li>corePoolSize：核心线程池数量<br>在线程数少于核心数量时，有新任务进来就新建一个线程，即使有的线程没事干<br>等超出核心数量后，就不会新建线程了，空闲的线程就得去任务队列里取任务执行了</li>
-<li>maximumPoolSize：最大线程数量<br>包括核心线程池数量 + 核心以外的数量<br>如果任务队列满了，并且池中线程数小于最大线程数，会再创建新的线程执行任务</li>
-<li>keepAliveTime：核心池以外的线程存活时间，即没有任务的外包的存活时间<br>如果给线程池设置 allowCoreThreadTimeOut(true)，则核心线程在空闲时头上也会响起死亡的倒计时<br>如果任务是多而容易执行的，可以调大这个参数，那样线程就可以在存活的时间里有更大可能接受新任务</li>
-<li>workQueue：保存待执行任务的阻塞队列<br>不同的任务类型有不同的选择，下一小节介绍</li>
-<li>threadFactory：每个线程创建的地方<br>可以给线程起个好听的名字，设置个优先级啥的</li>
-<li>handler：饱和策略，大家都很忙，咋办呢，有四种策略 <ul>
-<li>CallerRunsPolicy：只要线程池没关闭，就直接用调用者所在线程来运行任务</li>
-<li>AbortPolicy：直接抛出 RejectedExecutionException 异常</li>
-<li>DiscardPolicy：悄悄把任务放生，不做了</li>
-<li>DiscardOldestPolicy：把队列里待最久的那个任务扔了，然后再调用execute() 试试看能行不</li>
-<li>我们也可以实现自己的 RejectedExecutionHandler 接口自定义策略，比如如记录日志什么的</li>
-</ul>
-</li>
-</ul>
-<h3 id="保存待执行任务的阻塞队列"><a href="#保存待执行任务的阻塞队列" class="headerlink" title="保存待执行任务的阻塞队列"></a>保存待执行任务的阻塞队列</h3><p>当线程池中的核心线程数已满时，任务就要保存到队列中了。</p>
-<p>线程池中使用的队列是 BlockingQueue 接口，常用的实现有如下几种：</p>
-<ul>
-<li>ArrayBlockingQueue：基于数组、有界，按FIFO（先进先出）原则对元素进行排序</li>
-<li>LinkedBlockingQueue：基于链表，按FIFO （先进先出） 排序元素 <ul>
-<li>吞吐量通常要高于 ArrayBlockingQueue               </li>
-<li>Executors.newFixedThreadPool() 使用了这个队列</li>
-</ul>
-</li>
-<li>SynchronousQueue：不存储元素的阻塞队列 <ul>
-<li>每个插入操作必须等到另一个线程调用移除操作，否则插入操作一直处于阻塞状态</li>
-<li>吞吐量通常要高于 LinkedBlockingQueue</li>
-<li>Executors.newCachedThreadPool使用了这个队列</li>
-</ul>
-</li>
-<li>PriorityBlockingQueue：具有优先级的、无限阻塞队列</li>
-</ul>
-<h3 id="自定义线程池"><a href="#自定义线程池" class="headerlink" title="自定义线程池"></a>自定义线程池</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">public class ThreadPoolManager &#123;</span><br><span class="line">    private final String TAG &#x3D; this.getClass().getSimpleName();</span><br><span class="line">    private static final int CORE_POOL_SIZE &#x3D; Runtime.getRuntime().availableProcessors() * 2; </span><br><span class="line">    &#x2F;&#x2F; 核心线程数为 CPU数＊2</span><br><span class="line">    private static final int MAXIMUM_POOL_SIZE &#x3D; 64;    </span><br><span class="line">    &#x2F;&#x2F; 线程队列最大线程数</span><br><span class="line">    private static final int KEEP_ALIVE_TIME &#x3D; 1;    </span><br><span class="line">    &#x2F;&#x2F; 保持存活时间 1秒</span><br><span class="line"></span><br><span class="line">    &#x2F;*</span><br><span class="line">    ** 如果是要求高吞吐量的，可以使用 SynchronousQueue 队列；如果对执行顺序有要求，可以使用 PriorityBlockingQueue；如果最大积攒的待做任务有上限，可以使用 LinkedBlockingQueue</span><br><span class="line">    *&#x2F;</span><br><span class="line">    private final BlockingQueue&lt;Runnable&gt; mWorkQueue &#x3D; new LinkedBlockingQueue&lt;&gt;(128);</span><br><span class="line"></span><br><span class="line">    private final ThreadFactory DEFAULT_THREAD_FACTORY &#x3D; new ThreadFactory() &#123;</span><br><span class="line">        private final AtomicInteger mCount &#x3D; new AtomicInteger(1);</span><br><span class="line"></span><br><span class="line">        public Thread newThread(Runnable r) &#123;</span><br><span class="line">            Thread thread &#x3D; new Thread(r, TAG + &quot; #&quot; + mCount.getAndIncrement());</span><br><span class="line">            thread.setPriority(Thread.NORM_PRIORITY);</span><br><span class="line">            return thread;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    private ThreadPoolExecutor mExecutor &#x3D; new ThreadPoolExecutor(CORE_POOL_SIZE, MAXIMUM_POOL_SIZE, KEEP_ALIVE_TIME,</span><br><span class="line">            TimeUnit.SECONDS, mWorkQueue, DEFAULT_THREAD_FACTORY,</span><br><span class="line">            new ThreadPoolExecutor.DiscardOldestPolicy());</span><br><span class="line"></span><br><span class="line">    private static volatile ThreadPoolManager mInstance &#x3D; new ThreadPoolManager();</span><br><span class="line"></span><br><span class="line">    public static ThreadPoolManager getInstance() &#123;</span><br><span class="line">        return mInstance;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void addTask(Runnable runnable) &#123;</span><br><span class="line">        mExecutor.execute(runnable);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Deprecated</span><br><span class="line">    public void shutdownNow() &#123;</span><br><span class="line">        mExecutor.shutdownNow();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="两种提交任务的方法"><a href="#两种提交任务的方法" class="headerlink" title="两种提交任务的方法"></a>两种提交任务的方法</h3><p>ExecutorService 提供了两种提交任务的方法：</p>
-<ul>
-<li>execute()：提交不需要返回值的任务<br>execute() 的参数是一个 Runnable，也没有返回值。因此提交后无法判断该任务是否被线程池执行成功。</li>
-<li>submit()：提交需要返回值的任务<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;T&gt; Future&lt;T&gt; submit(Callable&lt;T&gt; task);</span><br><span class="line">&lt;T&gt; Future&lt;T&gt; submit(Runnable task, T result);</span><br><span class="line">Future&lt;?&gt; submit(Runnable task);</span><br></pre></td></tr></table></figure>
-submit() 有三种重载，参数可以是 Callable 也可以是 Runnable。<br>同时它会返回一个 Funture 对象，通过它我们可以判断任务是否执行成功。<br>获得执行结果调用 Future.get()方法，这个方法会阻塞当前线程直到任务完成。<br>提交一个 Callable 任务时，需要使用 FutureTask 包一层<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">FutureTask futureTask &#x3D; new FutureTask(new Callable&lt;String&gt;() &#123;    &#x2F;&#x2F;创建 Callable 任务</span><br><span class="line">    @Override</span><br><span class="line">    public String call() throws Exception &#123;</span><br><span class="line">        String result &#x3D; &quot;&quot;;</span><br><span class="line">        &#x2F;&#x2F;do something</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line">Future&lt;?&gt; submit &#x3D; executor.submit(futureTask);    &#x2F;&#x2F;提交到线程池</span><br><span class="line">try &#123;</span><br><span class="line">    Object result &#x3D; submit.get();    &#x2F;&#x2F;获取结果</span><br><span class="line">&#125; catch (InterruptedException e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">&#125; catch (ExecutionException e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-</li>
-</ul>
-<h3 id="关闭线程池"><a href="#关闭线程池" class="headerlink" title="关闭线程池"></a>关闭线程池</h3><p>线程池即使不执行任务也会占用一些资源，所以在我们要退出任务时最好关闭线程池。</p>
-<p>有两个方法关闭线程池：</p>
-<ul>
-<li>shutdown()<br>将线程池的状态设置为 SHUTDOWN，然后中断所有没有正在执行的线程</li>
-<li>shutdownNow()<br>将线程池设置为 STOP，然后尝试停止所有线程，并返回等待执行任务的列表</li>
-</ul>
-<p>它们的共同点是：都是通过遍历线程池中的工作线程，逐个调用 Thread.interrup()来中断线程，所以一些无法响应中断的任务可能永远无法停止（比如 Runnable）</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/03/%E5%A4%9A%E7%BA%BF%E7%A8%8B/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yudesong">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/06/03/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" class="post-title-link" itemprop="url">多线程</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-06-03 12:56:07" itemprop="dateCreated datePublished" datetime="2020-06-03T12:56:07+08:00">2020-06-03</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="1-什么是线程"><a href="#1-什么是线程" class="headerlink" title="1.什么是线程"></a>1.什么是线程</h2><p><strong>基本概念</strong></p>
-<p>我们先从线程的基本概念开始，给大家复习一下，不知道有多少同学是基础不太好，说什么是线程都不知道的，如果这样的话，花时间去补初级内容的课。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2020/06/03/%E5%A4%9A%E7%BA%BF%E7%A8%8B/#more" rel="contents">
+              <a class="btn" href="/2020/06/20/14%20Android%20View%E7%BB%98%E5%88%B6/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -918,7 +668,7 @@ submit() 有三种重载，参数可以是 Callable 也可以是 Runnable。<br>
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/03/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8811%EF%BC%89%EF%BC%9A%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E4%B9%8B%E9%87%8D%E6%8E%92%E5%BA%8F/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/20/13%20activity%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -932,7 +682,7 @@ submit() 有三种重载，参数可以是 Callable 也可以是 Runnable。<br>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/06/03/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8811%EF%BC%89%EF%BC%9A%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E4%B9%8B%E9%87%8D%E6%8E%92%E5%BA%8F/" class="post-title-link" itemprop="url">啃碎并发（11）：内存模型之重排序</a>
+            <a href="/2020/06/20/13%20activity%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" class="post-title-link" itemprop="url">13 activity启动流程</a>
         </h2>
 
         <div class="post-meta">
@@ -942,7 +692,7 @@ submit() 有三种重载，参数可以是 Callable 也可以是 Runnable。<br>
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2020-06-03 09:05:20" itemprop="dateCreated datePublished" datetime="2020-06-03T09:05:20+08:00">2020-06-03</time>
+              <time title="创建时间：2020-06-20 15:54:17" itemprop="dateCreated datePublished" datetime="2020-06-20T15:54:17+08:00">2020-06-20</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -950,11 +700,15 @@ submit() 有三种重载，参数可以是 Callable 也可以是 Runnable。<br>
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/JAVA%E5%B9%B6%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">JAVA并发</span></a>
+                  <a href="/categories/Android/" itemprop="url" rel="index"><span itemprop="name">Android</span></a>
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/JAVA%E5%B9%B6%E5%8F%91/%E9%87%8D%E6%8E%92%E5%BA%8F/" itemprop="url" rel="index"><span itemprop="name">重排序</span></a>
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/" itemprop="url" rel="index"><span itemprop="name">源码</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/%E6%BA%90%E7%A0%81/Activity%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">Activity启动流程</span></a>
                 </span>
             </span>
 
@@ -969,10 +723,10 @@ submit() 有三种重载，参数可以是 Callable 也可以是 Runnable。<br>
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>0 前言<br>在很多情况下，访问一个程序变量（对象实例字段，类静态字段和数组元素）可能会使用不同的顺序执行，而不是程序语义所指定的顺序执行。具体几种情况，如下：</p>
+          <h4 id="Activity的生命周期"><a href="#Activity的生命周期" class="headerlink" title="Activity的生命周期"></a>Activity的生命周期</h4><img src="/2020/06/20/13%20activity%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/12239817-57bb34bbf201853d.png" class="" title="[Activity的生命周期]">
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2020/06/03/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8811%EF%BC%89%EF%BC%9A%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E4%B9%8B%E9%87%8D%E6%8E%92%E5%BA%8F/#more" rel="contents">
+              <a class="btn" href="/2020/06/20/13%20activity%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -996,7 +750,7 @@ submit() 有三种重载，参数可以是 Callable 也可以是 Runnable。<br>
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/03/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8810%EF%BC%89%EF%BC%9A%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/07/%E9%A9%AC%E8%80%81%E5%B8%88%E7%AC%94%E8%AE%B0-%E8%AE%AD%E7%BB%83%E8%90%A5synchronized/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -1010,7 +764,7 @@ submit() 有三种重载，参数可以是 Callable 也可以是 Runnable。<br>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/06/03/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8810%EF%BC%89%EF%BC%9A%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/" class="post-title-link" itemprop="url">啃碎并发（10）：内存模型之内部原理</a>
+            <a href="/2020/06/07/%E9%A9%AC%E8%80%81%E5%B8%88%E7%AC%94%E8%AE%B0-%E8%AE%AD%E7%BB%83%E8%90%A5synchronized/" class="post-title-link" itemprop="url">马老师笔记-训练营synchronized</a>
         </h2>
 
         <div class="post-meta">
@@ -1020,20 +774,7 @@ submit() 有三种重载，参数可以是 Callable 也可以是 Runnable。<br>
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2020-06-03 09:03:58" itemprop="dateCreated datePublished" datetime="2020-06-03T09:03:58+08:00">2020-06-03</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/JAVA%E5%B9%B6%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">JAVA并发</span></a>
-                </span>
-                  ，
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/JAVA%E5%B9%B6%E5%8F%91/%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" itemprop="url" rel="index"><span itemprop="name">内存模型</span></a>
-                </span>
+              <time title="创建时间：2020-06-07 14:54:53" itemprop="dateCreated datePublished" datetime="2020-06-07T14:54:53+08:00">2020-06-07</time>
             </span>
 
           
@@ -1047,10 +788,140 @@ submit() 有三种重载，参数可以是 Callable 也可以是 Runnable。<br>
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>0 前言<br>如上一篇文章所述，Java内存模型规范了Java虚拟机与计算机内存是如何协同工作的。Java虚拟机是一个完整计算机的模型，因此，这个模型自然会包含一个内存模型—又称为Java内存模型。</p>
+          <h1 id="用户态与内核态"><a href="#用户态与内核态" class="headerlink" title="用户态与内核态"></a>用户态与内核态</h1><p>JDK早期，synchronized 叫做重量级锁， 因为申请锁资源必须通过kernel, 系统调用</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2020/06/03/%E5%95%83%E7%A2%8E%E5%B9%B6%E5%8F%91%EF%BC%8810%EF%BC%89%EF%BC%9A%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86/#more" rel="contents">
+              <a class="btn" href="/2020/06/07/%E9%A9%AC%E8%80%81%E5%B8%88%E7%AC%94%E8%AE%B0-%E8%AE%AD%E7%BB%83%E8%90%A5synchronized/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/07/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90%E4%B8%8E%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96(%E5%9B%BE%E7%81%B5%E5%AD%A6%E9%99%A2)/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/06/07/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90%E4%B8%8E%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96(%E5%9B%BE%E7%81%B5%E5%AD%A6%E9%99%A2)/" class="post-title-link" itemprop="url">JVM虚拟机底层原理分析与性能优化【图灵学院】</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-07 14:18:05" itemprop="dateCreated datePublished" datetime="2020-06-07T14:18:05+08:00">2020-06-07</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h4 id="1-深入剖析Java虚拟机内存模型"><a href="#1-深入剖析Java虚拟机内存模型" class="headerlink" title="1. 深入剖析Java虚拟机内存模型"></a>1. 深入剖析Java虚拟机内存模型</h4>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/06/07/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90%E4%B8%8E%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96(%E5%9B%BE%E7%81%B5%E5%AD%A6%E9%99%A2)/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/06/%E5%89%91%E6%8C%87Offer%20--%20%E5%88%B7%E9%A2%98%E7%AC%94%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/06/06/%E5%89%91%E6%8C%87Offer%20--%20%E5%88%B7%E9%A2%98%E7%AC%94%E8%AE%B0/" class="post-title-link" itemprop="url">剑指Offer -- 刷题笔记</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-06 17:05:08" itemprop="dateCreated datePublished" datetime="2020-06-06T17:05:08+08:00">2020-06-06</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><strong>1. 二维数组中的查找</strong></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/06/06/%E5%89%91%E6%8C%87Offer%20--%20%E5%88%B7%E9%A2%98%E7%AC%94%E8%AE%B0/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -1073,7 +944,7 @@ submit() 有三种重载，参数可以是 Callable 也可以是 Runnable。<br>
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/4/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span><a class="page-number" href="/page/6/">6</a><span class="space">&hellip;</span><a class="page-number" href="/page/11/">11</a><a class="extend next" rel="next" href="/page/6/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/4/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span><a class="page-number" href="/page/6/">6</a><span class="space">&hellip;</span><a class="page-number" href="/page/12/">12</a><a class="extend next" rel="next" href="/page/6/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1139,20 +1010,20 @@ submit() 有三种重载，参数可以是 Callable 也可以是 Runnable。<br>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">102</span>
+          <span class="site-state-item-count">112</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-count">42</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
