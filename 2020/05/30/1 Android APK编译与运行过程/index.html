@@ -29,8 +29,11 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://yoursite.com/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/81fedf6fb4d9134c741caaeec8db757a.png">
 <meta property="og:image" content="http://yoursite.com/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/5713484-5fd820650bb9317b.png">
+<meta property="og:image" content="http://yoursite.com/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/v2-f8f1ce068c1945007b3cdc77ea16ba44_720w.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/v2-9381d1f03a2399f86bfba4b5b3bbef35_720w.jpg">
+<meta property="og:image" content="http://yoursite.com/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/v2-122104178ead26b1f1de19ca711933ec_720w.jpg">
 <meta property="article:published_time" content="2020-05-29T16:29:03.975Z">
-<meta property="article:modified_time" content="2020-06-21T08:46:39.881Z">
+<meta property="article:modified_time" content="2021-03-11T04:57:10.511Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="Android系统层">
 <meta name="twitter:card" content="summary">
@@ -243,7 +246,7 @@
 <ul>
 <li>压缩(Shrink)：检测并移除代码中无用的类、字段、方法和特性(Attribute)</li>
 <li>优化(Optimize)：字节码进行优化，移除无用的指令。</li>
-<li>混淆(Obfuscate)：使用a、b、c、d这样简短而无意义的名称，对垒、字段和方法进行重命名。</li>
+<li>混淆(Obfuscate)：使用a、b、c、d这样简短而无意义的名称，对类、字段和方法进行重命名。</li>
 <li>预检测(Preveirfy)：在Java平台对处理后的代码进行预检测，确保加载class文件是可执行的。</li>
 </ul>
 <p>ProGuard的基本命令：</p>
@@ -255,6 +258,36 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">-keep public class * extends android.app.Activity</span><br><span class="line"># 枚举类不能被混淆</span><br><span class="line">-keepclassmembers enum * &#123;</span><br><span class="line">    public static **[] values();</span><br><span class="line">    public static ** valueOf(java.lang.String);</span><br><span class="line">&#125;</span><br><span class="line"># 保留Parcelable序列化的类不能被混淆</span><br><span class="line">-keep class * implements android.os.Parcelable&#123;</span><br><span class="line">    public static final android.os.Parcelable$Creator *;</span><br><span class="line">&#125;</span><br><span class="line"># 保留Serializable 序列化的类不被混淆</span><br><span class="line">-keepclassmembers class * implements java.io.Serializable &#123;</span><br><span class="line">   static final long serialVersionUID;</span><br><span class="line">   private static final java.io.ObjectStreamField[] serialPersistentFields;</span><br><span class="line">   !static !transient &lt;fields&gt;;</span><br><span class="line">   private void writeObject(java.io.ObjectOutputStream);</span><br><span class="line">   private void readObject(java.io.ObjectInputStream);</span><br><span class="line">   java.lang.Object writeReplace();</span><br><span class="line">   java.lang.Object readResolve();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"># 对R文件下的所有类及其方法，都不能被混淆</span><br><span class="line">-keepclassmembers class **.R$* &#123;</span><br><span class="line">    *；</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h4 id="三、APK签名"><a href="#三、APK签名" class="headerlink" title="三、APK签名"></a>三、APK签名</h4><p>Android提供了两种对Apk的签名方式，一种是基于JAR的签名方式，另一种是基于Apk的签名方式，它们的主要区别在于使用的签名文件不一样：jarsigner使用keystore文件进行签名；apksigner除了支持使用keystore文件进行签名外，还支持直接指定pem证书文件和私钥进行签名。</p>
+<p><strong>V1</strong></p>
+<img src="/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/v2-f8f1ce068c1945007b3cdc77ea16ba44_720w.jpg" class="" title="[一个完整的签名过程]">
+
+<p>(1)MANIFEST.MF：该文件中保存的内容其实就是逐一遍历 APK 中的所有条目，如果是目录就跳过，如果是一个文件，就用 SHA1（或者 SHA256）消息摘要算法提取出该文件的摘要然后进行 BASE64 编码后，作为「SHA1-Digest」属性的值写入到 MANIFEST.MF 文件中的一个块中。该块有一个「Name」属性， 其值就是该文件在 APK 包中的路径。</p>
+<p>(2)CERT.SF：二次摘要文件，存储文件名与MANIFEST.MF摘要条目的SHA1摘要（Base64格式）键值对</p>
+<p>(3)CERT.RSA 证书（公钥）及签名文件，存储keystore的公钥、发行信息、以及对CERT.SF文件摘要的签名信息（利用keystore的私钥进行加密过）</p>
+<img src="/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/v2-9381d1f03a2399f86bfba4b5b3bbef35_720w.jpg" class="" title="[一个完整的签名验证过程]">
+
+<p><strong>V2</strong><br>v2 签名将验证归档中的所有字节，而不是单个 ZIP 条目，因此，在签署后无法再运行 ZIPalign（必须在签名之前执行）。正因如此，现在，在编译过程中，Google 将压缩、调整和签署合并成一步完成。</p>
+<p>简单来说，v2 签名模式在原先 APK 块中增加了一个新的块（签名块），新的块存储了签名，摘要，签名算法，证书链，额外属性等信息，这个块有特定的格式，具体格式分析见后文，先看下现在 APK 成什么样子了。</p>
+<img src="/2020/05/30/1%20Android%20APK%E7%BC%96%E8%AF%91%E4%B8%8E%E8%BF%90%E8%A1%8C%E8%BF%87%E7%A8%8B/v2-122104178ead26b1f1de19ca711933ec_720w.jpg" class="" title="[]">
+
+<p>首先，说一下 APK 摘要计算规则，对于每个摘要算法，计算结果如下:</p>
+<p>将 APK 中文件 ZIP 条目的内容、ZIP 中央目录、ZIP 中央目录结尾按照 1MB 大小分割成一些小块。</p>
+<ul>
+<li>计算每个小块的数据摘要，数据内容是 0xa5 + 块字节长度 + 块内容。</li>
+<li>计算整体的数据摘要，数据内容是 0x5a + 数据块的数量 + 每个数据块的摘要内容<br>总之，就是把 APK 按照 1M 大小分割，分别计算这些分段的摘要，最后把这些分段的摘要在进行计算得到最终的摘要也就是 APK 的摘要。然后将 APK 的摘要 + 数字证书 + 其他属性生成签名数据写入到 APK Signing Block 区块。</li>
+</ul>
+<p>其中 v2 签名机制是在 Android 7.0 以及以上版本才支持。因此对于 Android 7.0 以及以上版本，在安装过程中，如果发现有 v2 签名块，则必须走 v2 签名机制，不能绕过。否则降级走 v1 签名机制。v1 和 v2 签名机制是可以同时存在的，其中对于 v1 和 v2 版本同时存在的时候，v1 版本的 META_INF 的 .SF 文件属性当中有一个 X-Android-APK-Signed 属性：</p>
+<blockquote>
+<p>X-Android-APK-Signed: 2</p>
+</blockquote>
+<p>因此如果想绕过 v2 走 v1 校验是不行的。</p>
+<p><strong>V1、V2签名下美团多渠道打包的切入点</strong><br>V1签名：META_INFO文件夹下增加文件不会对校验有任何影响，则是美团V1多渠道打包方案的切入点<br>V2签名：V2签名块中可以添加一些附属信息，不会对签名又任何影响，这是V2多渠道打包的切入点。</p>
+<p>总结:</p>
+<ul>
+<li>V1签名靠META_INFO文件夹下的签名文件</li>
+<li>V2签名依靠中央目录前的V2签名快，ZIP的目录结构不会改变，当然结尾偏移要改。</li>
+<li>V1 V2签名可以同时存在（miniSdkVersion 7.0以下如果没有V1签名是不可以的）多去到打包的切入点原则：附加信息不影响签名验证</li>
+</ul>
 <p>更具体的可以参考以下文章：<br><a href="https://www.jianshu.com/p/682bb351099f" target="_blank" rel="noopener">1. Apk签名机制之——JAR签名机制详解</a><br><a href="https://www.jianshu.com/p/308515c94dc6" target="_blank" rel="noopener">2. Apk签名机制之——V2签名机制详解</a></p>
 <h4 id="四、-dex-vdex-odex-art区别"><a href="#四、-dex-vdex-odex-art区别" class="headerlink" title="四、 dex vdex odex art区别"></a>四、 dex vdex odex art区别</h4><p><strong>odex</strong></p>
 <p>在Android N 之前,Dalvik虚拟机执行程序dex文件前,系统会对dex文件做优化,生成可执行文件odex，保存到data/dalvik-cache目录，最后把apk文件中的dex文件删除。这样做可以加快软件的启动速度，预先提取，减少对RAM的占用。没有odex的话，系统要从apk包中提取dex再运行。</p>
@@ -412,7 +445,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">112</span>
+          <span class="site-state-item-count">111</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
