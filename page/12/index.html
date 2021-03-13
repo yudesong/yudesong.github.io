@@ -160,6 +160,206 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/30/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-Integer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/05/30/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-Integer/" class="post-title-link" itemprop="url">JDK 源码解析 -- Integer</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-05-30 00:01:33 / 修改时间：00:01:58" itemprop="dateCreated datePublished" datetime="2020-05-30T00:01:33+08:00">2020-05-30</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>说到Java中的Integer包装类，大家或多或少的都听说过Integer缓存，下面我们先从Integer缓存相关的一道笔试题讲起。</p>
+<p>先来看一段代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Integer a1 &#x3D; Integer.valueOf(13);</span><br><span class="line">Integer a2 &#x3D; Integer.valueOf(13);</span><br><span class="line">Integer a3 &#x3D; Integer.valueOf(133);</span><br><span class="line">Integer a4 &#x3D; Integer.valueOf(133);</span><br><span class="line">System.out.println(a1 &#x3D;&#x3D; a2);   &#x2F;&#x2F; 输出 true</span><br><span class="line">System.out.println(a3 &#x3D;&#x3D; a4);   &#x2F;&#x2F; 输出 false</span><br></pre></td></tr></table></figure>
+<p>要想深入了解其中的道理，必须学会分析JDK里面的Integer类源码。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 使用cache[]数组构造</span><br><span class="line">public static Integer valueOf(int i) &#123;</span><br><span class="line">    if (i &gt;&#x3D; IntegerCache.low &amp;&amp; i &lt;&#x3D; IntegerCache.high)</span><br><span class="line">        return IntegerCache.cache[i + (-IntegerCache.low)];</span><br><span class="line">    return new Integer(i);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 静态内部类实现[-128, 127]的缓存</span><br><span class="line">private static class IntegerCache &#123;</span><br><span class="line">    static final int low &#x3D; -128;</span><br><span class="line">    static final int high;</span><br><span class="line">    static final Integer cache[];</span><br><span class="line">    static &#123;</span><br><span class="line">        &#x2F;&#x2F; high 值通过JVM进行设置，默认为127</span><br><span class="line">       &#x2F;&#x2F;  可以通过 vm 参数指定：-XX:AutoBoxCacheMax。</span><br><span class="line">        int h &#x3D; 127;</span><br><span class="line">        String integerCacheHighPropValue &#x3D;</span><br><span class="line">           sun.misc.VM.getSavedProperty(&quot;java.lang.Integer.IntegerCache.high&quot;);</span><br><span class="line">        if (integerCacheHighPropValue !&#x3D; null) &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                int i &#x3D; parseInt(integerCacheHighPropValue);</span><br><span class="line">                i &#x3D; Math.max(i, 127);</span><br><span class="line">                &#x2F;&#x2F; 最大缓存上限 Integer.MAX_VALUE</span><br><span class="line">                h &#x3D; Math.min(i, Integer.MAX_VALUE - (-low) -1);</span><br><span class="line">             &#125; catch( NumberFormatException nfe) &#123;</span><br><span class="line">                &#x2F;&#x2F; If the property cannot be parsed into an int, ignore it.</span><br><span class="line">             &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        high &#x3D; h;</span><br><span class="line">        cache &#x3D; new Integer[(high - low) + 1];</span><br><span class="line">        int j &#x3D; low;</span><br><span class="line">        for(int k &#x3D; 0; k &lt; cache.length; k++)</span><br><span class="line">            cache[k] &#x3D; new Integer(j++);</span><br><span class="line">            &#x2F;&#x2F; range [-128, 127] must be interned (JLS7 5.1.7)</span><br><span class="line">        assert IntegerCache.high &gt;&#x3D; 127;</span><br><span class="line">        &#125;</span><br><span class="line">        private IntegerCache() &#123;&#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>stringSize() 函数判断int长度</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">final static int [] sizeTable &#x3D; &#123; 9, 99, 999, 9999, 99999, 999999, 9999999,</span><br><span class="line">                                  99999999, 999999999, Integer.MAX_VALUE &#125;;</span><br><span class="line">&#x2F;&#x2F; Requires positive x 参数必须为正数</span><br><span class="line">static int stringSize(int x) &#123;</span><br><span class="line">    for (int i&#x3D;0; ; i++)</span><br><span class="line">        if (x &lt;&#x3D; sizeTable[i])</span><br><span class="line">            return i+1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>parseInt 函数</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">public static int parseInt(String s, int radix)</span><br><span class="line">                throws NumberFormatException</span><br><span class="line">    &#123;</span><br><span class="line">        if (s &#x3D;&#x3D; null) &#123;</span><br><span class="line">            throw new NumberFormatException(&quot;null&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">        if (radix &lt; Character.MIN_RADIX) &#123;</span><br><span class="line">            throw new NumberFormatException(&quot;radix &quot; + radix +</span><br><span class="line">                                            &quot; less than Character.MIN_RADIX&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">        if (radix &gt; Character.MAX_RADIX) &#123;</span><br><span class="line">            throw new NumberFormatException(&quot;radix &quot; + radix +</span><br><span class="line">                                            &quot; greater than Character.MAX_RADIX&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">        int result &#x3D; 0;</span><br><span class="line">        boolean negative &#x3D; false;</span><br><span class="line">        int i &#x3D; 0, len &#x3D; s.length();</span><br><span class="line">        int limit &#x3D; -Integer.MAX_VALUE;</span><br><span class="line">        int multmin;</span><br><span class="line">        int digit;</span><br><span class="line">        if (len &gt; 0) &#123;</span><br><span class="line">            char firstChar &#x3D; s.charAt(0);</span><br><span class="line">            if (firstChar &lt; &#39;0&#39;) &#123; &#x2F;&#x2F; Possible leading &quot;+&quot; or &quot;-&quot;</span><br><span class="line">                if (firstChar &#x3D;&#x3D; &#39;-&#39;) &#123;</span><br><span class="line">                    negative &#x3D; true;</span><br><span class="line">                    limit &#x3D; Integer.MIN_VALUE;</span><br><span class="line">                &#125; else if (firstChar !&#x3D; &#39;+&#39;)</span><br><span class="line">                    throw NumberFormatException.forInputString(s);</span><br><span class="line">                if (len &#x3D;&#x3D; 1) &#x2F;&#x2F; Cannot have lone &quot;+&quot; or &quot;-&quot;</span><br><span class="line">                    throw NumberFormatException.forInputString(s);</span><br><span class="line">                i++;</span><br><span class="line">            &#125;</span><br><span class="line">            multmin &#x3D; limit &#x2F; radix;</span><br><span class="line">            while (i &lt; len) &#123;</span><br><span class="line">                digit &#x3D; Character.digit(s.charAt(i++),radix);</span><br><span class="line">                if (digit &lt; 0) &#123;</span><br><span class="line">                    throw NumberFormatException.forInputString(s);</span><br><span class="line">                &#125;</span><br><span class="line">                if (result &lt; multmin) &#123;</span><br><span class="line">                    throw NumberFormatException.forInputString(s);</span><br><span class="line">                &#125;</span><br><span class="line">                result *&#x3D; radix;</span><br><span class="line">                if (result &lt; limit + digit) &#123;</span><br><span class="line">                    throw NumberFormatException.forInputString(s);</span><br><span class="line">                &#125;</span><br><span class="line">                result -&#x3D; digit;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            throw NumberFormatException.forInputString(s);</span><br><span class="line">        &#125;</span><br><span class="line">        return negative ? result : -result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>参考<br><a href="https://blog.csdn.net/u011080472/article/details/51406198" target="_blank" rel="noopener">【JDK】：java.lang.Integer源码解析</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/29/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-String/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/05/29/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-String/" class="post-title-link" itemprop="url">JDK 源码解析 -- String</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-05-29 23:57:44 / 修改时间：23:58:05" itemprop="dateCreated datePublished" datetime="2020-05-29T23:57:44+08:00">2020-05-29</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>String 类定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public final class String</span><br><span class="line">        implements java.io.Serializable, Comparable&lt;String&gt;, CharSequence</span><br><span class="line"></span><br><span class="line">&#x2F;** 底层字符的存储*&#x2F;</span><br><span class="line">private final char value[];</span><br><span class="line">&#x2F;** 哈希码*&#x2F;</span><br><span class="line">private int hash; &#x2F;&#x2F; Default to 0</span><br><span class="line">private static final long serialVersionUID &#x3D; -6849794470754667710L;</span><br></pre></td></tr></table></figure>
+<p>String类被声明为final的，意味着它不可以被继承。同时内部保持着了一个final 类型的char[]数组。</p>
+<p>构造函数</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public String(String original) &#123;</span><br><span class="line">    this.value &#x3D; original.value;</span><br><span class="line">    this.hash &#x3D; original.hash;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public String(char value[]) &#123;</span><br><span class="line">    this.value &#x3D; Arrays.copyOf(value, value.length);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public String(char value[], int offset, int count) &#123;</span><br><span class="line">    this.value &#x3D; Arrays.copyOfRange(value, offset, offset+count);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其他方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">public int length() &#123;</span><br><span class="line">    return value.length;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public boolean isEmpty() &#123;</span><br><span class="line">    return value.length &#x3D;&#x3D; 0;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public char charAt(int index) &#123;</span><br><span class="line">    if ((index &lt; 0) || (index &gt;&#x3D; value.length)) &#123;</span><br><span class="line">        throw new StringIndexOutOfBoundsException(index);</span><br><span class="line">    &#125;</span><br><span class="line">    return value[index];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public String substring(int beginIndex, int endIndex) &#123;</span><br><span class="line">    int subLen &#x3D; endIndex - beginIndex;</span><br><span class="line">    if (subLen &lt; 0) &#123;</span><br><span class="line">        throw new StringIndexOutOfBoundsException(subLen);</span><br><span class="line">    &#125;</span><br><span class="line">    return ((beginIndex &#x3D;&#x3D; 0) &amp;&amp; (endIndex &#x3D;&#x3D; value.length)) ? this</span><br><span class="line">            : new String(value, beginIndex, subLen);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 复制区间:从offset到offset+count处.</span><br><span class="line">public String(char value[], int offset, int count) &#123;</span><br><span class="line">    if (offset &lt; 0) &#123;</span><br><span class="line">        throw new StringIndexOutOfBoundsException(offset);</span><br><span class="line">    &#125;</span><br><span class="line">    if (count &lt;&#x3D; 0) &#123;</span><br><span class="line">        if (count &lt; 0) &#123;</span><br><span class="line">            throw new StringIndexOutOfBoundsException(count);</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F;count&#x3D;&#x3D;0</span><br><span class="line">        if (offset &lt;&#x3D; value.length) &#123;</span><br><span class="line">            this.value &#x3D; &quot;&quot;.value;</span><br><span class="line">            return;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F; Note: offset or count might be near -1&gt;&gt;&gt;1.</span><br><span class="line">    if (offset &gt; value.length - count) &#123;</span><br><span class="line">        throw new StringIndexOutOfBoundsException(offset + count);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    this.value &#x3D; Arrays.copyOfRange(value, offset, offset+count);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><a href="https://blog.csdn.net/qingmengwuhen1/article/details/52175303" target="_blank" rel="noopener">1. Java中String类为什么要设计成不可变的</a><br><a href="https://www.jianshu.com/p/6c302c706312" target="_blank" rel="noopener">2. Java源码解析(一): 从源码角度彻底搞懂String,StringBuffer,StringBuilder</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/29/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-Object/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yudesong">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/05/29/JDK-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-Object/" class="post-title-link" itemprop="url">JDK 源码解析 -- Object</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-29 23:55:28" itemprop="dateCreated datePublished" datetime="2020-05-29T23:55:28+08:00">2020-05-29</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在Java语言中，所有的类都是继承了java.lang.Object类的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">public class Object &#123;</span><br><span class="line">    &#x2F;&#x2F; 类加载的时候会先执行registerNatives方法,该方法是在java.dll中实现的</span><br><span class="line">    private static native void registerNatives();</span><br><span class="line">    static &#123;</span><br><span class="line">        registerNatives();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 通过该方法或以获取类的元数据和方法信息。它能够获取一个类的定义信息，然后使用反射去访问类的全部信息，包括函数和字段。</span><br><span class="line">    public final native Class&lt;?&gt; getClass();</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 返回该对象的哈希码值</span><br><span class="line">    public native int hashCode();</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 比较两个对象是否相等</span><br><span class="line">    &#x2F;&#x2F; &#x3D;&#x3D;表示的是变量值完成相同（对于基础类型，地址中存储的是值，引用类型则存储指向实际对象的地址）</span><br><span class="line">    &#x2F;&#x2F; 重写equals()方法必须重写hasCode()方法。</span><br><span class="line">    public boolean equals(Object obj) &#123;</span><br><span class="line">        return (this &#x3D;&#x3D; obj);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 被protected修饰，只能在本类或其子类中调用,Java的类要实现克隆则需要实现Cloneable接口，</span><br><span class="line">    &#x2F;&#x2F; 可以看到该方法会抛出一个CloneNotSupportedException异常，如果没有实现Cloneable接口而调用了clone方法，系统就会抛出这个异常。</span><br><span class="line">    protected native Object clone() throws CloneNotSupportedException;</span><br><span class="line">    </span><br><span class="line">    public String toString() &#123;</span><br><span class="line">        return getClass().getName() + &quot;@&quot; + Integer.toHexString(hashCode());</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 此方法用来唤醒单个线程</span><br><span class="line">    public final native void notify();</span><br><span class="line">    &#x2F;&#x2F; 唤醒的是所有的线程</span><br><span class="line">    public final native void notifyAll();</span><br><span class="line">    public final native void wait(long timeout) throws InterruptedException;</span><br><span class="line">    public final void wait(long timeout, int nanos) throws InterruptedException &#123;</span><br><span class="line">        if (timeout &lt; 0) &#123;</span><br><span class="line">            throw new IllegalArgumentException(&quot;timeout value is negative&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (nanos &lt; 0 || nanos &gt; 999999) &#123;</span><br><span class="line">            throw new IllegalArgumentException(</span><br><span class="line">                                &quot;nanosecond timeout value out of range&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (nanos &gt; 0) &#123;</span><br><span class="line">            timeout++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        wait(timeout);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public final void wait() throws InterruptedException &#123;</span><br><span class="line">        wait(0);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;&#x2F; 用于当对象被回收时调用</span><br><span class="line">    protected void finalize() throws Throwable &#123; &#125;</span><br></pre></td></tr></table></figure>
+
+<p>参考文章<br><a href="https://blog.csdn.net/u012598107/article/details/74011749" target="_blank" rel="noopener">1. JDK源码之Object类详解</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/29/LeakCanary-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -290,7 +490,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">111</span>
+          <span class="site-state-item-count">114</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -303,7 +503,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">13</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

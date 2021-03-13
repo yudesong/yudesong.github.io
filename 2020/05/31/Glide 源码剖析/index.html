@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://img-blog.csdn.net/20170515074139121?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvRXRoYW5Dbw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
 <meta property="article:published_time" content="2020-05-31T03:17:43.174Z">
-<meta property="article:modified_time" content="2020-08-26T05:25:47.570Z">
+<meta property="article:modified_time" content="2021-03-11T09:59:40.100Z">
 <meta property="article:author" content="yudesong">
 <meta property="article:tag" content="Android开源框架源码分析">
 <meta name="twitter:card" content="summary">
@@ -480,7 +480,6 @@ private &lt;Y extends Target&lt;TranscodeType&gt;&gt; Y into(
     requestManager.clear(target);
     target.setRequest(request);
     requestManager.track(target, request);
-
     return target;
 }</code></pre><p>}</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">into()返回Target对象且创建SingleRequest通过View.setTag绑定。最后交给requestManager的track方法： requestTracker.runRequest(request)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">### 资源请求(三级缓存)</span><br><span class="line"></span><br><span class="line">RequestTracker.java (Request集合, 负责Request的执行，暂停，取消等等关于图片请求的操作)</span><br></pre></td></tr></table></figure>
@@ -918,29 +917,6 @@ private void decodeFromRetrievedData() {
 <p>  private <Data> Resource<R> decodeFromFetcher(Data data, DataSource dataSource)<br>      throws GlideException {<br>    LoadPath&lt;Data, ?, R&gt; path = decodeHelper.getLoadPath((Class<Data>) data.getClass());<br>    return runLoadPath(data, dataSource, path);<br>  }</p>
 <p>  private &lt;Data, ResourceType&gt; Resource<R> runLoadPath(<br>      Data data, DataSource dataSource, LoadPath&lt;Data, ResourceType, R&gt; path)<br>      throws GlideException {<br>    Options options = getOptionsWithHardwareConfig(dataSource);<br>    DataRewinder<Data> rewinder = glideContext.getRegistry().getRewinder(data);<br>    try {<br>      // ResourceType in DecodeCallback below is required for compilation to work with gradle.<br>      return path.load(<br>          rewinder, options, width, height, new DecodeCallback<ResourceType>(dataSource));<br>    } finally {<br>      rewinder.cleanup();<br>    }<br>  }  </p>
 <p>}</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-
-
-<p>  public Resource<Transcode> load(<br>      DataRewinder<Data> rewinder,<br>      @NonNull Options options,<br>      int width,<br>      int height,<br>      DecodePath.DecodeCallback<ResourceType> decodeCallback)<br>      throws GlideException {<br>    List<Throwable> throwables = Preconditions.checkNotNull(listPool.acquire());<br>    try {<br>      return loadWithExceptionList(rewinder, options, width, height, decodeCallback, throwables);<br>    } finally {<br>      listPool.release(throwables);<br>    }<br>  }</p>
-<p>  private Resource<Transcode> loadWithExceptionList(<br>      DataRewinder<Data> rewinder,<br>      @NonNull Options options,<br>      int width,<br>      int height,<br>      DecodePath.DecodeCallback<ResourceType> decodeCallback,<br>      List<Throwable> exceptions)<br>      throws GlideException {<br>    Resource<Transcode> result = null;<br>    for (int i = 0, size = decodePaths.size(); i &lt; size; i++) {<br>      DecodePath&lt;Data, ResourceType, Transcode&gt; path = decodePaths.get(i);<br>      try {<br>        result = path.decode(rewinder, width, height, options, decodeCallback);<br>      } catch (GlideException e) {<br>        exceptions.add(e);<br>      }<br>      if (result != null) {<br>        break;<br>      }<br>    }</p>
-<pre><code>if (result == null) {
-  throw new GlideException(failureMessage, new ArrayList&lt;&gt;(exceptions));
-}
-
-return result;</code></pre><p>  }</p>
-<p>}  </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>  public Resource<Transcode> decode(<br>      DataRewinder<DataType> rewinder,<br>      int width,<br>      int height,<br>      @NonNull Options options,<br>      DecodeCallback<ResourceType> callback)<br>      throws GlideException {<br>    Resource<ResourceType> decoded = decodeResource(rewinder, width, height, options);<br>    Resource<ResourceType> transformed = callback.onResourceDecoded(decoded);<br>    return transcoder.transcode(transformed, options);<br>  }</p>
-<p>  @NonNull<br>  private Resource<ResourceType> decodeResource(<br>      DataRewinder<DataType> rewinder, int width, int height, @NonNull Options options)<br>      throws GlideException {<br>    List<Throwable> exceptions = Preconditions.checkNotNull(listPool.acquire());<br>    try {<br>      return decodeResourceWithList(rewinder, width, height, options, exceptions);<br>    } finally {<br>      listPool.release(exceptions);<br>    }<br>  }</p>
-<p>  private Resource<ResourceType> decodeResourceWithList(<br>      DataRewinder<DataType> rewinder,<br>      int width,<br>      int height,<br>      @NonNull Options options,<br>      List<Throwable> exceptions)<br>      throws GlideException {<br>    Resource<ResourceType> result = null;<br>    //noinspection ForLoopReplaceableByForEach to improve perf<br>    for (int i = 0, size = decoders.size(); i &lt; size; i++) {<br>      ResourceDecoder&lt;DataType, ResourceType&gt; decoder = decoders.get(i);<br>      try {<br>        DataType data = rewinder.rewindAndGet();<br>        if (decoder.handles(data, options)) {<br>          data = rewinder.rewindAndGet();<br>          result = decoder.decode(data, width, height, options);<br>        }<br>        // Some decoders throw unexpectedly. If they do, we shouldn’t fail the entire load path, but<br>        // instead log and continue. See #2406 for an example.<br>      } catch (IOException | RuntimeException | OutOfMemoryError e) {<br>        if (Log.isLoggable(TAG, Log.VERBOSE)) {<br>          Log.v(TAG, “Failed to decode data for “ + decoder, e);<br>        }<br>        exceptions.add(e);<br>      }</p>
-<pre><code>  if (result != null) {
-    break;
-  }
-}
-
-return result;</code></pre><p>  }  </p>
 <p>```</p>
 <p><img src="https://img-blog.csdn.net/20170515074139121?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvRXRoYW5Dbw==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="Glide 执行过程"></p>
 <h4 id="了解更多"><a href="#了解更多" class="headerlink" title="了解更多"></a>了解更多</h4><p><a href="https://blog.csdn.net/u011733020/article/details/52446902" target="_blank" rel="noopener">1. Glide（图片异步加载缓存库）发起request获取resource</a></p>
@@ -1042,7 +1018,7 @@ return result;</code></pre><p>  }  </p>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">111</span>
+          <span class="site-state-item-count">114</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1055,7 +1031,7 @@ return result;</code></pre><p>  }  </p>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">13</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
